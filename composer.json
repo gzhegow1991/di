@@ -15,9 +15,7 @@
   "require": {
     "php": "^7.2|^8.0",
     
-    "psr/cache": "1.0.1",
-    "psr/container": "1.0.0",
-    "symfony/var-dumper": "^5.4"
+    "psr/container": "1.0.0"
   },
   
   "autoload": {
@@ -35,8 +33,5 @@
     "optimize-autoloader": true,
     
     "sort-packages": false
-  },
-  "require-dev": {
-    "symfony/cache": "^5.4"
   }
 }

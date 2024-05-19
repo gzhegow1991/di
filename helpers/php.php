@@ -4,6 +4,7 @@ namespace Gzhegow\Di;
 
 
 use Psr\Cache\InvalidArgumentException;
+use Gzhegow\Di\Exception\LogicException;
 
 
 /**
@@ -274,71 +275,89 @@ function _php_method_exists(
 }
 
 
-define('REFLECT_CACHE_MODE_CLEAR_CACHE', -1);
+define('REFLECT_CACHE_MODE_RUNTIME_CACHE', -1);
 define('REFLECT_CACHE_MODE_NO_CACHE', 0);
-define('REFLECT_CACHE_MODE_RUNTIME_CACHE', 1);
-define('REFLECT_CACHE_MODE_STORAGE_CACHE', 2);
+define('REFLECT_CACHE_MODE_STORAGE_CACHE', 1);
 function _php_reflect_cache_settings(array $settings = []) : array
 {
-    static $currentSettings;
+    static $current;
 
-    $currentSettings[ 'mode' ] = null
-        ?? $settings[ 'mode' ]
-        ?? $currentSettings[ 'mode' ]
-        // ?? -1 // > clear cache
+    $current = $current
+        ?? [
+            'mode'     => null,
+            'filepath' => null,
+            'adapter'  => null,
+        ];
+
+
+    $cacheMode = $settings[ 'mode' ]
+        ?? $current[ 'mode' ]
+        ?? -1 // > use runtime cache
         // ?? 0 // > use no cache
-        ?? 1 // > use runtime cache
-        // ?? 2 // > use defined cache
+        // ?? 1 // > use defined cache
     ;
 
-    $currentSettings[ 'mode' ] = (int) $currentSettings[ 'mode' ];
+    $cacheMode = (int) $cacheMode;
 
-    if ($currentSettings[ 'mode' ] < -1) {
-        $currentSettings[ 'mode' ] = -1;
-
-    } elseif ($currentSettings[ 'mode' ] > 2) {
-        $currentSettings[ 'mode' ] = 1;
+    if (! in_array($cacheMode, $in = [
+        REFLECT_CACHE_MODE_RUNTIME_CACHE,
+        REFLECT_CACHE_MODE_NO_CACHE,
+        REFLECT_CACHE_MODE_STORAGE_CACHE,
+    ])) {
+        throw _php_throw(
+            'The `mode` should be one of: ' . implode(';', $in)
+            . ' / ' . _php_dump($cacheMode)
+        );
     }
 
+    $current[ 'mode' ] = $cacheMode;
 
-    $currentSettings[ 'filepath' ] = null
-        ?? $settings[ 'filepath' ]
-        ?? $currentSettings[ 'filepath' ]
+
+    $cacheFilepath = $settings[ 'filepath' ]
+        ?? $current[ 'filepath' ]
         ?? null;
 
-    $currentSettings[ 'filepath' ] = strval($currentSettings[ 'filepath' ]) ?: null;
+    $cacheFilepath = strval($cacheFilepath) ?: null;
 
 
-    $currentSettings[ 'adapter' ] = null
-        ?? $settings[ 'adapter' ]
-        ?? $currentSettings[ 'adapter' ]
+    $cacheAdapter = $settings[ 'adapter' ]
+        ?? $current[ 'adapter' ]
         ?? null;
 
-    if ($hasStorageCache = $currentSettings[ 'adapter' ]) {
-        if (! is_a($currentSettings[ 'adapter' ], $class = '\Psr\Cache\CacheItemPoolInterface')) {
+    if ($cacheAdapter) {
+        if (! is_a($cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
             throw _php_throw(
                 'Setting `cache` should be instance of: ' . $class
-                . ' / ' . _php_dump($currentSettings[ 'adapter' ])
+                . ' / ' . _php_dump($current[ 'adapter' ])
             );
         }
     }
 
-    if (! $hasStorageCache) {
-        $currentSettings[ 'filepath' ] = __DIR__ . '/../var/cache/php.reflect_cache/latest.cache';
-    }
 
-    return $currentSettings;
+    $cacheAdapter
+        ? ($current[ 'adapter' ] = $cacheAdapter)
+        : ($current[ 'filepath' ] = $cacheFilepath ?? (__DIR__ . '/../var/cache/php.reflect_cache/latest.cache'));
+
+
+    return $current;
 }
 
-function _php_reflect_cache() : object
+function _php_reflect_cache(object $cacheNew = null) : object
 {
     static $cache;
-    static $cacheSerialized;
     static $cacheItem;
 
-    $cache = $cache ?? null;
-    $cacheSerialized = $cacheSerialized ?? null;
+    $cache = $cacheNew ?? $cache ?? null;
     $cacheItem = $cacheItem ?? null;
+
+    if (isset($cacheNew)
+        && ! ($cacheNew instanceof \stdClass)
+    ) {
+        throw _php_throw(
+            'The `cacheNew` should be instance of: ' . \stdClass::class
+            . ' / ' . _php_dump($cacheNew)
+        );
+    }
 
     [
         'mode'     => $cacheMode,
@@ -346,18 +365,11 @@ function _php_reflect_cache() : object
         'adapter'  => $cacheAdapter,
     ] = $cacheSettings = _php_reflect_cache_settings();
 
-    if (
-        ($cacheMode === REFLECT_CACHE_MODE_NO_CACHE)
-        || ($cacheMode === REFLECT_CACHE_MODE_CLEAR_CACHE)
-    ) {
-        $cache = (object) [];
-    }
+    if (! isset($cache)) {
+        if ($cacheMode === REFLECT_CACHE_MODE_NO_CACHE) {
+            $cache = (object) [];
 
-    if (
-        ($cacheMode === REFLECT_CACHE_MODE_CLEAR_CACHE)
-        || ($cacheMode === REFLECT_CACHE_MODE_STORAGE_CACHE)
-    ) {
-        if (! isset($cache)) {
+        } elseif ($cacheMode === REFLECT_CACHE_MODE_STORAGE_CACHE) {
             if ($cacheAdapter) {
                 /** @var \Psr\Cache\CacheItemPoolInterface $cacheAdapter */
 
@@ -370,11 +382,8 @@ function _php_reflect_cache() : object
                     }
                 }
 
-                if ($cacheMode === REFLECT_CACHE_MODE_STORAGE_CACHE) {
-                    if ($cacheItem->isHit()) {
-                        $cache = $cacheItem->get();
-                        $cacheSerialized = serialize($cache);
-                    }
+                if ($cacheItem->isHit()) {
+                    $cache = $cacheItem->get();
                 }
 
             } else {
@@ -388,18 +397,13 @@ function _php_reflect_cache() : object
                     $cache = unserialize($cacheSerialized);
                 }
             }
-        }
 
-        $cache = $cache ?? (object) [];
+            $cache = $cache ?? (object) [];
+        }
     }
 
-    if (
-        ($cacheMode === REFLECT_CACHE_MODE_CLEAR_CACHE)
-        || ($cacheMode === REFLECT_CACHE_MODE_STORAGE_CACHE)
-    ) {
-        $cacheSerializedNew = serialize($cache);
-
-        if (! isset($cacheSerialized) || ($cacheSerializedNew !== $cacheSerialized)) {
+    if (isset($cacheNew)) {
+        if ($cacheMode === REFLECT_CACHE_MODE_STORAGE_CACHE) {
             if ($cacheAdapter) {
                 /** @var \Psr\Cache\CacheItemPoolInterface $cacheAdapter */
 
@@ -412,15 +416,15 @@ function _php_reflect_cache() : object
                     }
                 }
 
-                $cacheItem->set($cache);
+                $cacheItem->set($cacheNew);
 
                 $cacheAdapter->save($cacheItem);
 
             } else {
-                file_put_contents($cacheFilepath, $cacheSerializedNew);
-            }
+                $cacheSerialized = serialize($cacheNew);
 
-            $cacheSerialized = $cacheSerializedNew;
+                file_put_contents($cacheFilepath, $cacheSerialized);
+            }
         }
     }
 
@@ -578,8 +582,6 @@ function _php_reflect($reflectable) : array
 
         $reflectCache->{$reflectCacheKey} = $result;
     }
-
-    $reflectCache = _php_reflect_cache();
 
     return $reflectCache->{$reflectCacheKey};
 }

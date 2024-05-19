@@ -1,6 +1,5 @@
 <?php
 
-use Gzhegow\Di\Di;
 use Gzhegow\Di\Demo\MyClassTwo;
 use Gzhegow\Di\Demo\MyClassThree;
 use Gzhegow\Di\Demo\MyClassOneOne;
@@ -14,8 +13,8 @@ use function Gzhegow\Di\_di_bind;
 use function Gzhegow\Di\_di_make;
 use function Gzhegow\Di\_di_extend;
 use function Gzhegow\Di\_di_bind_lazy;
-use function Gzhegow\Di\_di_get_generic_lazy;
 use function Gzhegow\Di\_php_reflect_cache;
+use function Gzhegow\Di\_di_get_generic_lazy;
 use function Gzhegow\Di\_php_reflect_cache_settings;
 
 
@@ -38,46 +37,38 @@ set_exception_handler(static function ($e) {
 });
 
 
+// >>> configure cache
+$cacheDir = __DIR__ . '/var/cache';
+$cacheNamespace = 'php.reflect_cache';
+
+// > gzhegow, you can use filepath (cache will be made with `file_put_contents` + `serialize`)
+$cacheFilepath = "{$cacheDir}/{$cacheNamespace}/latest.cache";
+_php_reflect_cache_settings([
+    'mode'     => REFLECT_CACHE_MODE_STORAGE_CACHE,
+    'filepath' => $cacheFilepath,
+]);
+
+// > `composer require symfony/cache`
+// $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
+//     $cacheNamespace, 0, $cacheDir
+// );
+// _php_reflect_cache_settings([
+//     'mode'    => REFLECT_CACHE_MODE_STORAGE_CACHE,
+//     'adapter' => $symfonyCacheAdapter,
+// ]);
+
+
 // >>> clear cache (if you needed it; usually - console command)
-$cacheDir = __DIR__ . '/var/cache';
-$cacheNamespace = 'php.reflect_cache';
-// > you can use filepath (cache will be made with `file_put_contents` + `serialize`)
-// $cacheFilepath = "{$cacheDir}/{$cacheNamespace}/latest.cache";
-// _php_reflect_cache_settings([
-//     'mode'     => REFLECT_CACHE_MODE_CLEAR_CACHE,
-//     'filepath' => $cacheFilepath,
-// ]);
-$symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
-    $cacheNamespace, 0, $cacheDir
-);
-_php_reflect_cache_settings([
-    'mode'    => REFLECT_CACHE_MODE_CLEAR_CACHE,
-    'adapter' => $symfonyCacheAdapter,
-]);
-_php_reflect_cache(); // > ask cache (it will be cleared cause of mode set to clear)
-
-
-// >>> set cache
-$cacheDir = __DIR__ . '/var/cache';
-$cacheNamespace = 'php.reflect_cache';
-// > you can use filepath (cache will be made with `file_put_contents` + `serialize`)
-// $cacheFilepath = "{$cacheDir}/{$cacheNamespace}/latest.cache";
-// _php_reflect_cache_settings([
-//     'mode'     => REFLECT_CACHE_MODE_CLEAR_CACHE,
-//     'filepath' => $cacheFilepath,
-// ]);
-_php_reflect_cache_settings([
-    'mode'    => REFLECT_CACHE_MODE_STORAGE_CACHE,
-    'adapter' => $symfonyCacheAdapter,
-]);
-// _php_reflect_cache_settings([ 'mode' => REFLECT_CACHE_MODE_RUNTIME_CACHE ]); // > or you can use php memory for cache
-// _php_reflect_cache_settings([ 'mode' => REFLECT_CACHE_MODE_NO_CACHE ]); // > or you can always reflect from scratch
+$cacheNew = (object) [];
+_php_reflect_cache($cacheNew); // > ask cache (it will be cleared cause of mode set to clear)
 
 
 // >>> set up the container
 // > set current instance
-_di(new Di());
-// _di(); // > create and set current instance
+$di = _di();
+// > or you can set existing $di to global scope
+// $di = _di(new Di());
+
 
 // >>> factory binding MyClassAInterface to be resolved as object MyClassAA with passed arguments (config reading, for example)
 _di_bind(MyClassOneInterface::class, function () {
@@ -127,3 +118,9 @@ $result = $instance->do();
 // Hello, World
 var_dump($result);
 // int(1)
+
+
+// >>> save cache in the end of the script for future performance
+$cacheCurrent = _php_reflect_cache();
+// > ask cache (it will be saved)
+_php_reflect_cache($cacheCurrent);

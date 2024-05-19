@@ -134,7 +134,7 @@ class Di implements DiInterface
 
     public function makeInstance(string $id, array $parameters = []) : object
     {
-        if ($_bound = $this->resolveBound($id)) {
+        if ($_bound = $this->resolveBind($id)) {
             [ $boundType, $bound ] = $_bound;
 
         } else {
@@ -465,7 +465,7 @@ class Di implements DiInterface
     }
 
 
-    protected function resolveBound(string $id) : ?array
+    protected function resolveBind(string $id) : ?array
     {
         if (! isset($this->bind[ $id ])) {
             return null;

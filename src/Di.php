@@ -96,6 +96,20 @@ class Di implements DiInterface
         return $instance;
     }
 
+    /**
+     * @template T
+     *
+     * @param T|object $instance
+     *
+     * @return T
+     */
+    public function autowire(object $instance, array $methodArgs = null, string $methodName = null)
+    {
+        $this->autowireInstance($instance, $methodArgs, $methodName);
+
+        return $instance;
+    }
+
 
     public function hasInstance($id) : bool
     {
@@ -171,6 +185,23 @@ class Di implements DiInterface
                 $this->callFunction($callable, [ $instance ]);
             }
         }
+
+        return $instance;
+    }
+
+    /**
+     * @template T
+     *
+     * @param T|object $instance
+     *
+     * @return T
+     */
+    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null) : object
+    {
+        $methodArgs = $methodArgs ?? [];
+        $methodName = $methodName ?? '__autowire';
+
+        $this->callFunction([ $instance, '__autowire' ], $methodArgs);
 
         return $instance;
     }
@@ -541,9 +572,15 @@ class Di implements DiInterface
                     $_args[ $i ] = null;
 
                 } else {
-                    $_args[ $i ] = $this->has($argRtClass)
-                        ? $this->getInstance($argRtClass)
-                        : $this->makeInstance($argRtClass);
+                    if (! $this->has($argRtClass)) {
+                        throw new NotFoundException(
+                            'Missing bind to resolve parameter: '
+                            . "[ {$i} ] \${$argName} : {$argRtType}"
+                            . ' / ' . _php_dump($reflectable)
+                        );
+                    }
+
+                    $_args[ $i ] = $this->getInstance($argRtClass);
                 }
             }
         }

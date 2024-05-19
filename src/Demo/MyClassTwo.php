@@ -19,10 +19,8 @@ class MyClassTwo implements MyClassTwoInterface
     }
 
 
-    public function do()
+    public function do() : void
     {
         echo 'Hello, World!' . PHP_EOL;
-
-        return 1;
     }
 }

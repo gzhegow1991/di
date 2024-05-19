@@ -21,6 +21,7 @@ use function Gzhegow\Di\_di_get;
 use function Gzhegow\Di\_di_bind;
 use function Gzhegow\Di\_di_make;
 use function Gzhegow\Di\_di_extend;
+use function Gzhegow\Di\_di_autowire;
 use function Gzhegow\Di\_di_bind_lazy;
 use function Gzhegow\Di\_php_reflect_cache;
 use function Gzhegow\Di\_di_get_generic_lazy;
@@ -30,10 +31,10 @@ use function Gzhegow\Di\_php_reflect_cache_settings;
 require_once __DIR__ . '/vendor/autoload.php';
 
 
-// > configure php
+// >>> Настраиваем PHP
 ini_set('memory_limit', '32M');
 
-// > configure environment
+// >>> Настраиваем отлов ошибок
 error_reporting(E_ALL);
 set_error_handler(static function ($severity, $err, $file, $line) {
     if (error_reporting() & $severity) {
@@ -46,18 +47,18 @@ set_exception_handler(static function ($e) {
 });
 
 
-// >>> configure cache
+// >>> Настраиваем кеш
 $cacheDir = __DIR__ . '/var/cache';
 $cacheNamespace = 'php.reflect_cache';
 
-// > gzhegow, you can use filepath (cache will be made with `file_put_contents` + `serialize`)
+// > Можно использовать путь к файлу, в этом случае кеш будет сделан через file_{get|put}_contents() + (un)serialize()
 $cacheFilepath = "{$cacheDir}/{$cacheNamespace}/latest.cache";
 _php_reflect_cache_settings([
     'mode'     => REFLECT_CACHE_MODE_STORAGE_CACHE,
     'filepath' => $cacheFilepath,
 ]);
 
-// > `composer require symfony/cache`
+// > Либо можно установить пакет `composer require symfony/cache` и использовать адаптер, чтобы запихивать в Редис например
 // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
 //     $cacheNamespace, 0, $cacheDir
 // );
@@ -67,32 +68,31 @@ _php_reflect_cache_settings([
 // ]);
 
 
-// >>> clear cache (if you needed it; usually - console command)
+// >>> Так можно очистить кеш. Создаем пустой объект и передаем в функцию рефлексии кеша. Увидев аргумент, она его запишет в кеш поверху.
 $cacheNew = (object) [];
 _php_reflect_cache($cacheNew); // > ask cache (it will be cleared cause of mode set to clear)
 
 
-// >>> set up the container
-// > set current instance
+// >>> Настраиваем сам контейнер
 $di = _di();
-// > or you can set existing $di to global scope
+// > Или можно передать уже существующий экземпляр, чтобы все функции _di_{action}() работали через него
 // $di = _di(new Di());
 
 
-// >>> factory binding MyClassAInterface to be resolved as object MyClassAA with passed arguments (config reading, for example)
+// >>> Назначаем чтобы вызов MyClassOneInterface был распознан как объект MyClassOneOne с указанными аргументами (например, после считывания конфига из файла)
 _di_bind(MyClassOneInterface::class, function () {
     $object = _di_make(MyClassOneOne::class, [ 123 ]);
 
     return $object;
 });
 
-// >>> lazy binding MyClassBInterface to be resolved as object MyClassB after any method of class MyClassB been called
+// >>> Сервис MyClassTwo очень долго инициализируется и тормозит программу. Мы сделаем его ленивым, чтобы он создавался только тогда, когда мы вызовем на нем какой-то метод
 _di_bind_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 
-// >>> normal binding MyClassC to be resolved as object MyClassC
+// >>> А этот сервис мы зарегистрируем сам на себя. Попросил класс - получил. Метод ->has() будет возвращать TRUE
 _di_bind(MyClassThree::class);
 
-// >>> extend binding that will be called after object creation to allow to give to service more dependencies / aware
+// >>> После того как класс создан, нам может пригодится наполнить его зависимостями помимо тех, что переданы в конструктор
 _di_extend(MyClassOneAwareInterface::class, static function (MyClassOneAwareInterface $aware) {
     $one = _di_get(MyClassOneInterface::class);
 
@@ -109,28 +109,41 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 });
 
 
-// >>> use container
-// > get service
-$instance = _di_get(MyClassThree::class);
-// > or you can use similar getter but with @template/generic PHPDoc support for PHPStorm
+// >>> Пользуемся!
+
+// > Пример. "Дай сервис":
+$three = _di_get(MyClassThree::class);
+
+// > Если мы хотим создать не регистрируя или получить клон объекта, когда он зарегистрирован как синглтон:
+// $instance = _di_make(MyClassC::class);
+
+// > Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками
 // $instance = _di_generic(MyClassC::class, MyClassC::class);
 
-var_dump(get_class($instance));
+var_dump(get_class($three));
 // string(28) "Gzhegow\Di\Demo\MyClassThree"
 
-// > get lazy service
-$instance = _di_get_generic_lazy(MyClassTwoInterface::class, MyClassTwo::class);
-var_dump(get_class($instance));
+
+// > Еще пример. "Дай ленивый сервис":
+$two = _di_get_generic_lazy(MyClassTwoInterface::class, MyClassTwo::class);
+var_dump(get_class($two));
 // string(27) "Gzhegow\Di\Lazy\LazyService"
-$result = $instance->do();
-// > ...MyClassB is initialising for 3 seconds...
-// Hello, World
-var_dump($result);
-// int(1)
+
+// > За счет генериков PHPStorm будет давать подсказки на этот экземпляр, как будто он MyClassTwo, а не LazyService
+echo 'MyClassB загружается...' . PHP_EOL;
+// > MyClassB загружается...
+$two->do();
+// > Hello, World
 
 
-// >>> save cache in the end of the script for future performance
+// >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали" - вызовет функцию на уже существующем объекте
+$four = new \Gzhegow\Di\Demo\MyClassFour();
+_di_autowire($four);
+// _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire');
+var_dump($four);
+
+
+// >>> Теперь сохраним кеш сделанной за скрипт рефлексии для следующего раза
 $cacheCurrent = _php_reflect_cache();
-// > ask cache (it will be saved)
 _php_reflect_cache($cacheCurrent);
 ```

@@ -118,6 +118,12 @@ function _di_make_generic_lazy(string $id, string $generic, array $parameters = 
 }
 
 
+function _di_autowire(object $instance, array $methodArgs = null, string $methodName = null) : object
+{
+    return _di()->autowire($instance, $methodArgs, $methodName);
+}
+
+
 function _di_bind(string $id, $mixed = null, bool $singleton = null) : void
 {
     _di()->bind($id, $mixed, $singleton);

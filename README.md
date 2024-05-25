@@ -82,8 +82,8 @@ $cacheNamespace = 'php.reflect_cache';
 $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
 $cacheFilename = "latest.cache";
 $di->setCacheSettings([
-    // 'reflectorCacheMode'     => Reflector::CACHE_MODE_RUNTIME, // > использовать только кеш памяти на время текущего скрипта
     // 'reflectorCacheMode'     => Reflector::CACHE_MODE_NO_CACHE, // > не использовать кеш совсем
+    // 'reflectorCacheMode'     => Reflector::CACHE_MODE_RUNTIME, // > использовать только кеш памяти на время текущего скрипта
     'reflectorCacheMode'     => Reflector::CACHE_MODE_STORAGE, // > использовать файловую систему или адаптер (хранилище)
     //
     'reflectorCacheDirpath'  => $cacheDirpath,
@@ -183,8 +183,9 @@ _assert_true($three1 === $threeByAlias);
 // > Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
 // > В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
-$two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
+// $two = _di_ask_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
+$two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
 var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 
@@ -195,8 +196,8 @@ $two->do();                                           // Hello, [ User ] !
 
 // >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали" - вызовет функцию на уже существующем объекте
 $four = new MyClassFour();
-_di_autowire($four);
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
+_di_autowire($four);
 var_dump(get_class($four));                           // string(27) "Gzhegow\Di\Demo\MyClassFour"
 var_dump(get_class($four->one));                      // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
 _assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');

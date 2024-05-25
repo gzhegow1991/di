@@ -1,6 +1,6 @@
 <?php
 
-namespace Gzhegow\Di\Reflector;
+namespace Gzhegow\Di\Reflector\Struct;
 
 use Gzhegow\Di\Exception\RuntimeException;
 

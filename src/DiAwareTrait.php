@@ -6,7 +6,7 @@ namespace Gzhegow\Di;
 trait DiAwareTrait
 {
     /**
-     * @var Di
+     * @var DiInterface
      */
     protected $di;
 

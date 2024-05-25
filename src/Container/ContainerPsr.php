@@ -1,13 +1,12 @@
 <?php
 
-namespace Gzhegow\Di;
+namespace Gzhegow\Di\Container;
+
+use Gzhegow\Di\DiInterface;
 
 
-class Container implements ContainerInterface
+class ContainerPsr implements ContainerPsrInterface
 {
-    /** > gzhegow, это адаптер для Psr\Container\ContainerInterface */
-
-
     /**
      * @var DiInterface
      */

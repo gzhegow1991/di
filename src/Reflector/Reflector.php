@@ -4,13 +4,14 @@ namespace Gzhegow\Di\Reflector;
 
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
+use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
 use function Gzhegow\Di\_php_dump;
 use function Gzhegow\Di\_filter_dirpath;
 use function Gzhegow\Di\_filter_filename;
 use function Gzhegow\Di\_php_method_exists;
 
 
-class Reflector
+class Reflector implements ReflectorInterface
 {
     const CACHE_MODE_RUNTIME  = 'RUNTIME';
     const CACHE_MODE_NO_CACHE = 'NO_CACHE';
@@ -22,6 +23,11 @@ class Reflector
         self::CACHE_MODE_STORAGE  => true,
     ];
 
+
+    /**
+     * @var ReflectorFactoryInterface
+     */
+    protected $factory;
 
     /**
      * @var ReflectorCacheRuntime
@@ -58,20 +64,22 @@ class Reflector
     protected $cacheFilename = 'latest.cache';
 
 
-    public function newReflectorCacheRuntime() : ReflectorCacheRuntime
+    public function __construct(ReflectorFactoryInterface $factory)
     {
-        return new ReflectorCacheRuntime();
+        $this->factory = $factory;
     }
 
 
-    public function resetCache() : void
+    public function resetCache() // : static
     {
         $this->cache = null;
+
+        return $this;
     }
 
-    public function loadCache(bool $withoutData = null) : ReflectorCacheRuntime
+    public function loadCache(bool $readData = null) : ReflectorCacheRuntime
     {
-        $withoutData = $withoutData ?? false;
+        $readData = $readData ?? true;
 
         if ($this->cache) {
             return $this->cache;
@@ -84,7 +92,7 @@ class Reflector
 
                     $this->cacheItem = $cacheItem;
 
-                    if (! $withoutData) {
+                    if ($readData) {
                         if ($cacheItem->isHit()) {
                             $cache = $cacheItem->get();
                         }
@@ -94,14 +102,14 @@ class Reflector
                     $cache = null;
                 }
 
-                $cache = $cache ?? $this->newReflectorCacheRuntime();
+                $cache = $cache ?? $this->factory->newReflectorCacheRuntime();
 
             } elseif ($this->cacheDirpath) {
                 $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
 
                 $cache = null;
 
-                if (! $withoutData) {
+                if ($readData) {
                     $before = error_reporting(0);
                     if (@is_file($cacheFilepath)) {
                         if (false !== ($content = @file_get_contents($cacheFilepath))) {
@@ -112,22 +120,24 @@ class Reflector
                                 'Unable to read file: ' . $cacheFilepath
                             );
                         }
+
+                        $cache = unserialize($cache);
+
+                        if (get_class($cache) === '__PHP_Incomplete_Class') {
+                            $cache = null;
+                        }
                     }
                     error_reporting($before);
-
-                    if (null !== $cache) {
-                        $cache = unserialize($cache);
-                    }
                 }
 
-                $cache = $cache ?? $this->newReflectorCacheRuntime();
+                $cache = $cache ?? $this->factory->newReflectorCacheRuntime();
 
             } else {
-                $cache = $this->newReflectorCacheRuntime();
+                $cache = $this->factory->newReflectorCacheRuntime();
             }
 
         } else {
-            $cache = $this->newReflectorCacheRuntime();
+            $cache = $this->factory->newReflectorCacheRuntime();
         }
 
         $this->cache = $cache;
@@ -227,7 +237,7 @@ class Reflector
         object $cacheAdapter = null,
         string $cacheDirpath = null,
         string $cacheFilename = null
-    ) : void
+    ) // : static
     {
         if ((null !== $cacheMode) && ! isset(static::LIST_CACHE_MODE[ $cacheMode ])) {
             throw new LogicException(
@@ -259,6 +269,8 @@ class Reflector
         $this->cacheAdapter = $cacheAdapter;
         $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache';
         $this->cacheFilename = $cacheFilename ?? 'latest.cache';
+
+        return $this;
     }
 
 
@@ -442,27 +454,9 @@ class Reflector
     {
         if (! is_object($object)) return null;
 
-        $cache = $this->loadCache();
+        $class = get_class($object);
 
-        $reflectKey = get_class($object) . '::__construct';
-
-        if ($cache->has($reflectKey)) {
-            $result = $cache->get($reflectKey);
-
-        } else {
-            try {
-                $rc = new \ReflectionClass($object);
-            }
-            catch ( \Throwable $e ) {
-                throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-            }
-
-            $rm = $rc->getConstructor();
-
-            $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
-
-            $cache->set($reflectKey, $result);
-        }
+        $result = $this->reflectArgumentsConstructorClass($class);
 
         return $result;
     }

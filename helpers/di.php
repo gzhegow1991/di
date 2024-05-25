@@ -7,7 +7,7 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
 /**
- * @return Di
+ * @return DiInterface
  */
 function _di(DiInterface $di = null)
 {
@@ -15,7 +15,7 @@ function _di(DiInterface $di = null)
 
     $before = $instance;
 
-    $instance = $di ?? $instance ?? new Di();
+    $instance = $di ?? $instance ?? (new DiFactory())->newDi();
 
     if ($before !== $instance) {
         $instance::setInstance($instance);

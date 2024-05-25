@@ -3,7 +3,3 @@
 
 /vendor
 composer.lock
-
-/.data
-/.new
-/.old

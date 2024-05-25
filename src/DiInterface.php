@@ -3,6 +3,7 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
@@ -27,11 +28,9 @@ interface DiInterface
 
 
     /**
-     * @param static $di
-     *
      * @return static
      */
-    public function merge($di);
+    public function merge(InjectorInterface $di);
 
 
     /**
@@ -51,12 +50,12 @@ interface DiInterface
      */
     public function bindStruct($id, $structId, bool $isSingleton = null);
 
-    public function bindInstance($id, object $instance, bool $isSingleton = null);
-
     /**
      * @param callable $fnFactory
      */
     public function bindFactory($id, $fnFactory, bool $isSingleton = null);
+
+    public function bindInstance($id, object $instance, bool $isSingleton = null);
 
 
     /**
@@ -92,19 +91,19 @@ interface DiInterface
     /**
      * @return LazyService
      */
-    public function askLazy(string $id, array $parameters = null);
+    public function askLazy($id, array $parameters = null);
 
     /**
      * @return LazyService
      *
      * @throws NotFoundException
      */
-    public function getLazy(string $id);
+    public function getLazy($id);
 
     /**
      * @return LazyService
      */
-    public function makeLazy(string $id, array $parameters = null);
+    public function makeLazy($id, array $parameters = null);
 
 
     /**
@@ -114,7 +113,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function askGeneric(string $id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
+    public function askGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
@@ -125,7 +124,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function getGeneric(string $id, $structT = null, bool $forceInstanceOf = null);
+    public function getGeneric($id, $structT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
@@ -134,7 +133,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function makeGeneric(string $id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
+    public function makeGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
 
 
     /**
@@ -144,7 +143,7 @@ interface DiInterface
      *
      * @return LazyService<T>|T
      */
-    public function askLazyGeneric(string $id, array $parameters = null, $structT = null);
+    public function askLazyGeneric($id, array $parameters = null, $structT = null);
 
     /**
      * @template-covariant T
@@ -155,7 +154,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazyGeneric(string $id, $structT = null);
+    public function getLazyGeneric($id, $structT = null);
 
     /**
      * @template-covariant T
@@ -164,7 +163,7 @@ interface DiInterface
      *
      * @return LazyService<T>|T
      */
-    public function makeLazyGeneric(string $id, array $parameters = null, $structT = null);
+    public function makeLazyGeneric($id, array $parameters = null, $structT = null);
 
 
     /**
@@ -176,24 +175,11 @@ interface DiInterface
      */
     public function autowire(object $instance, array $methodArgs = null, string $methodName = null);
 
+
     /**
      * @param callable $fn
      *
      * @return mixed
      */
     public function call($fn, array $args = null);
-
-
-    public function newLazyServiceAsk($id, array $parameters = null) : LazyService;
-
-    public function newLazyServiceGet($id) : LazyService;
-
-    public function newLazyServiceMake($id, array $parameters = null) : LazyService;
-
-
-    public function lazyServiceFnFactoryAskPublic($lazyId, array $parameters = null) : object;
-
-    public function lazyServiceFnFactoryGetPublic($lazyId) : object;
-
-    public function lazyServiceFnFactoryMakePublic($lazyId, array $parameters = null) : object;
 }

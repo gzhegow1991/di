@@ -42,10 +42,11 @@ set_error_handler(static function ($severity, $err, $file, $line) {
         throw new \ErrorException($err, -1, $severity, $file, $line);
     }
 });
-set_exception_handler(static function ($e) {
-    var_dump($e);
-    die();
-});
+set_exception_handler('dd');
+// set_exception_handler(static function ($e) {
+//     var_dump($e);
+//     die();
+// });
 
 
 // >>> Создаем контейнер

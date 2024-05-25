@@ -11,7 +11,7 @@ interface DiInterface
 {
     /**
      * @param array{
-     *     reflectorCacheMode: Reflector::CACHE_MODE_RUNTIME|Reflector::CACHE_MODE_NO_CACHE|Reflector::CACHE_MODE_STORAGE|null,
+     *     reflectorCacheMode: string|null,
      *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
      *     reflectorCacheDirpath: string|null,
      *     reflectorCacheFilename: string|null,

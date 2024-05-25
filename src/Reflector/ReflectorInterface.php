@@ -17,10 +17,10 @@ interface ReflectorInterface
 
 
     /**
-     * @param static::CACHE_MODE_RUNTIME|static::CACHE_MODE_NO_CACHE|static::CACHE_MODE_STORAGE|null $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null                                          $cacheAdapter
-     * @param string|null                                                                            $cacheDirpath
-     * @param string|null                                                                            $cacheFilename
+     * @param string|null                                   $cacheMode
+     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
+     * @param string|null                                   $cacheDirpath
+     * @param string|null                                   $cacheFilename
      *
      * @noinspection PhpUndefinedNamespaceInspection
      * @noinspection PhpUndefinedClassInspection

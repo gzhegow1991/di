@@ -62,7 +62,7 @@ $di = _di();
 $cacheDir = __DIR__ . '/var/cache';
 $cacheNamespace = 'php.reflect_cache';
 
-// > Можно использовать путь к файлу, в этом случае кеш будет сделан через file_{get|put}_contents() + (un)serialize()
+// >>> Можно использовать путь к файлу, в этом случае кеш будет сделан через file_{get|put}_contents() + (un)serialize()
 $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
 $cacheFilename = "latest.cache";
 $di->setCacheSettings([
@@ -74,7 +74,7 @@ $di->setCacheSettings([
     'reflectorCacheFilename' => $cacheFilename,
 ]);
 
-// > Либо можно установить пакет `composer require symfony/cache` и использовать адаптер, чтобы запихивать в Редис например
+// >>> Либо можно установить пакет `composer require symfony/cache` и использовать адаптер, чтобы запихивать в Редис например
 // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
 //     $cacheNamespace, $defaultLifetime = 0, $cacheDir
 // );
@@ -139,33 +139,33 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 });
 
 
-// > Пример. "Дай сервис c заполненными зависимостями"
+// >>> Пример. "Дай сервис c заполненными зависимостями"
 $three = _di_get(MyClassThree::class);
 var_dump(get_class($three));                          // string(28) "Gzhegow\Di\Demo\MyClassThree"
 _assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
 
 
-// > Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
+// >>> Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
 $three1 = _di_get(MyClassThree::class);
 $three2 = _di_get(MyClassThree::class);
 $threeByAlias = _di_get('three');
 _assert_true($three1 === $three2);
 _assert_true($three1 === $threeByAlias);
 
-// > А вот если мы хотим создать класс не регистрируя его или получить новый экземпляр, даже если это синглтон, используем make()
+// >>> А вот если мы хотим создать класс не регистрируя его или получить новый экземпляр, даже если это синглтон, используем make()
 // $three = _di_make(MyClassThree::class);
 
-// > Выполнит get()/make() в зависимости от того, был ли сервис зарегистрирован
+// >>> Выполнит get()/make() в зависимости от того, был ли сервис зарегистрирован
 // $three = _di_ask(MyClassThree::class);
 
-// > Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
+// >>> Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
 // $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров
 // $two = _di_ask(MyClassTwoInterface::class, [], MyClassTwo::class); // > с параметрами, если сервис создается впервые
 // $two = _di_make(MyClassTwoInterface::class, [], MyClassTwo::class); // > всегда новый экземпляр с параметрами
 
 
-// > Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
-// > В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
+// >>> Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
+// >>> В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 // $two = _di_ask_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
@@ -173,7 +173,7 @@ $two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTw
 var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 
-// > При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
+// >>> При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
 echo 'MyClassB загружается (3 секунды)...' . PHP_EOL; // MyClassB загружается (3 секунды)...
 $two->do();                                           // Hello, [ User ] !
 

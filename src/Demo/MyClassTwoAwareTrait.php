@@ -12,8 +12,10 @@ trait MyClassTwoAwareTrait
      */
     protected $two;
 
-
-    public function setTwo(LazyService $two) : void
+    /**
+     * @param LazyService<MyClassTwo>|MyClassTwo $two
+     */
+    public function setTwo($two) : void
     {
         $this->two = $two;
     }

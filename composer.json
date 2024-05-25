@@ -15,7 +15,7 @@
   "require": {
     "php": "^7.2|^8.0",
 
-    "psr/container": "1.0.0"
+    "psr/container": "^1.0|^2.0"
   },
 
   "autoload": {
@@ -25,6 +25,7 @@
     "files": [
       "helpers/assert.php",
       "helpers/di.php",
+      "helpers/reflector.php",
       "helpers/php.php"
     ]
   },

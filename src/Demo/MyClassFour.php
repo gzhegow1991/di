@@ -7,7 +7,7 @@ class MyClassFour
     /**
      * @var MyClassOneInterface
      */
-    protected $one;
+    public $one;
 
 
     public function __autowire(MyClassOneInterface $one)

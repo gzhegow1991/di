@@ -3,60 +3,6 @@
 namespace Gzhegow\Di;
 
 
-function _filter_int($value) : ?int
-{
-    if (is_int($value)) {
-        return $value;
-    }
-
-    if (is_string($value)) {
-        if (! is_numeric($value)) {
-            return null;
-        }
-    }
-
-    $valueOriginal = $value;
-
-    if (! is_scalar($valueOriginal)) {
-        if (null === ($_valueOriginal = _filter_str($valueOriginal))) {
-            return null;
-        }
-
-        if (! is_numeric($_valueOriginal)) {
-            return null;
-        }
-
-        $valueOriginal = $_valueOriginal;
-    }
-
-    $_value = $valueOriginal;
-    $status = @settype($_value, 'integer');
-
-    if ($status) {
-        if ((float) $valueOriginal !== (float) $_value) {
-            return null;
-        }
-
-        return $_value;
-    }
-
-    return null;
-}
-
-function _filter_positive_int($value) : ?int
-{
-    if (null === ($_value = _filter_int($value))) {
-        return null;
-    }
-
-    if ($_value <= 0) {
-        return null;
-    }
-
-    return $_value;
-}
-
-
 function _filter_str($value) : ?string
 {
     if (is_string($value)) {
@@ -64,7 +10,7 @@ function _filter_str($value) : ?string
     }
 
     if (
-        is_null($value)
+        (null === $value)
         || is_array($value)
         || is_resource($value)
     ) {
@@ -91,23 +37,6 @@ function _filter_str($value) : ?string
     return null;
 }
 
-
-function _filter_trim($value) : ?string
-{
-    if (null === ($_value = _filter_str($value))) {
-        return null;
-    }
-
-    $_value = trim($_value);
-
-    if ('' === $_value) {
-        return null;
-    }
-
-    return $_value;
-}
-
-
 function _filter_string($value) : ?string
 {
     if (null === ($_value = _filter_str($value))) {
@@ -121,72 +50,69 @@ function _filter_string($value) : ?string
     return $_value;
 }
 
-function _filter_word($value) : ?string
+
+function _filter_path(
+    $value, array $optional = [],
+    array &$pathinfo = null
+) : ?string
 {
-    if (null === ($_value = _filter_trim($value))) {
+    $pathinfo = null;
+
+    $optional[ 0 ] = $optional[ 'with_pathinfo' ] ?? $optional[ 0 ] ?? false;
+
+    if (null === ($_value = _filter_string($value))) {
         return null;
     }
 
-    if (false !== strpos($_value, ' ')) {
+    if (false !== strpos($_value, "\0")) {
         return null;
     }
 
-    if (false === preg_match('/[^\p{L}\d_]/u', $_value, $m)) {
+    $withPathInfoResult = (bool) $optional[ 0 ];
+
+    if ($withPathInfoResult) {
+        try {
+            $pathinfo = pathinfo($_value);
+        }
+        catch ( \Throwable $e ) {
+            return null;
+        }
+    }
+
+    return $_value;
+}
+
+function _filter_dirpath(
+    $value, array $optional = [],
+    array &$pathinfo = null
+) : ?string
+{
+    $_value = _filter_path(
+        $value, $optional,
+        $pathinfo
+    );
+
+    if (null === $_value) {
         return null;
     }
 
-    if ($m) {
+    if (file_exists($_value) && ! is_dir($_value)) {
         return null;
     }
 
     return $_value;
 }
 
-
-function _filter_strlen($value, array $optional = [], array $refs = []) : ?string
+function _filter_filename($value) : ?string
 {
-    $refs[ 0 ] = null; // &$max
-    $refs[ 1 ] = null; // &$min
-
-    $max_ =& $refs[ 0 ]; // &$max
-    $min_ =& $refs[ 1 ]; // &$min
-
-    $optional[ 0 ] = $optional[ 'max' ] ?? $optional[ 0 ] ?? null;
-    $optional[ 1 ] = $optional[ 'min' ] ?? $optional[ 1 ] ?? 1;
-
-    if (null === ($_value = _filter_str($value))) {
+    if (null === ($_value = _filter_string($value))) {
         return null;
     }
 
-    $max_ = _filter_positive_int($optional[ 0 ]);
-    $min_ = _filter_positive_int($optional[ 1 ]);
+    $forbidden = [ "\0", "/", "\\", DIRECTORY_SEPARATOR ];
 
-    $isMax = isset($max_);
-    $isMin = isset($min_);
-
-    if ($isMax || $isMin) {
-        $len = strlen($_value);
-
-        if ($isMax && $isMin) {
-            if ($max_ < $min_) {
-                throw _php_throw(
-                    'The `max` should be greater than or equal to `min`: '
-                    . _php_dump($optional[ 0 ])
-                    . ' / ' . _php_dump($optional[ 1 ])
-                );
-            }
-        }
-
-        if ($isMax && ($len > $max_)) {
-            return null;
-        }
-
-        if ($isMin && ($len < $min_)) {
-            return null;
-        }
-
-    } else {
-        if ('' === $_value) {
+    foreach ( $forbidden as $f ) {
+        if (false !== strpos($_value, $f)) {
             return null;
         }
     }

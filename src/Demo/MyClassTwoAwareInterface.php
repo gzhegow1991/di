@@ -7,5 +7,8 @@ use Gzhegow\Di\Lazy\LazyService;
 
 interface MyClassTwoAwareInterface
 {
-    public function setTwo(LazyService $two);
+    /**
+     * @param LazyService<MyClassTwo>|MyClassTwo $two
+     */
+    public function setTwo($two);
 }

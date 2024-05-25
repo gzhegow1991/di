@@ -1,17 +1,27 @@
 # Dependency Injection / Container
 
-Контейнер внедрения зависимостей с функциональностью как у Laravel, только написанный в виде 5 классов и без рекурсивных вызовов callable
+Контейнер внедрения зависимостей с поддержкой кеша, ленивых сервисов и фабрик.
 
-Также поддерживает файловый кеш для рефлексии, однако сохраняет в рефлексию в рантайме. Если вы хотите сохранить её в кеш-адаптер - вызовите метод в конце работы скрипта.
-
+Поддерживает файловый кеш для рефлексии, однако сохраняет в рефлексию в рантайме.  
+Если вы хотите сохранить её в хранилище - вызовите метод ->flushCache() в конце работы скрипта.  
 Функция разогрева не имеет смысла, потому что это требует "создать все возможные обьекты во всех возможных комбинациях".
+
+## Установка
+
+```
+composer require gzhegow/di;
+```
+
+## Пример
 
 ```php
 <?php
 
 use Gzhegow\Di\Demo\MyClassTwo;
+use Gzhegow\Di\Demo\MyClassFour;
 use Gzhegow\Di\Demo\MyClassThree;
 use Gzhegow\Di\Demo\MyClassOneOne;
+use Gzhegow\Di\Reflector\Reflector;
 use Gzhegow\Di\Demo\MyClassOneInterface;
 use Gzhegow\Di\Demo\MyClassTwoInterface;
 use Gzhegow\Di\Demo\MyClassOneAwareInterface;
@@ -20,15 +30,23 @@ use function Gzhegow\Di\_di;
 use function Gzhegow\Di\_di_get;
 use function Gzhegow\Di\_di_bind;
 use function Gzhegow\Di\_di_make;
+use function Gzhegow\Di\_di_call;
 use function Gzhegow\Di\_di_extend;
 use function Gzhegow\Di\_di_autowire;
-use function Gzhegow\Di\_di_bind_lazy;
-use function Gzhegow\Di\_php_reflect_cache;
-use function Gzhegow\Di\_di_get_generic_lazy;
-use function Gzhegow\Di\_php_reflect_cache_settings;
+use function Gzhegow\Di\_di_get_lazy;
+use function Gzhegow\Di\_di_ask_lazy;
+use function Gzhegow\Di\_di_bind_singleton;
+use function Gzhegow\Di\_php_throw;
 
 
 require_once __DIR__ . '/vendor/autoload.php';
+
+function _assert_true(bool $bool, ...$errors)
+{
+    if (! $bool) {
+        throw _php_throw(...$errors);
+    }
+}
 
 
 // >>> Настраиваем PHP
@@ -47,52 +65,80 @@ set_exception_handler(static function ($e) {
 });
 
 
-// >>> Настраиваем кеш
+// >>> Создаем контейнер
+$di = _di();
+// > Или можно передать уже существующий экземпляр, чтобы все функции _di_{action}() работали через него
+// $di = _di(new Di());
+// >>> Для примера я буду использовать процедурные вызовы \Gzhegow\Di\_di() (для простоты применения), но те же методы доступны и на ООП стиле $di->bind()/$di->get() и тд.
+// $di = $di::getInstance();
+// $di::setInstance(new Di());
+
+
+// >>> Настраиваем кеш для рефлексии функций и конструкторов
 $cacheDir = __DIR__ . '/var/cache';
 $cacheNamespace = 'php.reflect_cache';
 
 // > Можно использовать путь к файлу, в этом случае кеш будет сделан через file_{get|put}_contents() + (un)serialize()
-$cacheFilepath = "{$cacheDir}/{$cacheNamespace}/latest.cache";
-_php_reflect_cache_settings([
-    'mode'     => REFLECT_CACHE_MODE_STORAGE_CACHE,
-    'filepath' => $cacheFilepath,
+$cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
+$cacheFilename = "latest.cache";
+$di->setCacheSettings([
+    // 'reflectorCacheMode'     => Reflector::CACHE_MODE_RUNTIME, // > использовать только кеш памяти на время текущего скрипта
+    // 'reflectorCacheMode'     => Reflector::CACHE_MODE_NO_CACHE, // > не использовать кеш совсем
+    'reflectorCacheMode'     => Reflector::CACHE_MODE_STORAGE, // > использовать файловую систему или адаптер (хранилище)
+    //
+    'reflectorCacheDirpath'  => $cacheDirpath,
+    'reflectorCacheFilename' => $cacheFilename,
 ]);
 
 // > Либо можно установить пакет `composer require symfony/cache` и использовать адаптер, чтобы запихивать в Редис например
 // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
-//     $cacheNamespace, 0, $cacheDir
+//     $cacheNamespace, $defaultLifetime = 0, $cacheDir
 // );
-// _php_reflect_cache_settings([
-//     'mode'    => REFLECT_CACHE_MODE_STORAGE_CACHE,
-//     'adapter' => $symfonyCacheAdapter,
+// $redisClient = \Symfony\Component\Cache\Adapter\RedisAdapter::createConnection('redis://localhost');
+// $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\RedisAdapter(
+//     $redisClient,
+//     $cacheNamespace = '',
+//     $defaultLifetime = 0
+// );
+// $di->setCacheSettings([
+//     'reflectorCacheMode'    => Reflector::CACHE_MODE_STORAGE,
+//     'reflectorCacheAdapter' => $symfonyCacheAdapter,
 // ]);
 
 
-// >>> Так можно очистить кеш. Создаем пустой объект и передаем в функцию рефлексии кеша. Увидев аргумент, она его запишет в кеш поверху.
-$cacheNew = (object) [];
-_php_reflect_cache($cacheNew); // > ask cache (it will be cleared cause of mode set to clear)
+// >>> Так можно очистить кеш принудительно (обычно для этого делают консольный скрипт и запускают вручную или кроном, но если использовать symfony/cache можно и просто установить TTL - время устаревания)
+$di->clearCache();
 
 
-// >>> Настраиваем сам контейнер
-$di = _di();
-// > Или можно передать уже существующий экземпляр, чтобы все функции _di_{action}() работали через него
-// $di = _di(new Di());
+// >>> Можно зарегистрировать класс в контейнере (смысл только в том, что метод get() не будет выбрасывать исключение)
+// _di_bind(MyClassOneOne::class);
 
+// >>> Можно привязать на интерфейс (а значит объект сможет пройти проверки зависимостей на входе конструктора)
+// _di_bind(MyClassOneInterface::class, MyClassOneOne::class);
 
-// >>> Назначаем чтобы вызов MyClassOneInterface был распознан как объект MyClassOneOne с указанными аргументами (например, после считывания конфига из файла)
-_di_bind(MyClassOneInterface::class, function () {
+// >>> А тут при создании класса будет использоваться фабричный метод
+$fnNewMyClassOne = static function () {
     $object = _di_make(MyClassOneOne::class, [ 123 ]);
 
     return $object;
-});
+};
+// _di_bind(MyClassOneInterface::class, $fnNewMyClassOne);
 
-// >>> Сервис MyClassTwo очень долго инициализируется и тормозит программу. Мы сделаем его ленивым, чтобы он создавался только тогда, когда мы вызовем на нем какой-то метод
-_di_bind_lazy(MyClassTwoInterface::class, MyClassTwo::class);
+// >>> И его результат будет сохранен как одиночка, то есть при втором вызове get()/ask() вернется тот же экземпляр
+_di_bind_singleton(MyClassOneInterface::class, $fnNewMyClassOne);
 
-// >>> А этот сервис мы зарегистрируем сам на себя. Попросил класс - получил. Метод ->has() будет возвращать TRUE
-_di_bind(MyClassThree::class);
+// >>> Зарегистрируем алиас на наш интерфейс по имени (если мы задаем конфигурацию в виде строк, а не в виде Class::class, мы избегаем подгрузки классов через autoloader, точнее откладываем её)
+_di_bind('one', '\Gzhegow\Di\Demo\MyClassOneInterface');
 
-// >>> После того как класс создан, нам может пригодится наполнить его зависимостями помимо тех, что переданы в конструктор
+// >>> Мы знаем, что сервис MyClassTwo долго выполняет __construct(), например, соединяется по сети, и нам нужно отложить его запуск до первого вызова. Регистриуем как обычно, а дальше запросим через _di_get_lazy()
+_di_bind(MyClassTwoInterface::class, MyClassTwo::class);
+_di_bind('two', '\Gzhegow\Di\Demo\MyClassTwoInterface');
+
+// >>> Зарегистрируем класс как синглтон (первый вызов создаст объект, второй - вернет созданный)
+_di_bind_singleton(MyClassThree::class);
+_di_bind('three', '\Gzhegow\Di\Demo\MyClassThree');
+
+// >>> MyClassThree требует сервисов One и Two, а чтобы не фиксировать сигнатуру конструктора, мы добавим их с помощью Интерфейсов и Трейтов
 _di_extend(MyClassOneAwareInterface::class, static function (MyClassOneAwareInterface $aware) {
     $one = _di_get(MyClassOneInterface::class);
 
@@ -101,7 +147,7 @@ _di_extend(MyClassOneAwareInterface::class, static function (MyClassOneAwareInte
     return $aware;
 });
 _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInterface $aware) {
-    $two = _di_get(MyClassTwoInterface::class);
+    $two = _di_get_lazy('two');
 
     $aware->setTwo($two);
 
@@ -109,41 +155,69 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 });
 
 
-// >>> Пользуемся!
-
-// > Пример. "Дай сервис":
+// > Пример. "Дай сервис c заполненными зависимостями"
 $three = _di_get(MyClassThree::class);
-
-// > Если мы хотим создать не регистрируя или получить клон объекта, когда он зарегистрирован как синглтон:
-// $instance = _di_make(MyClassC::class);
-
-// > Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками
-// $instance = _di_generic(MyClassC::class, MyClassC::class);
-
 var_dump(get_class($three));
-// string(28) "Gzhegow\Di\Demo\MyClassThree"
+// & string(28) "Gzhegow\Di\Demo\MyClassThree"
+_assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
 
 
-// > Еще пример. "Дай ленивый сервис":
-$two = _di_get_generic_lazy(MyClassTwoInterface::class, MyClassTwo::class);
+// > Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
+$three1 = _di_get(MyClassThree::class);
+$three2 = _di_get(MyClassThree::class);
+$threeByAlias = _di_get('three');
+_assert_true($three1 === $three2);
+_assert_true($three1 === $threeByAlias);
+
+// > А вот если мы хотим создать класс не регистрируя его или получить новый экземпляр, даже если это синглтон, используем make()
+// $three = _di_make(MyClassThree::class);
+
+// > Выполнит get()/make() в зависимости от того, был ли сервис зарегистрирован
+// $three = _di_ask(MyClassThree::class);
+
+// > Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
+// $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров
+// $two = _di_ask(MyClassTwoInterface::class, [], MyClassTwo::class); // > с параметрами, если сервис создается впервые
+// $two = _di_make(MyClassTwoInterface::class, [], MyClassTwo::class); // > всегда новый экземпляр с параметрами
+
+
+// > Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
+// > В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
+// $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
+$two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
+// $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 var_dump(get_class($two));
-// string(27) "Gzhegow\Di\Lazy\LazyService"
+// & string(27) "Gzhegow\Di\Lazy\LazyService"
+_assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 
-// > За счет генериков PHPStorm будет давать подсказки на этот экземпляр, как будто он MyClassTwo, а не LazyService
-echo 'MyClassB загружается...' . PHP_EOL;
-// > MyClassB загружается...
+// > При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
+echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;
+// & MyClassB загружается (3 секунды)...
 $two->do();
-// > Hello, World
+// & Hello, World
 
 
 // >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали" - вызовет функцию на уже существующем объекте
-$four = new \Gzhegow\Di\Demo\MyClassFour();
+$four = new MyClassFour();
 _di_autowire($four);
-// _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire');
-var_dump($four);
+// _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
+var_dump(get_class($four));
+// & string(27) "Gzhegow\Di\Demo\MyClassFour"
+_assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
+var_dump(get_class($four->one));
+// & string(29) "Gzhegow\Di\Demo\MyClassOneOne"
+_assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
+
+
+// >>> Еще пример. "Вызовем функцию, подбросив в неё зависимости"
+$result = _di_call(static function (MyClassThree $three) {
+    return get_class($three);
+});
+var_dump($result);
+// & string(28) "Gzhegow\Di\Demo\MyClassThree"
+_assert_true($result === 'Gzhegow\Di\Demo\MyClassThree');
 
 
 // >>> Теперь сохраним кеш сделанной за скрипт рефлексии для следующего раза
-$cacheCurrent = _php_reflect_cache();
-_php_reflect_cache($cacheCurrent);
+$di->flushCache();
 ```

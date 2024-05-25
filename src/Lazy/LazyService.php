@@ -2,62 +2,66 @@
 
 namespace Gzhegow\Di\Lazy;
 
+use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
+use function Gzhegow\Di\_php_dump;
 
 
 /**
- * @template T
+ * @template T of object
  */
 class LazyService
 {
     /**
-     * @var class-string<T>|T
+     * @var Id
      */
-    protected $class;
+    public $id;
+    /**
+     * @var T
+     */
+    public $instance;
+
     /**
      * @var callable() : T
      */
     protected $fnFactory;
+    /**
+     * @var array
+     */
+    protected $fnFactoryArguments = [];
+
 
     /**
-     * @var T
+     * @param callable $fnFactory
      */
-    protected $instance;
-
-
-    /**
-     * @param class-string<T> $class
-     */
-    public function __construct(string $class, $fnFactory)
+    public function __construct($id, $fnFactory, array $fnFactoryArguments = [])
     {
-        if (! class_exists($class)) {
+        $id = Id::from($id);
+
+        if (! is_callable($fnFactory)) {
             throw new LogicException(
-                'Missing class: ' . $class
+                'The `fnFactory` should be callable: ' . _php_dump($fnFactory)
             );
         }
 
-        $this->class = $class;
+        $this->id = $id;
+
         $this->fnFactory = $fnFactory;
-    }
-
-
-    /**
-     * @return class-string<T>
-     */
-    public function getClass() : string
-    {
-        return $this->class;
+        $this->fnFactoryArguments = $fnFactoryArguments;
     }
 
 
     public function __call($name, $arguments)
     {
-        if (! isset($this->instance)) {
-            $this->instance = call_user_func($this->fnFactory);
+        if (null === $this->instance) {
+            $this->instance = call_user_func($this->fnFactory, $this->id, $this->fnFactoryArguments);
 
             unset($this->fnFactory);
+            unset($this->fnFactoryArguments);
         }
 
-        return call_user_func_array([ $this->instance, $name ], $arguments);
+        $result = call_user_func_array([ $this->instance, $name ], $arguments);
+
+        return $result;
     }
 }

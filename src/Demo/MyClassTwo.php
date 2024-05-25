@@ -9,18 +9,24 @@ class MyClassTwo implements MyClassTwoInterface
      */
     protected $a;
 
+    /**
+     * @var string
+     */
+    protected $hello;
 
-    public function __construct(MyClassOneInterface $a)
+
+    public function __construct(MyClassOneInterface $a, string $hello = null)
     {
-        // > gzhegow, long init
+        // > gzhegow, long init example
         sleep(3);
 
         $this->a = $a;
+        $this->hello = $hello;
     }
 
 
     public function do() : void
     {
-        echo 'Hello, World!' . PHP_EOL;
+        echo "Hello, [ {$this->hello} ] !" . PHP_EOL;
     }
 }

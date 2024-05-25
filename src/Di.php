@@ -2,7 +2,9 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\Reflector\Reflector;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
@@ -10,550 +12,1129 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 class Di implements DiInterface
 {
-    /**
-     * @var array<string, string>
-     */
-    public $bind = [];
+    const BIND_TYPE_ALIAS    = 'alias';
+    const BIND_TYPE_STRUCT   = 'struct';
+    const BIND_TYPE_FACTORY  = 'factory';
+    const BIND_TYPE_INSTANCE = 'instance';
+
+    const LIST_BIND_TYPE = [
+        self::BIND_TYPE_ALIAS    => true,
+        self::BIND_TYPE_STRUCT   => true,
+        self::BIND_TYPE_FACTORY  => true,
+        self::BIND_TYPE_INSTANCE => true,
+    ];
+
 
     /**
      * @var array<string, string>
      */
-    public $class = [];
+    protected $bindList = [];
+
+
     /**
      * @var array<string, string>
      */
-    public $alias = [];
+    protected $structList = [];
 
     /**
-     * @var array<string, bool>
+     * @var array<string, string>
      */
-    public $singleton = [];
+    protected $aliasList = [];
 
     /**
      * @var array<string, callable>
      */
-    public $factory = [];
-
-    /**
-     * @var array<string, callable[]>
-     */
-    public $extend = [];
-    /**
-     * @var array<string, string>
-     */
-    public $extendParents = [];
+    protected $factoryList = [];
 
     /**
      * @var array<string, object>
      */
-    public $instance = [];
+    protected $instanceList = [];
+
+    /**
+     * @var int
+     */
+    protected $extendId = 0;
+    /**
+     * @var array<string, callable[]>
+     */
+    protected $extendList = [];
+
+    /**
+     * @var array<string, bool>
+     */
+    protected $isSingletonIndex = [];
 
 
-    public function merge(self $di) : void
+    protected function getReflector() : Reflector
     {
-        foreach ( $di->bind as $id => $type ) {
-            $this->bind(
-                $id,
-                $this->{$type}[ $id ],
-                ! empty($this->singleton[ $id ])
-            );
-        }
-
-        foreach ( $di->extend as $id => $callables ) {
-            foreach ( $callables as $callable ) {
-                $this->extend($id, $callable);
-            }
-        }
+        return _reflector();
     }
 
 
+    /**
+     * @param array{
+     *     reflectorCacheMode: Reflector::CACHE_MODE_RUNTIME|Reflector::CACHE_MODE_NO_CACHE|Reflector::CACHE_MODE_STORAGE|null,
+     *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
+     *     reflectorCacheDirpath: string|null,
+     *     reflectorCacheFilename: string|null,
+     * }|null $settings
+     *
+     * @noinspection PhpUndefinedNamespaceInspection
+     * @noinspection PhpUndefinedClassInspection
+     */
+    public function setCacheSettings(array $settings = null) // : static
+    {
+        $theReflector = $this->getReflector();
+
+        $cacheMode = $settings[ 'reflectorCacheMode' ] ?? $settings[ 0 ] ?? null;
+        $cacheAdapter = $settings[ 'reflectorCacheAdapter' ] ?? $settings[ 1 ] ?? null;
+        $cacheDirpath = $settings[ 'reflectorCacheDirpath' ] ?? $settings[ 2 ] ?? null;
+        $cacheFilename = $settings[ 'reflectorCacheFilename' ] ?? $settings[ 3 ] ?? null;
+
+        $theReflector->setCacheSettings(
+            $cacheMode,
+            $cacheAdapter,
+            $cacheDirpath,
+            $cacheFilename
+        );
+
+        return $this;
+    }
+
+    public function clearCache() // : static
+    {
+        $theReflector = $this->getReflector();
+
+        $theReflector->clearCache();
+
+        return $this;
+    }
+
+    public function flushCache() // : static
+    {
+        $theReflector = $this->getReflector();
+
+        $theReflector->flushCache();
+
+        return $this;
+    }
+
+
+    /**
+     * @param static $di
+     *
+     * @return static
+     */
+    public function merge($di) // : static
+    {
+        if (! is_a($di, static::class)) {
+            throw new RuntimeException(
+                'The `di` should be instance of: ' . static::class
+                . ' / ' . _php_dump($di)
+            );
+        }
+
+        foreach ( $di->bindList as $_bindId => $bindType ) {
+            $bindId = Id::from($_bindId);
+            $bindProperty = "{$bindType}List";
+            $bindObject = $di->{$bindProperty}[ $_bindId ];
+
+            $isSingleton = ! empty($di->isSingletonIndex[ $_bindId ]);
+
+            $this->bindDependency($bindType, $bindId, $bindObject, $isSingleton);
+        }
+
+        foreach ( $di->extendList as $_extendId => $callables ) {
+            $extendId = Id::from($_extendId);
+
+            foreach ( $callables as $callable ) {
+                $this->extendDependency($extendId, $callable);
+            }
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param string $id
+     */
     public function has($id) : bool
     {
-        $status = $this->hasInstance($id);
+        $status = $this->hasBound($id);
 
         return $status;
     }
 
-    /**
-     * @return object
-     *
-     * @throws NotFoundException
-     */
-    public function get($id)
-    {
-        $instance = $this->getInstance($id);
 
-        return $instance;
+    public function bind($id, $mixed = null, bool $isSingleton = null) // : static
+    {
+        $isSingleton = $isSingleton ?? false;
+
+        $id = Id::from($id);
+
+        [ $_mixed, $bindType ] = $this->resolveBind($id, $mixed);
+
+        $this->bindDependency($bindType, $id, $_mixed, $isSingleton);
+
+        return $this;
     }
 
-    /**
-     * @return object
-     */
-    public function make($id, array $parameters = [])
-    {
-        $instance = $this->makeInstance($id, $parameters);
-
-        return $instance;
-    }
-
-    /**
-     * @template T
-     *
-     * @param T|object $instance
-     *
-     * @return T
-     */
-    public function autowire(object $instance, array $methodArgs = null, string $methodName = null)
-    {
-        $this->autowireInstance($instance, $methodArgs, $methodName);
-
-        return $instance;
-    }
-
-
-    public function hasInstance($id) : bool
-    {
-        if (! is_string($id)) {
-            return false;
-        }
-
-        if (isset($this->bind[ $id ])) {
-            return true;
-        }
-
-        return false;
-    }
-
-    public function getInstance(string $id) : object
-    {
-        if (! $this->has($id)) {
-            throw new NotFoundException(
-                'Missing bind: ' . $id
-            );
-        }
-
-        if (isset($this->instance[ $id ])) {
-            $instance = $this->instance[ $id ];
-
-        } else {
-            $instance = $this->makeInstance($id);
-
-            if (isset($this->singleton[ $id ])) {
-                $this->instance[ $id ] = $instance;
-            }
-        }
-
-        return $instance;
-    }
-
-    public function makeInstance(string $id, array $parameters = []) : object
-    {
-        if ($_bound = $this->resolveBind($id)) {
-            [ $boundType, $bound ] = $_bound;
-
-        } else {
-            [ $boundType, $bound ] = [ 'class', $id ];
-        }
-
-        if ('instance' === $boundType) {
-            $instance = clone $bound;
-
-        } elseif ('factory' === $boundType) {
-            $instance = $this->callFunction($bound, $parameters);
-
-        } elseif ('class' === $boundType) {
-            $instance = $this->callConstructor($bound, $parameters);
-
-        } else {
-            throw new RuntimeException(
-                'Unknown `boundType` while making: ' . $boundType
-                . ' / ' . $id
-            );
-        }
-
-        $classmap = [ $id => $id ];
-        if (class_exists($id) || interface_exists($id)) {
-            $classmap = $classmap
-                + class_parents($id)
-                + class_implements($id);
-        }
-
-        $intersect = array_intersect_key($this->extendParents, $classmap);
-
-        foreach ( $intersect as $idParent => $idCurrent ) {
-            foreach ( $this->extend[ $idParent ] ?? [] as $callable ) {
-                $this->callFunction($callable, [ $instance ]);
-            }
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template T
-     *
-     * @param T|object $instance
-     *
-     * @return T
-     */
-    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null) : object
-    {
-        $methodArgs = $methodArgs ?? [];
-        $methodName = $methodName ?? '__autowire';
-
-        $this->callFunction([ $instance, '__autowire' ], $methodArgs);
-
-        return $instance;
-    }
-
-
-    public function getLazy(string $id) : LazyService
-    {
-        $instance = $this->get($id);
-
-        if (! is_a($instance, LazyService::class)) {
-            throw new RuntimeException(
-                'The `instance` should be instanceof: ' . LazyService::class
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    public function makeLazy(string $id, array $parameters = []) : LazyService
-    {
-        $instance = $this->make($id, $parameters);
-
-        if (! ($instance instanceof LazyService)) {
-            throw new RuntimeException(
-                'The `instance` should be instanceof: ' . LazyService::class
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T> $generic
-     *
-     * @return T
-     */
-    public function getGeneric(string $id, string $generic, bool $forceInstanceOf = null)
-    {
-        $forceInstanceOf = $forceInstanceOf ?? false;
-
-        $instance = $this->get($id);
-
-        if ($forceInstanceOf && ! ($instance instanceof $generic)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $generic
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T> $generic
-     *
-     * @return T
-     */
-    public function makeGeneric(string $id, string $generic, array $parameters = [], bool $forceInstanceOf = null)
-    {
-        $forceInstanceOf = $forceInstanceOf ?? false;
-
-        $instance = $this->make($id, $parameters);
-
-        if ($forceInstanceOf && ! ($instance instanceof $generic)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $generic
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T> $generic
-     *
-     * @return LazyService<T>|T
-     */
-    public function getGenericLazy(string $id, string $generic, bool $forceInstanceOf = null)
-    {
-        /** @var LazyService $instance */
-
-        $forceInstanceOf = $forceInstanceOf ?? false;
-
-        $instance = $this->getLazy($id);
-
-        if ($forceInstanceOf
-            && (! is_a($instanceClass = $instance->getClass(), $generic, true))
-        ) {
-            throw new RuntimeException(
-                'Returned LazyService must have class: '
-                . $generic
-                . ' / ' . $instanceClass
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T> $generic
-     *
-     * @return LazyService<T>|T
-     */
-    public function makeGenericLazy(string $id, string $generic, array $parameters = [], bool $forceInstanceOf = null)
-    {
-        /** @var LazyService $instance */
-
-        $forceInstanceOf = $forceInstanceOf ?? false;
-
-        $instance = $this->makeLazy($id, $parameters);
-
-        if ($forceInstanceOf
-            && (! is_a($instanceClass = $instance->getClass(), $generic, true))
-        ) {
-            throw new RuntimeException(
-                'Returned LazyService must have class: '
-                . $generic
-                . ' / ' . $instanceClass
-            );
-        }
-
-        return $instance;
-    }
-
-
-    public function bind(string $id, $mixed = null, bool $singleton = null) : void
-    {
-        $singleton = $singleton ?? false;
-
-        if ($this->has($id)) {
-            throw new RuntimeException(
-                'Dependency already exists: ' . $id
-            );
-        }
-
-        $_mixed = $mixed ?? $id;
-
-        if (is_callable($_mixed)) {
-            $this->bind[ $id ] = 'factory';
-            $this->factory[ $id ] = $_mixed;
-
-        } elseif (is_object($_mixed)) {
-            $this->bind[ $id ] = 'instance';
-            $this->instance[ $id ] = $_mixed;
-
-        } elseif (is_string($_mixed)) {
-            $isAlias = $_mixed !== $id;
-
-            if ($isAlias) {
-                if (! $this->has($_mixed)) {
-                    throw new RuntimeException(
-                        'Missing alias while binding: ' . $_mixed
-                        . ' / ' . $id
-                    );
-                }
-
-                $this->bind[ $id ] = 'alias';
-                $this->alias[ $id ] = $_mixed;
-
-            } else {
-                if (! (class_exists($_mixed) || interface_exists($_mixed))) {
-                    throw new RuntimeException(
-                        'Missing class while binding: ' . $_mixed
-                        . ' / ' . $id
-                    );
-                }
-
-                $this->bind[ $id ] = 'class';
-                $this->class[ $id ] = $_mixed;
-            }
-
-        } else {
-            throw new LogicException(
-                'The `mixed` should be string|object|callable: '
-                . _php_dump($mixed)
-            );
-        }
-
-        if ($singleton) {
-            $this->singleton[ $id ] = true;
-        }
-    }
-
-
-    public function bindSingleton(string $id, $mixed = null) : void
+    public function bindSingleton($id, $mixed = null) // : static
     {
         $this->bind($id, $mixed, true);
+
+        return $this;
     }
 
-    public function bindInstance(string $id, object $instance) : void
+
+    public function bindAlias($id, $aliasId, bool $isSingleton = null) // : static
     {
-        $this->bind($id, $instance);
+        $isSingleton = $isSingleton ?? false;
+
+        $id = Id::from($id);
+        $aliasId = Id::from($aliasId);
+
+        $this->bindDependencyAlias($id, $aliasId, $isSingleton);
+
+        return $this;
     }
 
-    public function bindAlias(string $id, string $alias, bool $singleton = null) : void
+    /**
+     * @param class-string $structId
+     */
+    public function bindStruct($id, $structId, bool $isSingleton = null) // : static
     {
-        if ($id === $alias) {
-            throw new LogicException(
-                'The `id` should be not equal to `alias`: '
-                . $id
-                . ' / ' . $alias
-            );
-        }
+        $isSingleton = $isSingleton ?? false;
 
-        $this->bind($id, $alias, $singleton);
+        $id = Id::from($id);
+        $structId = Id::from($structId);
+
+        $this->bindDependencyStruct($id, $structId, $isSingleton);
+
+        return $this;
     }
 
-    public function bindLazy(string $id, string $class, bool $singleton = null) : void
+    public function bindInstance($id, object $instance, bool $isSingleton = null) // : static
     {
-        if ($id === $class) {
-            throw new LogicException(
-                'The `id` should be not equal to `class`: '
-                . $id
-                . ' / ' . $class
-            );
-        }
+        $isSingleton = $isSingleton ?? false;
 
-        $lazyService = new LazyService($class, function () use ($class) {
-            $instance = $this->getInstance($class);
+        $id = Id::from($id);
 
-            return $instance;
-        });
+        $this->bindDependencyInstance($id, $instance, $isSingleton);
 
-        $this->bind($class, $class, $singleton);
-        $this->bind($id, $lazyService, $singleton);
+        return $this;
     }
 
     /**
      * @param callable $fnFactory
      */
-    public function bindFactory(string $id, $fnFactory, bool $singleton = null) : void
+    public function bindFactory($id, $fnFactory, bool $isSingleton = null) // : static
     {
-        $this->bind($id, $fnFactory, $singleton);
+        $isSingleton = $isSingleton ?? false;
+
+        $id = Id::from($id);
+
+        $this->bindDependencyFactory($id, $fnFactory, $isSingleton);
+
+        return $this;
     }
 
 
     /**
      * @param callable $fnExtend
      */
-    public function extend(string $id, $fnExtend) : void
+    public function extend($id, $fnExtend) // : static
     {
-        $this->extend[ $id ] = $this->extend[ $id ] ?? [];
-        $this->extend[ $id ][] = $fnExtend;
+        $id = Id::from($id);
 
-        $classmap = [ $id => $id ];
-        if (class_exists($id) || interface_exists($id)) {
-            $classmap = $classmap
-                + class_parents($id)
-                + class_implements($id);
-        }
+        $this->extendDependency($id, $fnExtend);
 
-        foreach ( $classmap as $class => $devnull ) {
-            $this->extendParents[ $class ] = $id;
-        }
+        return $this;
     }
 
 
-    protected function callConstructor(string $class, array $parameters = [])
+    /**
+     * @param string $id
+     *
+     * @return object
+     */
+    public function ask($id, array $parameters = null) // : object
     {
-        $_args = $this->resolveArguments($class, $parameters);
+        $parameters = $parameters ?? [];
 
-        $instance = new $class(...$_args);
+        $_id = Id::from($id);
+
+        $instance = $this->askDependency($_id, $parameters);
 
         return $instance;
     }
 
     /**
-     * @param callable $fn
+     * @param string $id
+     *
+     * @return object
+     *
+     * @throws NotFoundException
      */
-    protected function callFunction($fn, array $args = [])
+    public function get($id) // : object
     {
-        $_args = $this->resolveArguments($fn, $args);
+        $_id = Id::from($id);
+
+        $instance = $this->getDependency($_id);
+
+        return $instance;
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return object
+     */
+    public function make($id, array $parameters = null) // : object
+    {
+        $parameters = $parameters ?? [];
+
+        $_id = Id::from($id);
+
+        $instance = $this->makeDependency($_id, $parameters);
+
+        return $instance;
+    }
+
+
+    /**
+     * @return LazyService
+     */
+    public function askLazy(string $id, array $parameters = null) // : LazyService
+    {
+        $parameters = $parameters ?? [];
+
+        $_id = Id::from($id);
+
+        $instance = $this->askDependencyLazy($_id, $parameters);
+
+        return $instance;
+    }
+
+    /**
+     * @return LazyService
+     *
+     * @throws NotFoundException
+     */
+    public function getLazy(string $id) // : LazyService
+    {
+        $_id = Id::from($id);
+
+        $instance = $this->getDependencyLazy($_id);
+
+        return $instance;
+    }
+
+    /**
+     * @return LazyService
+     */
+    public function makeLazy(string $id, array $parameters = null) // : LazyService
+    {
+        $parameters = $parameters ?? [];
+
+        $_id = Id::from($id);
+
+        $instance = $this->makeDependencyLazy($_id, $parameters);
+
+        return $instance;
+    }
+
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $structT
+     *
+     * @return T
+     */
+    public function askGeneric(string $id, array $parameters = null, $structT = null, bool $forceInstanceOf = null) // : object
+    {
+        $parameters = $parameters ?? [];
+        $structT = _filter_string($structT) ?? '';
+        $forceInstanceOf = $forceInstanceOf ?? false;
+
+        $_id = Id::from($id);
+
+        $instance = $this->askDependencyGeneric($_id, $parameters, $structT, $forceInstanceOf);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $structT
+     *
+     * @return T
+     *
+     * @throws NotFoundException
+     */
+    public function getGeneric(string $id, $structT = null, bool $forceInstanceOf = null) // : object
+    {
+        $structT = _filter_string($structT) ?? '';
+        $forceInstanceOf = $forceInstanceOf ?? false;
+
+        $_id = Id::from($id);
+
+        $instance = $this->getDependencyGeneric($_id, $structT, $forceInstanceOf);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $structT
+     *
+     * @return T
+     */
+    public function makeGeneric(string $id, array $parameters = null, $structT = null, bool $forceInstanceOf = null) // : object
+    {
+        $parameters = $parameters ?? [];
+        $structT = _filter_string($structT) ?? '';
+        $forceInstanceOf = $forceInstanceOf ?? false;
+
+        $_id = Id::from($id);
+
+        $instance = $this->makeDependencyGeneric($_id, $parameters, $structT, $forceInstanceOf);
+
+        return $instance;
+    }
+
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $structT
+     *
+     * @return LazyService<T>|T
+     */
+    public function askLazyGeneric(string $id, array $parameters = null, $structT = null) // : LazyService
+    {
+        $parameters = $parameters ?? [];
+        $structT = _filter_string($structT) ?? '';
+
+        $_id = Id::from($id);
+
+        $instance = $this->askDependencyLazyGeneric($_id, $parameters, $structT);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $structT
+     *
+     * @return LazyService<T>|T
+     *
+     * @throws NotFoundException
+     */
+    public function getLazyGeneric(string $id, $structT = null) // : LazyService
+    {
+        $structT = _filter_string($structT) ?? '';
+
+        $_id = Id::from($id);
+
+        $instance = $this->getDependencyLazyGeneric($_id, $structT);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $structT
+     *
+     * @return LazyService<T>|T
+     */
+    public function makeLazyGeneric(string $id, array $parameters = null, $structT = null) // : LazyService
+    {
+        $parameters = $parameters ?? [];
+        $structT = _filter_string($structT) ?? '';
+
+        $_id = Id::from($id);
+
+        $instance = $this->makeDependencyLazyGeneric($_id, $parameters, $structT);
+
+        return $instance;
+    }
+
+
+    /**
+     * @template T
+     *
+     * @param T|object $instance
+     *
+     * @return T
+     */
+    public function autowire(object $instance, array $methodArgs = null, string $methodName = null) // : object
+    {
+        $methodArgs = $methodArgs ?? [];
+        $methodName = $methodName ?? '';
+
+        $this->autowireDependency($instance, $methodArgs, $methodName);
+
+        return $instance;
+    }
+
+
+    /**
+     * @param callable $fn
+     *
+     * @return mixed
+     */
+    public function call($fn, array $args = null) // : mixed
+    {
+        $args = $args ?? [];
+
+        $result = $this->autowireCallFunction($fn, $args);
+
+        return $result;
+    }
+
+
+    protected function hasBound($id, Id &$result = null) : bool
+    {
+        $result = null;
+
+        $id = Id::tryFrom($id);
+
+        if (! $id) {
+            return false;
+        }
+
+        $_id = $id->getValue();
+
+        if (isset($this->bindList[ $_id ])) {
+            $result = $id;
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    /**
+     * @param static::BIND_TYPE_ALIAS|static::BIND_TYPE_STRUCT|static::BIND_TYPE_FACTORY|static::BIND_TYPE_INSTANCE|static::BIND_TYPE_LAZY $type
+     * @param callable|object|array|class-string                                                                                           $mixed
+     */
+    protected function bindDependency(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void
+    {
+        if ($this->hasBound($id)) {
+            throw new RuntimeException(
+                'Dependency already exists: ' . $id
+            );
+        }
+
+        switch ( $type ):
+            case static::BIND_TYPE_ALIAS:
+                $aliasId = Id::from($mixed);
+
+                $this->bindDependencyAlias($id, $aliasId, $isSingleton);
+
+                break;
+
+            case static::BIND_TYPE_STRUCT:
+                $structId = Id::from($mixed);
+
+                $this->bindDependencyStruct($id, $structId, $isSingleton);
+
+                break;
+
+            case static::BIND_TYPE_INSTANCE:
+                $this->bindDependencyInstance($id, $mixed, $isSingleton);
+
+                break;
+
+            case static::BIND_TYPE_FACTORY:
+                $this->bindDependencyFactory($id, $mixed, $isSingleton);
+
+                break;
+
+            default:
+                throw new LogicException(
+                    'The `mixed` should be callable|object|class-string: '
+                    . _php_dump($mixed)
+                );
+
+        endswitch;
+    }
+
+    protected function bindDependencyAlias(Id $id, Id $aliasId, bool $isSingleton = null) // : static
+    {
+        $isSingleton = $isSingleton ?? false;
+
+        $_id = $id->getValue();
+        $_alias = $aliasId->getValue();
+
+        if ($_id === $_alias) {
+            throw new LogicException(
+                'The `id` should be not equal to `aliasId`: '
+                . $_id
+                . ' / ' . $_alias
+            );
+        }
+
+        $this->bindList[ $_id ] = static::BIND_TYPE_ALIAS;
+        $this->aliasList[ $_id ] = $_alias;
+
+        $_id = $id->getValue();
+
+        if ($isSingleton) {
+            $this->isSingletonIndex[ $_id ] = true;
+        }
+
+        return $this;
+    }
+
+    protected function bindDependencyStruct(Id $id, Id $structId, bool $isSingleton = false) // : static
+    {
+        $_id = $id->getValue();
+        $_structId = $structId->getValue();
+
+        if (! $structId->isStruct()) {
+            throw new LogicException(
+                'The `structId` should be existing class or interface: ' . $_structId
+            );
+        }
+
+        $this->bindList[ $_id ] = static::BIND_TYPE_STRUCT;
+        $this->structList[ $_id ] = $_structId;
+
+        $_id = $id->getValue();
+
+        if ($isSingleton) {
+            $this->isSingletonIndex[ $_id ] = true;
+        }
+
+        return $this;
+    }
+
+    protected function bindDependencyInstance(Id $id, object $instance, bool $isSingleton = null) // : static
+    {
+        $isSingleton = $isSingleton ?? false;
+
+        $_id = $id->getValue();
+
+        $this->bindList[ $_id ] = static::BIND_TYPE_INSTANCE;
+        $this->instanceList[ $_id ] = $instance;
+
+        $_id = $id->getValue();
+
+        if ($isSingleton) {
+            $this->isSingletonIndex[ $_id ] = true;
+        }
+
+        return $this;
+    }
+
+    protected function bindDependencyFactory(Id $id, callable $fnFactory, bool $isSingleton = null) // : static
+    {
+        $isSingleton = $isSingleton ?? false;
+
+        $_id = $id->getValue();
+
+        $this->bindList[ $_id ] = static::BIND_TYPE_FACTORY;
+        $this->factoryList[ $_id ] = $fnFactory;
+
+        $_id = $id->getValue();
+
+        if ($isSingleton) {
+            $this->isSingletonIndex[ $_id ] = true;
+        }
+
+        return $this;
+    }
+
+
+    protected function extendDependency(Id $id, callable $fnExtend) : void
+    {
+        $_id = $id->getValue();
+
+        $this->extendList[ $_id ][ $this->extendId++ ] = $fnExtend;
+    }
+
+
+    protected function askDependency(Id $id, array $parameters = []) : object
+    {
+        $instance = $this->hasBound($id)
+            ? $this->getDependency($id, $parameters)
+            : $this->makeDependency($id, $parameters);
+
+        return $instance;
+    }
+
+    /**
+     * @throws NotFoundException
+     */
+    protected function getDependency(Id $id, array $parameters = []) : object
+    {
+        if (! $this->hasBound($id)) {
+            throw new NotFoundException(
+                'Missing bind: ' . $id
+            );
+        }
+
+        $_id = $id->getValue();
+
+        if (isset($this->instanceList[ $_id ])) {
+            $instance = $this->instanceList[ $_id ];
+
+        } else {
+            [ $_aliasId ] = $this->resolveDependencyBoundId($id);
+
+            $aliasId = Id::from($_aliasId);
+
+            $instance = null
+                ?? $this->instanceList[ $_aliasId ]
+                ?? $this->makeDependency($aliasId, $parameters);
+
+            if (isset($this->isSingletonIndex[ $_id ])) {
+                $this->instanceList[ $_id ] = $instance;
+            }
+        }
+
+        return $instance;
+    }
+
+    protected function makeDependency(Id $id, array $parameters = []) : object
+    {
+        $id = Id::from($id);
+
+        $_id = $id->getValue();
+
+        [ $bound, $boundId, $boundType ] = $this->resolveDependency($id);
+
+        if (static::BIND_TYPE_INSTANCE === $boundType) {
+            $instance = clone $bound;
+
+        } elseif (static::BIND_TYPE_STRUCT === $boundType) {
+            $instance = $this->autowireNewInstance($bound, $parameters);
+
+        } elseif (static::BIND_TYPE_FACTORY === $boundType) {
+            $instance = $this->autowireCallFunction($bound, $parameters);
+
+        } else {
+            throw new RuntimeException(
+                'Unknown `boundType` while making: '
+                . $boundType
+                . ' / ' . $_id
+            );
+        }
+
+        $classmap = [ $_id => $_id ];
+
+        if ($id->isStruct()) {
+            $classmap += class_parents($_id);
+            $classmap += class_implements($_id);
+        }
+
+        $classmap += class_parents($instance);
+        $classmap += class_implements($instance);
+
+        $intersect = array_intersect_key($this->extendList, $classmap);
+
+        if ($intersect) {
+            $callablesOrdered = [];
+
+            foreach ( $intersect as $extendClass => $callables ) {
+                $callablesOrdered += $callables;
+            }
+
+            foreach ( $callablesOrdered as $callable ) {
+                $this->autowireCallFunction($callable, [ $instance ]);
+            }
+        }
+
+        return $instance;
+    }
+
+
+    protected function askDependencyLazy(Id $id, array $parameters = []) : LazyService
+    {
+        $lazyService = $this->newLazyServiceAsk($id, $parameters);
+
+        return $lazyService;
+    }
+
+    /**
+     * @throws NotFoundException
+     */
+    protected function getDependencyLazy(Id $id) : LazyService
+    {
+        $lazyService = $this->newLazyServiceGet($id);
+
+        return $lazyService;
+    }
+
+    protected function makeDependencyLazy(Id $id, array $parameters = []) : LazyService
+    {
+        $lazyService = $this->newLazyServiceMake($id, $parameters);
+
+        return $lazyService;
+    }
+
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $classT
+     *
+     * @return T
+     */
+    protected function askDependencyGeneric(Id $id, array $paremeters = [], string $classT = '', bool $forceInstanceOf = false) : object
+    {
+        $instance = $this->askDependency($id, $paremeters);
+
+        if ($forceInstanceOf && ! is_a($instance, $classT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $classT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $classT
+     *
+     * @return T
+     *
+     * @throws NotFoundException
+     */
+    protected function getDependencyGeneric(Id $id, string $classT = '', bool $forceInstanceOf = false) : object
+    {
+        $instance = $this->getDependency($id);
+
+        if ($forceInstanceOf && ! is_a($instance, $classT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $classT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $classT
+     *
+     * @return T
+     */
+    protected function makeDependencyGeneric(Id $id, array $parameters = [], string $classT = '', bool $forceInstanceOf = false) : object
+    {
+        $instance = $this->makeDependency($id, $parameters);
+
+        if ($forceInstanceOf && ! is_a($instance, $classT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $classT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
+        return $instance;
+    }
+
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $classT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function askDependencyLazyGeneric(Id $id, array $parameters = [], string $classT = '') : LazyService
+    {
+        $instance = $this->askDependencyLazy($id, $parameters);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $classT
+     *
+     * @return LazyService<T>|T
+     *
+     * @throws NotFoundException
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function getDependencyLazyGeneric(Id $id, string $classT = '') : LazyService
+    {
+        $instance = $this->getDependencyLazy($id);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $classT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function makeDependencyLazyGeneric(Id $id, array $parameters = [], string $classT = '') : LazyService
+    {
+        $instance = $this->makeDependencyLazy($id, $parameters);
+
+        return $instance;
+    }
+
+
+    /**
+     * @template T
+     *
+     * @param T|object $instance
+     *
+     * @return T
+     */
+    protected function autowireDependency(object $instance, array $methodArgs = [], string $methodName = '') : object
+    {
+        $methodName = $methodName ?: '__autowire';
+
+        $this->autowireCallFunction([ $instance, $methodName ], $methodArgs);
+
+        return $instance;
+    }
+
+    protected function autowireCallFunction(callable $fn, array $args = [])
+    {
+        $theReflector = $this->getReflector();
+
+        $reflectResult = $theReflector->reflectArgumentsCallable($fn);
+
+        $_args = $this->resolveArguments($reflectResult, $fn, $args);
 
         $result = call_user_func_array($fn, $_args);
 
         return $result;
     }
 
-
-    protected function resolveBind(string $id) : ?array
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $class
+     *
+     * @return T
+     */
+    protected function autowireNewInstance(string $class, array $parameters = []) : object
     {
-        if (! isset($this->bind[ $id ])) {
-            return null;
-        }
+        $theReflector = $this->getReflector();
 
-        $currentBound = $id;
-        $currentPath = [];
-        do {
-            $currentBoundType = $this->bind[ $currentBound ];
-            $currentBound = $this->{$currentBoundType}[ $currentBound ];
+        $reflectResult = $theReflector->reflectArgumentsConstructor($class);
 
-            if ($currentBoundType !== 'alias') {
-                break;
+        $arguments = $this->resolveArguments($reflectResult, $class, $parameters);
+
+        $instance = new $class(...$arguments);
+
+        return $instance;
+    }
+
+
+    protected function resolveBind(Id $id, $mixed) : array
+    {
+        $_id = $id->getValue();
+
+        if (is_callable($mixed)) {
+            $fnFactory = $mixed;
+
+            return [ $fnFactory, static::BIND_TYPE_FACTORY ];
+
+        } elseif (is_object($mixed)) {
+            $instance = $mixed;
+
+            return [ $instance, static::BIND_TYPE_INSTANCE ];
+
+        } elseif (is_string($mixed)) {
+            $stringId = Id::from($mixed);
+
+            $_stringId = $stringId->getValue();
+
+            $isAlias = ($_id !== $_stringId);
+
+            if ($isAlias) {
+                return [ $stringId, static::BIND_TYPE_ALIAS ];
+
+            } elseif ($stringId->isStruct()) {
+                return [ $stringId, static::BIND_TYPE_STRUCT ];
             }
 
-            if (isset($currentPath[ $currentBound ])) {
+        } elseif (null === $mixed) {
+            if ($id->isStruct()) {
+                return [ $id, static::BIND_TYPE_STRUCT ];
+            }
+        }
+
+        throw new LogicException(
+            'Unable to resolve `bindType`: '
+            . $_id
+            . ' / ' . _php_dump($mixed)
+        );
+    }
+
+
+    protected function resolveDependency(Id $id) : array
+    {
+        $dependencyDefinition = $this->resolveDependencyId($id);
+
+        [ $dependencyId, $dependencyType, $dependencyFullpath ] = $dependencyDefinition;
+
+        $dependencyProperty = "{$dependencyType}List";
+        $dependencyMixed = $this->{$dependencyProperty}[ $dependencyId ] ?? $dependencyId;
+
+        return [ $dependencyMixed, $dependencyId, $dependencyType, $dependencyFullpath ];
+    }
+
+    protected function resolveDependencyId(Id $id) : array
+    {
+        $_id = $id->getValue();
+
+        if (! isset($this->bindList[ $_id ])) {
+            $dependencyId = $_id;
+            $dependencyType = static::BIND_TYPE_STRUCT;
+            $dependencyFullpath = [ $dependencyId => $dependencyType ];
+
+            if (! $id->isStruct()) {
                 throw new RuntimeException(
-                    'Cyclic dependency resolving detected: '
-                    . _php_dump($currentPath)
+                    "Invalid struct while resolving: "
+                    . '[ ' . implode(' -> ', array_keys($dependencyFullpath)) . ' ]'
                 );
             }
 
-            $currentPath[ $currentBound ] = true;
-        } while ( isset($this->bind[ $currentBound ]) );
+            return [ $dependencyId, $dependencyType, $dependencyFullpath ];
+        }
 
-        $bound = [ $currentBoundType, $currentBound ];
+        $boundDefinition = $this->resolveDependencyBoundId($id);
 
-        return $bound;
+        return $boundDefinition;
     }
 
-    protected function resolveArguments($reflectable, array $parameters = []) : array
+
+    protected function resolveDependencyBound(Id $id) : array
     {
-        $reflectResult = _php_reflect($reflectable);
+        $boundDefinition = $this->resolveDependencyBoundId($id);
 
-        [ 'arguments' => $arguments ] = $reflectResult;
+        [ $boundId, $boundType, $boundFullpath ] = $boundDefinition;
 
-        $_args = [];
-        foreach ( $arguments as $i => [ $argName, $argRtList, $argRtTree, $argIsNullable ] ) {
-            if (isset($parameters[ $i ])) {
-                $_args[ $i ] = $parameters[ $i ];
+        $boundProperty = "{$boundType}List";
+        $boundMixed = $this->{$boundProperty}[ $boundId ] ?? null;
 
-            } elseif (isset($parameters[ $argName ])) {
-                $_args[ $i ] = $parameters[ $argName ];
+        if (null === $boundMixed) {
+            throw new RuntimeException(
+                "Missing `{$boundProperty}[ {$boundId} ]` while resolving: "
+                . '[ ' . implode(' -> ', array_keys($boundFullpath)) . ' ]'
+            );
+        }
 
-            } else {
-                $argRtIsMulti = (count($argRtTree[ '' ]) > 2);
+        return [ $boundMixed, $boundId, $boundType, $boundFullpath ];
+    }
 
-                $argRtType = false;
-                $argRtClass = false;
-                if (! $argRtIsMulti) {
-                    $argRtType = $argRtList[ 0 ][ 0 ] ?? null;
-                    $argRtClass = $argRtList[ 0 ][ 1 ] ?? null;
+    protected function resolveDependencyBoundId(Id $id) : array
+    {
+        $_id = $id->getValue();
+
+        if (! $this->hasBound($id)) {
+            throw new RuntimeException(
+                'Missing bound id: ' . $_id
+            );
+        }
+
+        $boundId = $_id;
+        $boundType = $this->bindList[ $boundId ];
+        $boundPath = [];
+        $boundFullpath = [ $boundId => $boundType ];
+
+        $queue = [];
+        $queue[] = [ $boundId, $boundType, $boundPath ];
+
+        while ( $queue ) {
+            [ $boundId, $boundType, $boundPath ] = array_shift($queue);
+
+            if ($boundType !== static::BIND_TYPE_ALIAS) {
+                break;
+            }
+
+            if (isset($boundPath[ $boundId ])) {
+                throw new RuntimeException(
+                    'Cyclic dependency resolving detected while resolving: '
+                    . '[ ' . implode(' -> ', array_keys($boundPath)) . ' ]'
+                );
+            }
+
+            $boundFullpath = $boundPath;
+            $boundFullpath[ $boundId ] = $boundType;
+
+            $boundId = $this->aliasList[ $boundId ] ?? null;
+            $boundType = $this->bindList[ $boundId ] ?? null;
+
+            if (null === $boundType) {
+                if (! Id::from($boundId)->isStruct()) {
+                    throw new RuntimeException(
+                        'Missing bound id while making: '
+                        . '[ ' . implode(' -> ', array_keys($boundFullpath)) . ' ]'
+                    );
                 }
 
-                if (! isset($argRtClass)) {
+                $boundType = static::BIND_TYPE_STRUCT;
+            }
+
+            $queue[] = [ $boundId, $boundType, $boundFullpath ];
+        }
+
+        return [ $boundId, $boundType, $boundFullpath ];
+    }
+
+
+    protected function resolveArguments($reflectResult, $reflectable, array $arguments = []) : array
+    {
+        [ 'arguments' => $reflectArguments ] = $reflectResult;
+
+        $reflectArguments = $reflectArguments ?? [];
+
+        $_arguments = [];
+        foreach ( $reflectArguments as $i => [ $argName, $argReflectionTypeList, $argReflectionTypeTree, $argIsNullable ] ) {
+            if (array_key_exists($argName, $arguments)) {
+                $_arguments[ $i ] = $arguments[ $argName ];
+
+            } elseif (isset($arguments[ $i ])) {
+                $_arguments[ $i ] = $arguments[ $i ];
+
+            } else {
+                $argReflectionTypeIsMulti = (count($argReflectionTypeTree[ '' ]) > 2);
+
+                $argReflectionTypeName = false;
+                $argReflectionTypeClass = false;
+                if (! $argReflectionTypeIsMulti) {
+                    $argReflectionTypeName = $argReflectionTypeList[ 0 ][ 'name' ] ?? null;
+                    $argReflectionTypeClass = $argReflectionTypeList[ 0 ][ 'class' ] ?? null;
+                }
+
+                if (! isset($argReflectionTypeClass)) {
                     if (! $argIsNullable) {
-                        if ($argRtIsMulti) {
+                        if ($argReflectionTypeIsMulti) {
                             throw new RuntimeException(
                                 'Resolving UNION / INTERSECT parameters is not implemented: '
                                 . "[ {$i} ] \${$argName}"
@@ -563,28 +1144,133 @@ class Di implements DiInterface
                         } else {
                             throw new RuntimeException(
                                 'Unable to resolve parameter: '
-                                . "[ {$i} ] \${$argName} : {$argRtType}"
+                                . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
                                 . ' / ' . _php_dump($reflectable)
                             );
                         }
                     }
 
-                    $_args[ $i ] = null;
+                    $_arguments[ $i ] = null;
 
                 } else {
-                    if (! $this->has($argRtClass)) {
+                    if (! $this->hasBound($argReflectionTypeClass, $id)) {
                         throw new NotFoundException(
                             'Missing bind to resolve parameter: '
-                            . "[ {$i} ] \${$argName} : {$argRtType}"
+                            . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
                             . ' / ' . _php_dump($reflectable)
                         );
                     }
 
-                    $_args[ $i ] = $this->getInstance($argRtClass);
+                    $_arguments[ $i ] = $this->getDependency($id);
                 }
             }
         }
 
-        return $_args;
+        return $_arguments;
     }
+
+
+
+    public function newLazyServiceAsk($id, array $parameters = null) : LazyService
+    {
+        $parameters = $parameters ?? [];
+
+        $lazyService = isset(static::$instances[ static::class ])
+            ? new LazyService($id, [ static::class, 'lazyServiceFnFactoryAskStatic' ], $parameters)
+            : new LazyService($id, [ $this, 'lazyServiceFnFactoryAskPublic' ], $parameters);
+
+        return $lazyService;
+    }
+
+    public function newLazyServiceGet($id) : LazyService
+    {
+        $lazyService = isset(static::$instances[ static::class ])
+            ? new LazyService($id, [ static::class, 'lazyServiceFnFactoryGetStatic' ])
+            : new LazyService($id, [ $this, 'lazyServiceFnFactoryGetPublic' ]);
+
+        return $lazyService;
+    }
+
+    public function newLazyServiceMake($id, array $parameters = null) : LazyService
+    {
+        $parameters = $parameters ?? [];
+
+        $lazyService = isset(static::$instances[ static::class ])
+            ? new LazyService($id, [ static::class, 'lazyServiceFnFactoryMakeStatic' ], $parameters)
+            : new LazyService($id, [ $this, 'lazyServiceFnFactoryMakePublic' ], $parameters);
+
+        return $lazyService;
+    }
+
+
+    public function lazyServiceFnFactoryAskPublic($lazyId, array $parameters = null) : object
+    {
+        $instance = $this->ask($lazyId, $parameters);
+
+        return $instance;
+    }
+
+    public function lazyServiceFnFactoryGetPublic($lazyId) : object
+    {
+        $instance = $this->get($lazyId);
+
+        return $instance;
+    }
+
+    public function lazyServiceFnFactoryMakePublic($lazyId, array $parameters = null) : object
+    {
+        $instance = $this->make($lazyId, $parameters);
+
+        return $instance;
+    }
+
+
+    public static function lazyServiceFnFactoryAskStatic($lazyId, array $parameters = []) : object
+    {
+        $instance = static::getInstance()->lazyServiceFnFactoryAskPublic($lazyId, $parameters);
+
+        return $instance;
+    }
+
+    public static function lazyServiceFnFactoryGetStatic($lazyId) : object
+    {
+        $instance = static::getInstance()->lazyServiceFnFactoryGetPublic($lazyId);
+
+        return $instance;
+    }
+
+    public static function lazyServiceFnFactoryMakeStatic($lazyId, array $parameters = []) : object
+    {
+        $instance = static::getInstance()->lazyServiceFnFactoryMakePublic($lazyId, $parameters);
+
+        return $instance;
+    }
+
+
+    public static function getInstance() // : static
+    {
+        return static::$instances[ static::class ] = static::$instances[ static::class ] ?? new static();
+    }
+
+    /**
+     * @param static $di
+     *
+     * @return void
+     */
+    public static function setInstance($di) : void
+    {
+        if (! is_a($di, static::class)) {
+            throw new RuntimeException(
+                'The `di` should be instance of: ' . static::class
+                . ' / ' . _php_dump($di)
+            );
+        }
+
+        static::$instances[ get_class($di) ] = $di;
+    }
+
+    /**
+     * @var array<class-string, static>
+     */
+    protected static $instances = [];
 }

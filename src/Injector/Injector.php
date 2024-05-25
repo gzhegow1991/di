@@ -376,6 +376,8 @@ class Injector implements InjectorInterface
                 $callablesOrdered += $callables;
             }
 
+            ksort($callablesOrdered);
+
             foreach ( $callablesOrdered as $callable ) {
                 $this->autowireFunctionCall($callable, [ $instance ]);
             }

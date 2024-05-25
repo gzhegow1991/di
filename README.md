@@ -157,8 +157,7 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 
 // > Пример. "Дай сервис c заполненными зависимостями"
 $three = _di_get(MyClassThree::class);
-var_dump(get_class($three));
-// & string(28) "Gzhegow\Di\Demo\MyClassThree"
+var_dump(get_class($three));                          // string(28) "Gzhegow\Di\Demo\MyClassThree"
 _assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
 
 
@@ -186,26 +185,21 @@ _assert_true($three1 === $threeByAlias);
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 $two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
-var_dump(get_class($two));
-// & string(27) "Gzhegow\Di\Lazy\LazyService"
+var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 
 // > При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
-echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;
-// & MyClassB загружается (3 секунды)...
-$two->do();
-// & Hello, World
+echo 'MyClassB загружается (3 секунды)...' . PHP_EOL; // MyClassB загружается (3 секунды)...
+$two->do();                                           // Hello, [ User ] !
 
 
 // >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали" - вызовет функцию на уже существующем объекте
 $four = new MyClassFour();
 _di_autowire($four);
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
-var_dump(get_class($four));
-// & string(27) "Gzhegow\Di\Demo\MyClassFour"
+var_dump(get_class($four));                           // string(27) "Gzhegow\Di\Demo\MyClassFour"
+var_dump(get_class($four->one));                      // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
 _assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
-var_dump(get_class($four->one));
-// & string(29) "Gzhegow\Di\Demo\MyClassOneOne"
 _assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
 
 
@@ -213,8 +207,7 @@ _assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
 $result = _di_call(static function (MyClassThree $three) {
     return get_class($three);
 });
-var_dump($result);
-// & string(28) "Gzhegow\Di\Demo\MyClassThree"
+var_dump($result); // string(28) "Gzhegow\Di\Demo\MyClassThree"
 _assert_true($result === 'Gzhegow\Di\Demo\MyClassThree');
 
 

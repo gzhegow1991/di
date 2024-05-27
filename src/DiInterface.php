@@ -76,7 +76,7 @@ interface DiInterface
      *
      * @param class-string<T>|null $contractT
      *
-     * @return T
+     * @return T|null
      */
     public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
 
@@ -98,17 +98,17 @@ interface DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
-
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $contractT
+     * @param class-string<T>|null $contractT
      *
-     * @return LazyService<T>|T
+     * @return T
      */
-    public function askLazy($id, string $contractT = null, array $parametersWhenNew = null);
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
+
 
     /**
      * @template-covariant T

@@ -95,9 +95,9 @@ function _di_extend($id, $fnExtend)
  *
  * @param class-string<T>|null $contractT
  *
- * @return T
+ * @return T|null
  */
-function _di_ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
+function _di_ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : ?object
 {
     return _di()->ask($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 }
@@ -123,23 +123,23 @@ function _di_get($id, string $contractT = null, bool $forceInstanceOf = null, ar
  *
  * @return T
  */
+function _di_take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+{
+    return _di()->take($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+}
+
+/**
+ * @template-covariant T
+ *
+ * @param class-string<T>|null $contractT
+ *
+ * @return T
+ */
 function _di_make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
 {
     return _di()->make($id, $parameters, $contractT, $forceInstanceOf);
 }
 
-
-/**
- * @template-covariant T
- *
- * @param class-string<T>|T|null $contractT
- *
- * @return LazyService<T>|T
- */
-function _di_ask_lazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
-{
-    return _di()->askLazy($id, $contractT, $parametersWhenNew);
-}
 
 /**
  * @template-covariant T

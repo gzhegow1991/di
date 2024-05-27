@@ -216,9 +216,9 @@ class Di implements DiInterface
      *
      * @param class-string<T>|null $contractT
      *
-     * @return T
+     * @return T|null
      */
-    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
+    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : ?object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -260,6 +260,26 @@ class Di implements DiInterface
      *
      * @return T
      */
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    {
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
+        $forceInstanceOf = $forceInstanceOf ?? false;
+
+        $id = Id::from($id);
+
+        $instance = $this->injector->takeItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
     public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
         $parameters = $parameters ?? [];
@@ -273,25 +293,6 @@ class Di implements DiInterface
         return $instance;
     }
 
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|T|null $contractT
-     *
-     * @return LazyService<T>|T
-     */
-    public function askLazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
-    {
-        $parametersWhenNew = $parametersWhenNew ?? [];
-        $contractT = $contractT ?? '';
-
-        $id = Id::from($id);
-
-        $lazyService = $this->askItemLazy($id, $contractT, $parametersWhenNew);
-
-        return $lazyService;
-    }
 
     /**
      * @template-covariant T
@@ -366,22 +367,6 @@ class Di implements DiInterface
         return $result;
     }
 
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|T $contractT
-     *
-     * @return LazyService<T>|T
-     *
-     * @noinspection PhpUnusedParameterInspection
-     */
-    protected function askItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : LazyService
-    {
-        $lazyService = $this->factory->newLazyServiceAsk($id, $parametersWhenNew);
-
-        return $lazyService;
-    }
 
     /**
      * @template-covariant T

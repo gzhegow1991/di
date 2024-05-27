@@ -49,9 +49,9 @@ interface InjectorInterface
      *
      * @param class-string<T>|null $contractT
      *
-     * @return T
+     * @return T|null
      */
-    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object;
+    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : ?object;
 
     /**
      * @template-covariant T
@@ -63,6 +63,15 @@ interface InjectorInterface
      * @throws NotFoundException
      */
     public function getItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object;
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
     /**
      * @template-covariant T

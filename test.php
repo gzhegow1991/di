@@ -17,7 +17,7 @@ use function Gzhegow\Di\_di_call;
 use function Gzhegow\Di\_di_extend;
 use function Gzhegow\Di\_di_autowire;
 use function Gzhegow\Di\_di_get_lazy;
-use function Gzhegow\Di\_di_ask_lazy;
+use function Gzhegow\Di\_di_make_lazy;
 use function Gzhegow\Di\_di_bind_singleton;
 use function Gzhegow\Di\_php_throw;
 
@@ -152,24 +152,18 @@ $threeByAlias = _di_get('three');
 _assert_true($three1 === $three2);
 _assert_true($three1 === $threeByAlias);
 
-// >>> А вот если мы хотим создать класс не регистрируя его или получить новый экземпляр, даже если это синглтон, используем make()
-// $three = _di_make(MyClassThree::class);
-
-// >>> Выполнит get()/make() в зависимости от того, был ли сервис зарегистрирован
-// $three = _di_ask(MyClassThree::class);
-
 // >>> Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
-// $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров
-// $two = _di_ask(MyClassTwoInterface::class, [], MyClassTwo::class); // > с параметрами, если сервис создается впервые
+// $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров, бросит исключение, если не зарегистрировано в контейнере
+// $two = _di_ask(MyClassTwoInterface::class, MyClassTwo::class); // > get() если зарегистрировано, NULL если не зарегистрировано
 // $two = _di_make(MyClassTwoInterface::class, [], MyClassTwo::class); // > всегда новый экземпляр с параметрами
+// $two = _di_take(MyClassTwoInterface::class, [], MyClassTwo::class); // > get() если зарегистрировано, make() если не зарегистрировано
 
 
 // >>> Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
 // >>> В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
-// $two = _di_ask_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
-$two = _di_ask_lazy(MyClassTwoInterface::class, MyClassTwo::class, [ 'hello' => 'User' ]);
+$two = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
 var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 

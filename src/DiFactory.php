@@ -44,16 +44,6 @@ class DiFactory implements DiFactoryInterface
     }
 
 
-    public function newLazyServiceAsk($lazyId, array $parametersWhenNew = null) : LazyService
-    {
-        $lazyId = Id::from($lazyId);
-        $parametersWhenNew = $parametersWhenNew ?? [];
-
-        $lazyService = new LazyService($lazyId, [ $this, 'lazyServiceFnFactoryAsk' ], $parametersWhenNew);
-
-        return $lazyService;
-    }
-
     public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : LazyService
     {
         $lazyId = Id::from($lazyId);
@@ -74,19 +64,6 @@ class DiFactory implements DiFactoryInterface
         return $lazyService;
     }
 
-
-    /**
-     * @return object
-     */
-    public function lazyServiceFnFactoryAsk($lazyId, array $parametersWhenNew = null) // : object
-    {
-        $lazyId = Id::from($lazyId);
-        $parametersWhenNew = $parametersWhenNew ?? [];
-
-        $instance = $this->injector->askItem($lazyId, '', false, $parametersWhenNew);
-
-        return $instance;
-    }
 
     /**
      * @return object

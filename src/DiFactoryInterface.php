@@ -13,14 +13,10 @@ interface DiFactoryInterface
     public function newInjector() : InjectorInterface;
 
 
-    public function newLazyServiceAsk($lazyId, array $parametersWhenNew = null) : LazyService;
-
     public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : LazyService;
 
     public function newLazyServiceMake($lazyId, array $parameters = null) : LazyService;
 
-
-    public function lazyServiceFnFactoryAsk($lazyId, array $parametersWhenNew = null);
 
     public function lazyServiceFnFactoryGet($lazyId, array $parametersWhenNew = null);
 

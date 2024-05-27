@@ -304,15 +304,17 @@ class Injector implements InjectorInterface
      *
      * @param class-string<T>|null $contractT
      *
-     * @return T
+     * @return T|null
      */
-    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object
+    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : ?object
     {
         $paremeters = $paremeters ?? [];
 
-        $instance = $this->hasBound($id)
-            ? $this->getItem($id, '', false, $parametersWhenNew)
-            : $this->makeItem($id, $parametersWhenNew);
+        if (! $this->hasBound($id)) {
+            return null;
+        }
+
+        $instance = $this->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
@@ -360,6 +362,32 @@ class Injector implements InjectorInterface
                 $this->instanceList[ $_id ] = $instance;
             }
         }
+
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $contractT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
+    {
+        $paremeters = $paremeters ?? [];
+
+        $instance = $this->hasBound($id)
+            ? $this->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew)
+            : $this->makeItem($id, $parametersWhenNew);
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(

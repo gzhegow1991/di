@@ -42,44 +42,34 @@ interface InjectorInterface
     public function extendItem(Id $id, callable $fnExtend) : void;
 
 
-    public function askItem(Id $id, array $parameters = []) : object;
-
-    /**
-     * @throws NotFoundException
-     */
-    public function getItem(Id $id, array $parameters = []) : object;
-
-    public function makeItem(Id $id, array $parameters = []) : object;
-
-
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $classT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function askItemGeneric(Id $id, array $paremeters = [], string $classT = '', bool $forceInstanceOf = false) : object;
+    public function askItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $classT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      *
      * @throws NotFoundException
      */
-    public function getItemGeneric(Id $id, string $classT = '', bool $forceInstanceOf = false) : object;
+    public function getItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $classT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function makeItemGeneric(Id $id, array $parameters = [], string $classT = '', bool $forceInstanceOf = false) : object;
+    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
 
     /**

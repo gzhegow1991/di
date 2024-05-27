@@ -3,8 +3,6 @@
 namespace Gzhegow\Di\Lazy;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\Exception\LogicException;
-use function Gzhegow\Di\_php_dump;
 
 
 /**
@@ -31,20 +29,9 @@ class LazyService
     protected $fnFactoryArguments = [];
 
 
-    /**
-     * @param callable $fnFactory
-     */
-    public function __construct($id, $fnFactory, array $fnFactoryArguments = [])
+    public function __construct(Id $lazyId, callable $fnFactory, array $fnFactoryArguments = [])
     {
-        $id = Id::from($id);
-
-        if (! is_callable($fnFactory)) {
-            throw new LogicException(
-                'The `fnFactory` should be callable: ' . _php_dump($fnFactory)
-            );
-        }
-
-        $this->id = $id;
+        $this->id = $lazyId;
 
         $this->fnFactory = $fnFactory;
         $this->fnFactoryArguments = $fnFactoryArguments;

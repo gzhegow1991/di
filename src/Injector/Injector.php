@@ -290,19 +290,42 @@ class Injector implements InjectorInterface
     }
 
 
-    public function askItem(Id $id, array $parameters = []) : object
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function askItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
+        $paremeters = $paremeters ?? [];
+
         $instance = $this->hasBound($id)
-            ? $this->getItem($id, $parameters)
-            : $this->makeItem($id, $parameters);
+            ? $this->getItem($id, $parametersWhenNew)
+            : $this->makeItem($id, $parametersWhenNew);
+
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $contractT
+                . ' / ' . _php_dump($instance)
+            );
+        }
 
         return $instance;
     }
 
     /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     *
      * @throws NotFoundException
      */
-    public function getItem(Id $id, array $parameters = []) : object
+    public function getItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
         if (! $this->hasBound($id)) {
             throw new NotFoundException(
@@ -322,17 +345,32 @@ class Injector implements InjectorInterface
 
             $instance = null
                 ?? $this->instanceList[ $_aliasId ]
-                ?? $this->makeItem($aliasId, $parameters);
+                ?? $this->makeItem($aliasId, $parametersWhenNew);
 
             if (isset($this->isSingletonIndex[ $_id ])) {
                 $this->instanceList[ $_id ] = $instance;
             }
         }
 
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $contractT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
         return $instance;
     }
 
-    public function makeItem(Id $id, array $parameters = []) : object
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
         $id = Id::from($id);
 
@@ -383,71 +421,10 @@ class Injector implements InjectorInterface
             }
         }
 
-        return $instance;
-    }
-
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     */
-    public function askItemGeneric(Id $id, array $paremeters = [], string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->askItem($id, $paremeters);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
                 'Returned object should be instance of: '
-                . $classT
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     *
-     * @throws NotFoundException
-     */
-    public function getItemGeneric(Id $id, string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->getItem($id);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $classT
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     */
-    public function makeItemGeneric(Id $id, array $parameters = [], string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->makeItem($id, $parameters);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $classT
+                . $contractT
                 . ' / ' . _php_dump($instance)
             );
         }

@@ -44,51 +44,66 @@ class DiFactory implements DiFactoryInterface
     }
 
 
-    public function newLazyServiceAsk($id, array $parameters = null) : LazyService
+    public function newLazyServiceAsk($lazyId, array $parametersWhenNew = null) : LazyService
     {
-        $parameters = $parameters ?? [];
+        $lazyId = Id::from($lazyId);
+        $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $lazyService = new LazyService($id, [ $this, 'lazyServiceFnFactoryAsk' ], $parameters);
+        $lazyService = new LazyService($lazyId, [ $this, 'lazyServiceFnFactoryAsk' ], $parametersWhenNew);
 
         return $lazyService;
     }
 
-    public function newLazyServiceGet($id) : LazyService
+    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : LazyService
     {
-        $lazyService = new LazyService($id, [ $this, 'lazyServiceFnFactoryGet' ]);
+        $lazyId = Id::from($lazyId);
+        $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $lazyService = new LazyService($lazyId, [ $this, 'lazyServiceFnFactoryGet' ], $parametersWhenNew);
 
         return $lazyService;
     }
 
-    public function newLazyServiceMake($id, array $parameters = null) : LazyService
-    {
-        $parameters = $parameters ?? [];
-
-        $lazyService = new LazyService($id, [ $this, 'lazyServiceFnFactoryMake' ], $parameters);
-
-        return $lazyService;
-    }
-
-
-    public function lazyServiceFnFactoryAsk($lazyId, array $parameters = null) // : object
+    public function newLazyServiceMake($lazyId, array $parameters = null) : LazyService
     {
         $lazyId = Id::from($lazyId);
         $parameters = $parameters ?? [];
 
-        $instance = $this->injector->askItem($lazyId, $parameters);
+        $lazyService = new LazyService($lazyId, [ $this, 'lazyServiceFnFactoryMake' ], $parameters);
 
-        return $instance;
+        return $lazyService;
     }
 
-    public function lazyServiceFnFactoryGet($lazyId) // : object
+
+    /**
+     * @return object
+     */
+    public function lazyServiceFnFactoryAsk($lazyId, array $parametersWhenNew = null) // : object
     {
         $lazyId = Id::from($lazyId);
+        $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $instance = $this->injector->getItem($lazyId);
+        $instance = $this->injector->askItem($lazyId, $parametersWhenNew);
 
         return $instance;
     }
 
+    /**
+     * @return object
+     */
+    public function lazyServiceFnFactoryGet($lazyId, array $parametersWhenNew = null) // : object
+    {
+        $lazyId = Id::from($lazyId);
+        $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $instance = $this->injector->getItem($lazyId, $parametersWhenNew);
+
+        return $instance;
+    }
+
+    /**
+     * @return object
+     */
     public function lazyServiceFnFactoryMake($lazyId, array $parameters = null) // : object
     {
         $lazyId = Id::from($lazyId);

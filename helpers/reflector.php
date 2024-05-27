@@ -3,6 +3,7 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Reflector\Reflector;
+use Gzhegow\Di\Reflector\ReflectorFactory;
 
 
 /**
@@ -12,7 +13,13 @@ function _reflector(Reflector $reflector = null)
 {
     static $instance;
 
-    $instance = $reflector ?? $instance ?? new Reflector();
+    $before = $instance;
+
+    $instance = $reflector ?? $instance ?? (new ReflectorFactory())->newReflector();
+
+    if ($before !== $instance) {
+        $instance::setInstance($instance);
+    }
 
     return $instance;
 }
@@ -28,7 +35,7 @@ function _reflector(Reflector $reflector = null)
  * @noinspection PhpUndefinedNamespaceInspection
  * @noinspection PhpUndefinedClassInspection
  */
-function _reflector_cache_settins(array $settings = null) : void
+function _reflector_cache_settins(array $settings = null)
 {
     $settings = $settings ?? [];
 
@@ -37,7 +44,7 @@ function _reflector_cache_settins(array $settings = null) : void
     $cacheDirpath = $settings[ 'cacheDirpath' ] ?? $settings[ 2 ] ?? null;
     $cacheFilename = $settings[ 'cacheFilename' ] ?? $settings[ 3 ] ?? null;
 
-    _reflector()->setCacheSettings(
+    return _reflector()->setCacheSettings(
         $cacheMode,
         $cacheAdapter,
         $cacheDirpath,
@@ -45,9 +52,9 @@ function _reflector_cache_settins(array $settings = null) : void
     );
 }
 
-function _reflector_flush_cache() : void
+function _reflector_flush_cache()
 {
-    _reflector()->flushCache();
+    return _reflector()->flushCache();
 }
 
 

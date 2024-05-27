@@ -4,7 +4,6 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Lazy\LazyService;
-use Gzhegow\Di\Reflector\Reflector;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Reflector\ReflectorInterface;
@@ -109,9 +108,19 @@ class Di implements DiInterface
     /**
      * @param string $id
      */
-    public function has($id) : bool
+    public function hasBound($id, Id &$result = null) : bool
     {
-        $status = $this->injector->hasBound($id);
+        $status = $this->injector->hasBound($id, $result);
+
+        return $status;
+    }
+
+    /**
+     * @param string $id
+     */
+    public function hasItem($id, Id &$result = null) : bool
+    {
+        $status = $this->injector->hasItem($id, $result);
 
         return $status;
     }
@@ -205,113 +214,21 @@ class Di implements DiInterface
 
 
     /**
-     * @param string $id
-     *
-     * @return object
-     */
-    public function ask($id, array $parameters = null) // : object
-    {
-        $parameters = $parameters ?? [];
-
-        $_id = Id::from($id);
-
-        $instance = $this->injector->askItem($_id, $parameters);
-
-        return $instance;
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return object
-     *
-     * @throws NotFoundException
-     */
-    public function get($id) // : object
-    {
-        $_id = Id::from($id);
-
-        $instance = $this->injector->getItem($_id);
-
-        return $instance;
-    }
-
-    /**
-     * @param string $id
-     *
-     * @return object
-     */
-    public function make($id, array $parameters = null) // : object
-    {
-        $parameters = $parameters ?? [];
-
-        $_id = Id::from($id);
-
-        $instance = $this->injector->makeItem($_id, $parameters);
-
-        return $instance;
-    }
-
-
-    /**
-     * @return LazyService
-     */
-    public function askLazy($id, array $parameters = null) // : LazyService
-    {
-        $parameters = $parameters ?? [];
-
-        $_id = Id::from($id);
-
-        $instance = $this->askItemLazy($_id, $parameters);
-
-        return $instance;
-    }
-
-    /**
-     * @return LazyService
-     *
-     * @throws NotFoundException
-     */
-    public function getLazy($id) // : LazyService
-    {
-        $_id = Id::from($id);
-
-        $instance = $this->getItemLazy($_id);
-
-        return $instance;
-    }
-
-    /**
-     * @return LazyService
-     */
-    public function makeLazy($id, array $parameters = null) // : LazyService
-    {
-        $parameters = $parameters ?? [];
-
-        $_id = Id::from($id);
-
-        $instance = $this->makeItemLazy($_id, $parameters);
-
-        return $instance;
-    }
-
-
-    /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function askGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null) // : object
+    public function ask($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
-        $parameters = $parameters ?? [];
-        $structT = _filter_string($structT) ?? '';
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
         $_id = Id::from($id);
 
-        $instance = $this->injector->askItemGeneric($_id, $parameters, $structT, $forceInstanceOf);
+        $instance = $this->injector->askItem($_id, $parametersWhenNew, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -319,20 +236,21 @@ class Di implements DiInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      *
      * @throws NotFoundException
      */
-    public function getGeneric($id, $structT = null, bool $forceInstanceOf = null) // : object
+    public function get($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
-        $structT = _filter_string($structT) ?? '';
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
         $_id = Id::from($id);
 
-        $instance = $this->getItemGeneric($_id, $structT, $forceInstanceOf);
+        $instance = $this->injector->getItem($_id, $parametersWhenNew, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -340,19 +258,19 @@ class Di implements DiInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function makeGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null) // : object
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
         $parameters = $parameters ?? [];
-        $structT = _filter_string($structT) ?? '';
+        $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
         $_id = Id::from($id);
 
-        $instance = $this->makeItemGeneric($_id, $parameters, $structT, $forceInstanceOf);
+        $instance = $this->injector->makeItem($_id, $parameters, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -361,59 +279,60 @@ class Di implements DiInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      */
-    public function askLazyGeneric($id, array $parameters = null, $structT = null) // : LazyService
+    public function askLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
     {
-        $parameters = $parameters ?? [];
-        $structT = _filter_string($structT) ?? '';
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
 
         $_id = Id::from($id);
 
-        $instance = $this->askItemLazyGeneric($_id, $parameters, $structT);
+        $lazyService = $this->askItemLazy($_id, $parametersWhenNew, $contractT);
 
-        return $instance;
+        return $lazyService;
     }
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      *
      * @throws NotFoundException
      */
-    public function getLazyGeneric($id, $structT = null) // : LazyService
+    public function getLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
     {
-        $structT = _filter_string($structT) ?? '';
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
 
         $_id = Id::from($id);
 
-        $instance = $this->getItemLazyGeneric($_id, $structT);
+        $lazyService = $this->getItemLazy($_id, $parametersWhenNew, $contractT);
 
-        return $instance;
+        return $lazyService;
     }
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      */
-    public function makeLazyGeneric($id, array $parameters = null, $structT = null) // : LazyService
+    public function makeLazy($id, array $parameters = null, string $contractT = null) // : LazyService
     {
         $parameters = $parameters ?? [];
-        $structT = _filter_string($structT) ?? '';
+        $contractT = $contractT ?? '';
 
         $_id = Id::from($id);
 
-        $instance = $this->makeItemLazyGeneric($_id, $parameters, $structT);
+        $lazyService = $this->makeItemLazy($_id, $parameters, $contractT);
 
-        return $instance;
+        return $lazyService;
     }
 
 
@@ -450,148 +369,54 @@ class Di implements DiInterface
     }
 
 
-    protected function askItemLazy(Id $id, array $parameters = []) : LazyService
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $contractT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function askItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
     {
-        $lazyService = $this->factory->newLazyServiceAsk($id, $parameters);
+        $lazyService = $this->factory->newLazyServiceAsk($id, $parametersWhenNew);
 
         return $lazyService;
     }
 
     /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $contractT
+     *
+     * @return LazyService<T>|T
+     *
      * @throws NotFoundException
+     *
+     * @noinspection PhpUnusedParameterInspection
      */
-    protected function getItemLazy(Id $id) : LazyService
+    protected function getItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
     {
-        $lazyService = $this->factory->newLazyServiceGet($id);
+        $lazyService = $this->factory->newLazyServiceGet($id, $parametersWhenNew);
 
         return $lazyService;
     }
 
-    protected function makeItemLazy(Id $id, array $parameters = []) : LazyService
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $contractT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function makeItemLazy(Id $id, array $parameters = [], string $contractT = '') : LazyService
     {
         $lazyService = $this->factory->newLazyServiceMake($id, $parameters);
 
         return $lazyService;
-    }
-
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     */
-    protected function askItemGeneric(Id $id, array $paremeters = [], string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->injector->askItem($id, $paremeters);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $classT
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     *
-     * @throws NotFoundException
-     */
-    protected function getItemGeneric(Id $id, string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->injector->getItem($id);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $classT
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $classT
-     *
-     * @return T
-     */
-    protected function makeItemGeneric(Id $id, array $parameters = [], string $classT = '', bool $forceInstanceOf = false) : object
-    {
-        $instance = $this->injector->makeItem($id, $parameters);
-
-        if ($forceInstanceOf && ! is_a($instance, $classT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $classT
-                . ' / ' . _php_dump($instance)
-            );
-        }
-
-        return $instance;
-    }
-
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|T $classT
-     *
-     * @return LazyService<T>|T
-     *
-     * @noinspection PhpUnusedParameterInspection
-     */
-    protected function askItemLazyGeneric(Id $id, array $parameters = [], string $classT = '') : LazyService
-    {
-        $instance = $this->askItemLazy($id, $parameters);
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|T $classT
-     *
-     * @return LazyService<T>|T
-     *
-     * @throws NotFoundException
-     *
-     * @noinspection PhpUnusedParameterInspection
-     */
-    protected function getItemLazyGeneric(Id $id, string $classT = '') : LazyService
-    {
-        $instance = $this->getItemLazy($id);
-
-        return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|T $classT
-     *
-     * @return LazyService<T>|T
-     *
-     * @noinspection PhpUnusedParameterInspection
-     */
-    protected function makeItemLazyGeneric(Id $id, array $parameters = [], string $classT = '') : LazyService
-    {
-        $instance = $this->makeItemLazy($id, $parameters);
-
-        return $instance;
     }
 
 

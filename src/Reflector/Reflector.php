@@ -642,4 +642,40 @@ class Reflector implements ReflectorInterface
             'isNullable' => $isNullable,
         ];
     }
+
+
+    public static function getInstance() // : static
+    {
+        $instance = static::$instances[ static::class ];
+
+        if (! is_a($instance, static::class)) {
+            throw new RuntimeException(
+                'No instance bound. Please, call Di::setInstance() first.'
+            );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @param static $reflector
+     *
+     * @return void
+     */
+    public static function setInstance($reflector) : void
+    {
+        if (! is_a($reflector, static::class)) {
+            throw new RuntimeException(
+                'The `reflector` should be instance of: ' . static::class
+                . ' / ' . _php_dump($reflector)
+            );
+        }
+
+        static::$instances[ get_class($reflector) ] = $reflector;
+    }
+
+    /**
+     * @var array<class-string, static>
+     */
+    protected static $instances = [];
 }

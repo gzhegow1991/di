@@ -103,6 +103,7 @@ function _filter_dirpath(
     return $_value;
 }
 
+
 function _filter_filename($value) : ?string
 {
     if (null === ($_value = _filter_string($value))) {

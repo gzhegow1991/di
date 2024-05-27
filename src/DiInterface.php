@@ -2,6 +2,7 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Lazy\LazyService;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
@@ -36,7 +37,12 @@ interface DiInterface
     /**
      * @param string $id
      */
-    public function has($id) : bool;
+    public function hasBound($id, Id &$result = null) : bool;
+
+    /**
+     * @param string $id
+     */
+    public function hasItem($id, Id &$result = null) : bool;
 
 
     public function bind($id, $mixed = null, bool $isSingleton = null);
@@ -65,105 +71,63 @@ interface DiInterface
 
 
     /**
-     * @param string $id
-     *
-     * @return object
-     */
-    public function ask($id, array $parameters = null);
-
-    /**
-     * @param string $id
-     *
-     * @return object
-     *
-     * @throws NotFoundException
-     */
-    public function get($id);
-
-    /**
-     * @param string $id
-     *
-     * @return object
-     */
-    public function make($id, array $parameters = null);
-
-
-    /**
-     * @return LazyService
-     */
-    public function askLazy($id, array $parameters = null);
-
-    /**
-     * @return LazyService
-     *
-     * @throws NotFoundException
-     */
-    public function getLazy($id);
-
-    /**
-     * @return LazyService
-     */
-    public function makeLazy($id, array $parameters = null);
-
-
-    /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function askGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
+    public function ask($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      *
      * @throws NotFoundException
      */
-    public function getGeneric($id, $structT = null, bool $forceInstanceOf = null);
+    public function get($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $structT
+     * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function makeGeneric($id, array $parameters = null, $structT = null, bool $forceInstanceOf = null);
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
 
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      */
-    public function askLazyGeneric($id, array $parameters = null, $structT = null);
+    public function askLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      *
      * @throws NotFoundException
      */
-    public function getLazyGeneric($id, $structT = null);
+    public function getLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|T|null $structT
+     * @param class-string<T>|T|null $contractT
      *
      * @return LazyService<T>|T
      */
-    public function makeLazyGeneric($id, array $parameters = null, $structT = null);
+    public function makeLazy($id, array $parameters = null, string $contractT = null);
 
 
     /**

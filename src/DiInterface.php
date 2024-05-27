@@ -148,5 +148,12 @@ interface DiInterface
      *
      * @return mixed
      */
+    public function callUserFunc($fn, ...$args);
+
+    /**
+     * @param callable $fn
+     *
+     * @return mixed
+     */
     public function callUserFuncArray($fn, array $args = null);
 }

@@ -45,7 +45,7 @@ interface InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T|null
      */
@@ -54,7 +54,7 @@ interface InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      *
@@ -65,7 +65,7 @@ interface InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      */
@@ -74,7 +74,7 @@ interface InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      */
@@ -91,7 +91,10 @@ interface InjectorInterface
     public function autowireItem(object $instance, array $methodArgs = [], string $methodName = '') : object;
 
 
+    public function autowireUserFunc(callable $fn, ...$args);
+
     public function autowireUserFuncArray(callable $fn, array $args = []);
+
 
     /**
      * @template-covariant T

@@ -33,7 +33,7 @@ class Injector implements InjectorInterface
     /**
      * @var array<string, string>
      */
-    protected $bindList = [];
+    protected $bindToTypeList = [];
 
     /**
      * @var array<string, string>
@@ -61,6 +61,10 @@ class Injector implements InjectorInterface
      */
     protected $extendList = [];
 
+    /**
+     * @var array<string, object>
+     */
+    protected $singletonList = [];
     /**
      * @var array<string, bool>
      */
@@ -110,7 +114,7 @@ class Injector implements InjectorInterface
             );
         }
 
-        foreach ( $di->bindList as $_bindId => $bindType ) {
+        foreach ( $di->bindToTypeList as $_bindId => $bindType ) {
             $bindId = Id::from($_bindId);
             $bindProperty = "{$bindType}List";
             $bindObject = $di->{$bindProperty}[ $_bindId ];
@@ -144,7 +148,7 @@ class Injector implements InjectorInterface
 
         $_id = $id->getValue();
 
-        if (isset($this->bindList[ $_id ])) {
+        if (isset($this->bindToTypeList[ $_id ])) {
             $result = $id;
 
             return true;
@@ -173,7 +177,7 @@ class Injector implements InjectorInterface
             );
         }
 
-        $this->bindList[ $_id ] = static::BIND_TYPE_ALIAS;
+        $this->bindToTypeList[ $_id ] = static::BIND_TYPE_ALIAS;
         $this->aliasList[ $_id ] = $_aliasId;
 
         $_id = $id->getValue();
@@ -210,7 +214,7 @@ class Injector implements InjectorInterface
             );
         }
 
-        $this->bindList[ $_id ] = static::BIND_TYPE_CLASS;
+        $this->bindToTypeList[ $_id ] = static::BIND_TYPE_CLASS;
         $this->classList[ $_id ] = $_classId;
 
         $_id = $id->getValue();
@@ -232,7 +236,7 @@ class Injector implements InjectorInterface
 
         $_id = $id->getValue();
 
-        $this->bindList[ $_id ] = static::BIND_TYPE_FACTORY;
+        $this->bindToTypeList[ $_id ] = static::BIND_TYPE_FACTORY;
         $this->factoryList[ $_id ] = $fnFactory;
 
         $_id = $id->getValue();
@@ -254,7 +258,7 @@ class Injector implements InjectorInterface
 
         $_id = $id->getValue();
 
-        $this->bindList[ $_id ] = static::BIND_TYPE_INSTANCE;
+        $this->bindToTypeList[ $_id ] = static::BIND_TYPE_INSTANCE;
         $this->instanceList[ $_id ] = $instance;
 
         $_id = $id->getValue();
@@ -340,7 +344,7 @@ class Injector implements InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T|null
      */
@@ -368,7 +372,7 @@ class Injector implements InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      *
@@ -384,34 +388,64 @@ class Injector implements InjectorInterface
 
         $_id = $id->getValue();
 
-        if (isset($this->instanceList[ $_id ])) {
+        if (isset($this->singletonList[ $_id ])) {
+            $instance = $this->singletonList[ $_id ];
+
+        } elseif (isset($this->instanceList[ $_id ])) {
             $instance = $this->instanceList[ $_id ];
 
-        } else {
-            [ $_resolvedId ] = $this->resolveBoundId($id);
-
-            if (isset($this->instanceList[ $_resolvedId ])) {
-                $instance = $this->instanceList[ $_resolvedId ];
-
-            } else {
-                $resolvedId = Id::from($_resolvedId);
-
-                $instance = $this->makeItem($resolvedId, $parametersWhenNew);
+            if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+                throw new RuntimeException(
+                    'Returned object should be instance of: '
+                    . $contractT
+                    . ' / ' . _php_dump($instance)
+                );
             }
-        }
 
-        if (isset($this->isSingletonIndex[ $_id ])
-            && ! isset($this->instanceList[ $_id ])
-        ) {
-            $this->instanceList[ $_id ] = $instance;
-        }
+            if (isset($this->isSingletonIndex[ $_id ])) {
+                $this->singletonList[ $_id ] = $instance;
+            }
 
-        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $contractT
-                . ' / ' . _php_dump($instance)
-            );
+            return $instance;
+
+        } else {
+            $resolvedPath = $this->resolveItemPath($id);
+
+            $instance = null;
+            foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
+                $isSingleton = false;
+                $isInstance = false;
+
+                (false)
+                || ($isSingleton = isset($this->singletonList[ $_resolvedId ]))
+                || ($isInstance = isset($this->instanceList[ $_resolvedId ]));
+
+                if ($isSingleton || $isInstance) {
+                    $instance = null
+                        ?? $this->singletonList[ $_resolvedId ]
+                        ?? $this->instanceList[ $_resolvedId ];
+
+                    break;
+                }
+            }
+
+            if (null === $instance) {
+                $instance = $this->resolveItem($resolvedPath, $id, $parametersWhenNew);
+            }
+
+            if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+                throw new RuntimeException(
+                    'Returned object should be instance of: '
+                    . $contractT
+                    . ' / ' . _php_dump($instance)
+                );
+            }
+
+            foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
+                if (isset($this->isSingletonIndex[ $_resolvedId ])) {
+                    $this->singletonList[ $_resolvedId ] = $instance;
+                }
+            }
         }
 
         return $instance;
@@ -420,34 +454,15 @@ class Injector implements InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      */
     public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
-        $id = Id::from($id);
+        $resolvedPath = $this->resolveItemPath($id);
 
-        $_id = $id->getValue();
-
-        [ $bound, , $boundType ] = $resolved = $this->resolveItem($id);
-
-        if (static::BIND_TYPE_INSTANCE === $boundType) {
-            $instance = clone $bound;
-
-        } elseif (static::BIND_TYPE_CLASS === $boundType) {
-            $instance = $this->autowireConstructorArray($bound, $parameters);
-
-        } elseif (static::BIND_TYPE_FACTORY === $boundType) {
-            $instance = $this->autowireUserFuncArray($bound, $parameters);
-
-        } else {
-            throw new RuntimeException(
-                'Unknown `boundType` while making: '
-                . $boundType
-                . ' / ' . $_id
-            );
-        }
+        $instance = $this->resolveItem($resolvedPath, $id, $parameters);
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
@@ -457,35 +472,9 @@ class Injector implements InjectorInterface
             );
         }
 
-        if (isset($this->isSingletonIndex[ $_id ])
-            && ! isset($this->instanceList[ $_id ])
-        ) {
-            $this->instanceList[ $_id ] = $instance;
-        }
-
-        $classmap = [ $_id => $_id ];
-
-        if ($id->isContract()) {
-            $classmap += class_parents($_id);
-            $classmap += class_implements($_id);
-        }
-
-        $classmap += class_parents($instance);
-        $classmap += class_implements($instance);
-
-        $intersect = array_intersect_key($this->extendList, $classmap);
-
-        if ($intersect) {
-            $callablesOrdered = [];
-
-            foreach ( $intersect as $extendClass => $callables ) {
-                $callablesOrdered += $callables;
-            }
-
-            ksort($callablesOrdered);
-
-            foreach ( $callablesOrdered as $callable ) {
-                $this->autowireUserFuncArray($callable, [ $instance ]);
+        foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
+            if (isset($this->isSingletonIndex[ $_resolvedId ])) {
+                $this->singletonList[ $_resolvedId ] = $instance;
             }
         }
 
@@ -495,7 +484,7 @@ class Injector implements InjectorInterface
     /**
      * @template-covariant T
      *
-     * @param class-string<T>|null $contractT
+     * @param class-string<T> $contractT
      *
      * @return T
      */
@@ -536,7 +525,18 @@ class Injector implements InjectorInterface
     }
 
 
-    public function autowireUserFuncArray(callable $fn, array $args = [])
+    public function autowireUserFunc(callable $fn, ...$args) // : mixed
+    {
+        $reflectResult = $this->reflector->reflectArgumentsCallable($fn);
+
+        $_args = $this->resolveArguments($reflectResult, $fn, $args);
+
+        $result = call_user_func($fn, ...$_args);
+
+        return $result;
+    }
+
+    public function autowireUserFuncArray(callable $fn, array $args = []) // : mixed
     {
         $reflectResult = $this->reflector->reflectArgumentsCallable($fn);
 
@@ -616,100 +616,104 @@ class Injector implements InjectorInterface
     }
 
 
-    /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     *     2: string,
-     *     3: array<string, string>
-     * }
-     */
-    protected function resolveItem(Id $id) : array
+    protected function resolveItem(array $resolvedPath, Id $id, array $parameters = []) : object
     {
-        [ $itemId, $itemType, $itemFullpath ] = $this->resolveItemId($id);
+        $_id = $id->getValue();
 
-        $itemProperty = "{$itemType}List";
-        $itemPropertyValue = $this->{$itemProperty}[ $itemId ] ?? null;
+        $lastResolvedType = end($resolvedPath);
+        $lastResolvedId = key($resolvedPath);
 
-        if ($isClass = ($itemType === static::BIND_TYPE_CLASS)) {
-            $itemPropertyValue = $itemId;
+        if (static::BIND_TYPE_INSTANCE === $lastResolvedType) {
+            $resolvedInstance = $this->instanceList[ $lastResolvedId ];
+
+            $instance = clone $resolvedInstance;
+
+        } elseif (static::BIND_TYPE_CLASS === $lastResolvedType) {
+            $resolvedClass = $this->classList[ $lastResolvedId ] ?? $lastResolvedId;
+
+            $instance = $this->autowireConstructorArray($resolvedClass, $parameters);
+
+        } elseif (static::BIND_TYPE_FACTORY === $lastResolvedType) {
+            $resolvedFnFactory = $this->factoryList[ $lastResolvedId ];
+
+            $instance = $this->autowireUserFuncArray($resolvedFnFactory, $parameters);
+
+        } else {
+            // } elseif (static::BIND_TYPE_ALIAS === $lastResolvedType) {
+
+            throw new RuntimeException(
+                'Unknown `boundType` while making: '
+                . $lastResolvedType
+                . ' / ' . $_id
+            );
         }
 
-        $result = [ $itemPropertyValue, $itemId, $itemType, $itemFullpath ];
+        $extendIdList = [];
+        $extendContractList = [];
 
-        return $result;
+        $id->isContract()
+            ? ($extendContractList[ $_id ] = true)
+            : ($extendIdList[ $_id ] = true);
+
+        foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
+            $resolvedId = Id::from($_resolvedId);
+
+            $resolvedId->isContract()
+                ? ($extendContractList[ $_resolvedId ] = true)
+                : ($extendIdList[ $_resolvedId ] = true);
+        }
+
+        $extendContractList[ get_class($instance) ] = true;
+
+        $extendList = [];
+        $extendList += $extendIdList;
+        $extendList += $extendContractList;
+        foreach ( $extendContractList as $contract => $bool ) {
+            $extendList += class_implements($contract);
+            $extendList += class_parents($contract);
+        }
+
+        $intersect = array_intersect_key($this->extendList, $extendList);
+
+        if ($intersect) {
+            $callablesOrdered = [];
+
+            foreach ( $intersect as $extendClass => $callables ) {
+                $callablesOrdered += $callables;
+            }
+
+            ksort($callablesOrdered);
+
+            foreach ( $callablesOrdered as $callable ) {
+                $this->autowireUserFuncArray($callable, [ $instance ]);
+            }
+        }
+
+        return $instance;
     }
 
     /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     *     2: string,
-     *     3: array<string, string>
-     * }
+     * @return array<string, string>
      */
-    protected function resolveBound(Id $id) : array
-    {
-        [ $itemId, $itemType, $itemFullpath ] = $this->resolveBoundId($id);
-
-        $itemProperty = "{$itemType}List";
-        $itemPropertyValue = $this->{$itemProperty}[ $itemId ] ?? null;
-
-        $result = [ $itemPropertyValue, $itemId, $itemType, $itemFullpath ];
-
-        return $result;
-    }
-
-    /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     *     2: string,
-     *     3: array<string, string>
-     * }
-     */
-    protected function resolveClass(Id $id) : array
-    {
-        [ $itemId, $itemType, $itemFullpath ] = $this->resolveClassId($id);
-
-        $itemPropertyValue = $itemId;
-
-        $result = [ $itemPropertyValue, $itemId, $itemType, $itemFullpath ];
-
-        return $result;
-    }
-
-
-    /**
-     * @return array{
-     *     0: string,
-     *     1: string,
-     *     2: array<string, string>
-     * }
-     */
-    protected function resolveItemId(Id $id) : array
+    protected function resolveItemPath(Id $id) : array
     {
         $_id = $id->getValue();
 
-        $result = isset($this->bindList[ $_id ])
-            ? $this->resolveBoundId($id)
-            : $this->resolveClassId($id);
+        $result = isset($this->bindToTypeList[ $_id ])
+            ? $this->resolveBoundPath($id)
+            : $this->resolveUnboundPath($id);
 
         return $result;
     }
 
     /**
-     * @return array{
-     *     0: string,
-     *     1: string,
-     *     2: array<string, string>
-     * }
+     * @return array<string, string>
      */
-    protected function resolveBoundId(Id $id) : array
+    protected function resolveBoundPath(Id $id) : array
     {
         $_id = $id->getValue();
 
-        if (! isset($this->bindList[ $_id ])) {
+        if (! isset($this->bindToTypeList[ $_id ])) {
             throw new RuntimeException(
                 'Unable to ' . __FUNCTION__ . '. '
                 . 'Missing `id`: ' . $_id
@@ -717,19 +721,15 @@ class Injector implements InjectorInterface
         }
 
         $boundId = $_id;
-        $boundType = $this->bindList[ $boundId ];
-        $boundPath = [];
-        $boundFullpath = [ $boundId => $boundType ];
+        $boundType = $this->bindToTypeList[ $_id ];
 
         $queue = [];
-        $queue[] = [ $boundId, $boundType, $boundPath ];
+        $queue[] = [ $boundId, $boundType, [] ];
 
-        while ( $queue ) {
+        $boundFullpath = [];
+
+        do {
             [ $boundId, $boundType, $boundPath ] = array_shift($queue);
-
-            if (static::BIND_TYPE_ALIAS !== $boundType) {
-                break;
-            }
 
             if (isset($boundPath[ $boundId ])) {
                 throw new RuntimeException(
@@ -742,44 +742,41 @@ class Injector implements InjectorInterface
             $boundFullpath = $boundPath;
             $boundFullpath[ $boundId ] = $boundType;
 
-            $boundId = $this->aliasList[ $boundId ] ?? null;
-            $boundType = $this->bindList[ $boundId ] ?? null;
+            if (static::BIND_TYPE_ALIAS === $boundType) {
+                $boundIdChild = $this->aliasList[ $boundId ] ?? null;
+                $boundTypeChild = $this->bindToTypeList[ $boundIdChild ] ?? null;
+                $boundPathChild = $boundFullpath;
 
-            if (null === $boundType) {
-                $boundIdObject = Id::from($boundId);
+                if (null === $boundTypeChild) {
+                    if (class_exists($boundIdChild)) {
+                        $boundTypeChild = static::BIND_TYPE_CLASS;
 
-                if ($boundIdObject->isClass()) {
-                    $boundType = static::BIND_TYPE_CLASS;
-
-                } else {
-                    throw new RuntimeException(
-                        'Unable to ' . __FUNCTION__ . '. '
-                        . 'Missing `boundId` while making: '
-                        . '[ ' . implode(' -> ', array_keys($boundFullpath)) . ' ]'
-                    );
+                    } else {
+                        throw new RuntimeException(
+                            'Unable to ' . __FUNCTION__ . '. '
+                            . 'Missing `boundId` while making: '
+                            . '[ ' . implode(' -> ', array_keys($boundPathChild)) . ' ]'
+                        );
+                    }
                 }
+
+                $queue[] = [ $boundIdChild, $boundTypeChild, $boundPathChild ];
             }
+        } while ( $queue );
 
-            $queue[] = [ $boundId, $boundType, $boundFullpath ];
-        }
-
-        $result = [ $boundId, $boundType, $boundFullpath ];
+        $result = $boundFullpath;
 
         return $result;
     }
 
     /**
-     * @return array{
-     *     0: string,
-     *     1: string,
-     *     2: array<string, string>
-     * }
+     * @return array<string, string>
      */
-    protected function resolveClassId(Id $id) : array
+    protected function resolveUnboundPath(Id $id) : array
     {
         $_id = $id->getValue();
 
-        if (isset($this->bindList[ $_id ])) {
+        if (isset($this->bindToTypeList[ $_id ])) {
             throw new RuntimeException(
                 'Unable to ' . __FUNCTION__ . '. '
                 . 'Bind exists, so this `id` it is not a class: ' . $_id
@@ -793,11 +790,10 @@ class Injector implements InjectorInterface
             );
         }
 
-        $itemId = $_id;
-        $itemType = static::BIND_TYPE_CLASS;
-        $itemFullpath = [ $itemId => $itemType ];
+        $classId = $_id;
+        $classType = static::BIND_TYPE_CLASS;
 
-        $result = [ $itemId, $itemType, $itemFullpath ];
+        $result = [ $classId => $classType ];
 
         return $result;
     }

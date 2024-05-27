@@ -352,6 +352,18 @@ class Di implements DiInterface
      *
      * @return mixed
      */
+    public function callUserFunc($fn, ...$args) // : mixed
+    {
+        $result = $this->injector->autowireUserFunc($fn, ...$args);
+
+        return $result;
+    }
+
+    /**
+     * @param callable $fn
+     *
+     * @return mixed
+     */
     public function callUserFuncArray($fn, array $args = null) // : mixed
     {
         $args = $args ?? [];

@@ -28,7 +28,7 @@ interface InjectorInterface
     /**
      * @param callable|object|array|class-string $mixed
      */
-    public function bindItem(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void;
+    public function bindItemOfType(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void;
 
     public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false);
 
@@ -37,6 +37,8 @@ interface InjectorInterface
     public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = null);
 
     public function bindItemInstance(Id $id, object $instance, bool $isSingleton = null);
+
+    public function bindItem(Id $id, $mixed = null, bool $isSingleton = false);
 
 
     public function extendItem(Id $id, callable $fnExtend) : void;
@@ -49,7 +51,7 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function askItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
+    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object;
 
     /**
      * @template-covariant T
@@ -60,7 +62,7 @@ interface InjectorInterface
      *
      * @throws NotFoundException
      */
-    public function getItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
+    public function getItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object;
 
     /**
      * @template-covariant T
@@ -81,6 +83,7 @@ interface InjectorInterface
      */
     public function autowireItem(object $instance, array $methodArgs = [], string $methodName = '') : object;
 
+
     public function autowireFunctionCall(callable $fn, array $args = []);
 
     /**
@@ -91,56 +94,4 @@ interface InjectorInterface
      * @return T
      */
     public function autowireClassConstructor(string $class, array $parameters = []) : object;
-
-
-    /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     * }
-     */
-    public function resolveBind(Id $id, $mixed) : array;
-
-
-    /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     *     2: string,
-     *     3: array<string, string>
-     * }
-     */
-    public function resolveDependency(Id $id) : array;
-
-    /**
-     * @return array{
-     *     0: string,
-     *     1: string,
-     *     2: array<string, string>
-     * }
-     */
-    public function resolveDependencyId(Id $id) : array;
-
-
-    /**
-     * @return array{
-     *     0: mixed,
-     *     1: string,
-     *     2: string,
-     *     3: array<string, string>
-     * }
-     */
-    public function resolveDependencyBound(Id $id) : array;
-
-    /**
-     * @return array{
-     *     0: string,
-     *     1: string,
-     *     2: array<string, string>
-     * }
-     */
-    public function resolveDependencyBoundId(Id $id) : array;
-
-
-    public function resolveArguments(array $reflectResult, $reflectable, array $arguments = []) : array;
 }

@@ -83,7 +83,7 @@ class DiFactory implements DiFactoryInterface
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $instance = $this->injector->askItem($lazyId, $parametersWhenNew);
+        $instance = $this->injector->askItem($lazyId, '', false, $parametersWhenNew);
 
         return $instance;
     }
@@ -96,7 +96,7 @@ class DiFactory implements DiFactoryInterface
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $instance = $this->injector->getItem($lazyId, $parametersWhenNew);
+        $instance = $this->injector->getItem($lazyId, '', false, $parametersWhenNew);
 
         return $instance;
     }

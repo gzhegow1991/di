@@ -43,39 +43,39 @@ function _di_has_item($id, Id &$result = null) : bool
 }
 
 
-function _di_bind(string $id, $mixed = null, bool $isSingleton = null)
+function _di_bind($id, $mixed = null, bool $isSingleton = null)
 {
     _di()->bind($id, $mixed, $isSingleton);
 }
 
-function _di_bind_singleton(string $id, $mixed = null)
+function _di_bind_singleton($id, $mixed = null)
 {
     _di()->bindSingleton($id, $mixed);
 }
 
 
-function _di_bind_alias(string $id, string $aliasId, bool $isSingleton = null)
+function _di_bind_alias($id, $aliasId, bool $isSingleton = null)
 {
     return _di()->bindAlias($id, $aliasId, $isSingleton);
 }
 
 /**
- * @param class-string $class
+ * @param class-string $structId
  */
-function _di_bind_class(string $id, string $class, bool $isSingleton = null)
+function _di_bind_struct($id, $structId, bool $isSingleton = null)
 {
-    return _di()->bindStruct($id, $class, $isSingleton);
+    return _di()->bindStruct($id, $structId, $isSingleton);
 }
 
 /**
  * @param callable $fnFactory
  */
-function _di_bind_factory(string $id, $fnFactory, bool $isSingleton = null)
+function _di_bind_factory($id, $fnFactory, bool $isSingleton = null)
 {
     return _di()->bindFactory($id, $fnFactory, $isSingleton);
 }
 
-function _di_bind_instance(string $id, object $instance, bool $isSingleton = null)
+function _di_bind_instance($id, object $instance, bool $isSingleton = null)
 {
     return _di()->bindInstance($id, $instance, $isSingleton);
 }
@@ -84,7 +84,7 @@ function _di_bind_instance(string $id, object $instance, bool $isSingleton = nul
 /**
  * @param callable $fnExtend
  */
-function _di_extend(string $id, $fnExtend)
+function _di_extend($id, $fnExtend)
 {
     return _di()->extend($id, $fnExtend);
 }
@@ -97,9 +97,9 @@ function _di_extend(string $id, $fnExtend)
  *
  * @return T
  */
-function _di_ask(string $id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+function _di_ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
 {
-    return _di()->ask($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+    return _di()->ask($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 }
 
 /**
@@ -111,9 +111,9 @@ function _di_ask(string $id, array $parametersWhenNew = null, string $contractT 
  *
  * @throws NotFoundException
  */
-function _di_get(string $id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+function _di_get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
 {
-    return _di()->get($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+    return _di()->get($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 }
 
 /**
@@ -123,7 +123,7 @@ function _di_get(string $id, array $parametersWhenNew = null, string $contractT 
  *
  * @return T
  */
-function _di_make(string $id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+function _di_make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
 {
     return _di()->make($id, $parameters, $contractT, $forceInstanceOf);
 }
@@ -136,9 +136,9 @@ function _di_make(string $id, array $parameters = null, string $contractT = null
  *
  * @return LazyService<T>|T
  */
-function _di_ask_lazy(string $id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+function _di_ask_lazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
 {
-    return _di()->askLazy($id, $parametersWhenNew, $contractT);
+    return _di()->askLazy($id, $contractT, $parametersWhenNew);
 }
 
 /**
@@ -150,9 +150,9 @@ function _di_ask_lazy(string $id, array $parametersWhenNew = null, string $contr
  *
  * @throws NotFoundException
  */
-function _di_get_lazy(string $id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+function _di_get_lazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
 {
-    return _di()->getLazy($id, $parametersWhenNew, $contractT);
+    return _di()->getLazy($id, $contractT, $parametersWhenNew);
 }
 
 /**
@@ -162,7 +162,7 @@ function _di_get_lazy(string $id, array $parametersWhenNew = null, string $contr
  *
  * @return LazyService<T>|T
  */
-function _di_make_lazy(string $id, array $parameters = null, string $contractT = null) // : LazyService
+function _di_make_lazy($id, array $parameters = null, string $contractT = null) // : LazyService
 {
     return _di()->makeLazy($id, $parameters, $contractT);
 }

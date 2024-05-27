@@ -49,6 +49,7 @@ interface DiInterface
 
     public function bindSingleton($id, $mixed = null);
 
+
     public function bindAlias($id, $aliasId, bool $isSingleton = null);
 
     /**
@@ -77,7 +78,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function ask($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
 
     /**
      * @template-covariant T
@@ -88,7 +89,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
 
     /**
      * @template-covariant T
@@ -107,7 +108,7 @@ interface DiInterface
      *
      * @return LazyService<T>|T
      */
-    public function askLazy($id, array $parametersWhenNew = null, string $contractT = null);
+    public function askLazy($id, string $contractT = null, array $parametersWhenNew = null);
 
     /**
      * @template-covariant T
@@ -118,7 +119,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazy($id, array $parametersWhenNew = null, string $contractT = null);
+    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null);
 
     /**
      * @template-covariant T

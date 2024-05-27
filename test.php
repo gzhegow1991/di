@@ -169,7 +169,7 @@ _assert_true($three1 === $threeByAlias);
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 // $two = _di_ask_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
-$two = _di_ask_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
+$two = _di_ask_lazy(MyClassTwoInterface::class, MyClassTwo::class, [ 'hello' => 'User' ]);
 var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
 

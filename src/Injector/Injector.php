@@ -88,7 +88,7 @@ class Injector implements InjectorInterface
 
             $isSingleton = ! empty($di->isSingletonIndex[ $_bindId ]);
 
-            $this->bindItem($bindType, $bindId, $bindObject, $isSingleton);
+            $this->bindItemOfType($bindType, $bindId, $bindObject, $isSingleton);
         }
 
         foreach ( $di->extendList as $_extendId => $callables ) {
@@ -155,7 +155,7 @@ class Injector implements InjectorInterface
     /**
      * @param callable|object|array|class-string $mixed
      */
-    public function bindItem(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void
+    public function bindItemOfType(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void
     {
         if ($this->hasBound($id)) {
             throw new RuntimeException(
@@ -281,6 +281,15 @@ class Injector implements InjectorInterface
         return $this;
     }
 
+    public function bindItem(Id $id, $mixed = null, bool $isSingleton = false) // : static
+    {
+        [ $_mixed, $bindType ] = $this->resolveBind($id, $mixed);
+
+        $this->bindItemOfType($bindType, $id, $_mixed, $isSingleton);
+
+        return $this;
+    }
+
 
     public function extendItem(Id $id, callable $fnExtend) : void
     {
@@ -297,12 +306,12 @@ class Injector implements InjectorInterface
      *
      * @return T
      */
-    public function askItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
+    public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object
     {
         $paremeters = $paremeters ?? [];
 
         $instance = $this->hasBound($id)
-            ? $this->getItem($id, $parametersWhenNew)
+            ? $this->getItem($id, '', false, $parametersWhenNew)
             : $this->makeItem($id, $parametersWhenNew);
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
@@ -325,7 +334,7 @@ class Injector implements InjectorInterface
      *
      * @throws NotFoundException
      */
-    public function getItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
+    public function getItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : object
     {
         if (! $this->hasBound($id)) {
             throw new NotFoundException(
@@ -449,6 +458,7 @@ class Injector implements InjectorInterface
         return $instance;
     }
 
+
     public function autowireFunctionCall(callable $fn, array $args = [])
     {
         $reflectResult = $this->reflector->reflectArgumentsCallable($fn);
@@ -485,7 +495,7 @@ class Injector implements InjectorInterface
      *     1: string,
      * }
      */
-    public function resolveBind(Id $id, $mixed) : array
+    protected function resolveBind(Id $id, $mixed) : array
     {
         $_id = $id->getValue();
 
@@ -535,7 +545,7 @@ class Injector implements InjectorInterface
      *     3: array<string, string>
      * }
      */
-    public function resolveDependency(Id $id) : array
+    protected function resolveDependency(Id $id) : array
     {
         $dependencyDefinition = $this->resolveDependencyId($id);
 
@@ -554,7 +564,7 @@ class Injector implements InjectorInterface
      *     2: array<string, string>
      * }
      */
-    public function resolveDependencyId(Id $id) : array
+    protected function resolveDependencyId(Id $id) : array
     {
         $_id = $id->getValue();
 
@@ -587,7 +597,7 @@ class Injector implements InjectorInterface
      *     3: array<string, string>
      * }
      */
-    public function resolveDependencyBound(Id $id) : array
+    protected function resolveDependencyBound(Id $id) : array
     {
         $boundDefinition = $this->resolveDependencyBoundId($id);
 
@@ -613,7 +623,7 @@ class Injector implements InjectorInterface
      *     2: array<string, string>
      * }
      */
-    public function resolveDependencyBoundId(Id $id) : array
+    protected function resolveDependencyBoundId(Id $id) : array
     {
         $_id = $id->getValue();
 
@@ -669,7 +679,7 @@ class Injector implements InjectorInterface
     }
 
 
-    public function resolveArguments(array $reflectResult, $reflectable, array $arguments = []) : array
+    protected function resolveArguments(array $reflectResult, $reflectable, array $arguments = []) : array
     {
         [ 'arguments' => $reflectArguments ] = $reflectResult;
 

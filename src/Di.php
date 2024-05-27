@@ -132,9 +132,7 @@ class Di implements DiInterface
 
         $id = Id::from($id);
 
-        [ $_mixed, $bindType ] = $this->injector->resolveBind($id, $mixed);
-
-        $this->injector->bindItem($bindType, $id, $_mixed, $isSingleton);
+        $this->injector->bindItem($id, $mixed, $isSingleton);
 
         return $this;
     }
@@ -220,15 +218,15 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function ask($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $instance = $this->injector->askItem($_id, $parametersWhenNew, $contractT, $forceInstanceOf);
+        $instance = $this->injector->askItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 
         return $instance;
     }
@@ -242,15 +240,15 @@ class Di implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $instance = $this->injector->getItem($_id, $parametersWhenNew, $contractT, $forceInstanceOf);
+        $instance = $this->injector->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
 
         return $instance;
     }
@@ -268,9 +266,9 @@ class Di implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $instance = $this->injector->makeItem($_id, $parameters, $contractT, $forceInstanceOf);
+        $instance = $this->injector->makeItem($id, $parameters, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -283,14 +281,14 @@ class Di implements DiInterface
      *
      * @return LazyService<T>|T
      */
-    public function askLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    public function askLazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $lazyService = $this->askItemLazy($_id, $parametersWhenNew, $contractT);
+        $lazyService = $this->askItemLazy($id, $contractT, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -304,14 +302,14 @@ class Di implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $lazyService = $this->getItemLazy($_id, $parametersWhenNew, $contractT);
+        $lazyService = $this->getItemLazy($id, $contractT, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -328,9 +326,9 @@ class Di implements DiInterface
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
 
-        $_id = Id::from($id);
+        $id = Id::from($id);
 
-        $lazyService = $this->makeItemLazy($_id, $parameters, $contractT);
+        $lazyService = $this->makeItemLazy($id, $parameters, $contractT);
 
         return $lazyService;
     }
@@ -378,7 +376,7 @@ class Di implements DiInterface
      *
      * @noinspection PhpUnusedParameterInspection
      */
-    protected function askItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
+    protected function askItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : LazyService
     {
         $lazyService = $this->factory->newLazyServiceAsk($id, $parametersWhenNew);
 
@@ -396,7 +394,7 @@ class Di implements DiInterface
      *
      * @noinspection PhpUnusedParameterInspection
      */
-    protected function getItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
+    protected function getItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : LazyService
     {
         $lazyService = $this->factory->newLazyServiceGet($id, $parametersWhenNew);
 

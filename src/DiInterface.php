@@ -17,6 +17,9 @@ interface DiInterface
      */
     public function setSettings(array $settings = null); // : static
 
+
+    public function resetCache(); // : static
+
     /**
      * @param array{
      *     reflectorCacheMode: string|null,

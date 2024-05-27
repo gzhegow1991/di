@@ -55,6 +55,13 @@ class Di implements DiInterface
     }
 
 
+    public function resetCache() // : static
+    {
+        $this->reflector->resetCache();
+
+        return $this;
+    }
+
     /**
      * @param array{
      *     reflectorCacheMode: string|null,
@@ -79,6 +86,8 @@ class Di implements DiInterface
             $cacheDirpath,
             $cacheFilename
         );
+
+        $this->reflector->resetCache();
 
         return $this;
     }

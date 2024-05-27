@@ -2,6 +2,7 @@
 
 use Gzhegow\Di\Demo\MyClassTwo;
 use Gzhegow\Di\Demo\MyClassFour;
+use Gzhegow\Di\Demo\MyClassFive;
 use Gzhegow\Di\Demo\MyClassThree;
 use Gzhegow\Di\Demo\MyClassOneOne;
 use Gzhegow\Di\Reflector\Reflector;
@@ -9,18 +10,17 @@ use Gzhegow\Di\Demo\MyClassOneInterface;
 use Gzhegow\Di\Demo\MyClassTwoInterface;
 use Gzhegow\Di\Demo\MyClassOneAwareInterface;
 use Gzhegow\Di\Demo\MyClassTwoAwareInterface;
-use Gzhegow\Di\Demo\MyClassFive;
 use function Gzhegow\Di\_di;
 use function Gzhegow\Di\_di_get;
 use function Gzhegow\Di\_di_bind;
 use function Gzhegow\Di\_di_make;
 use function Gzhegow\Di\_di_call;
 use function Gzhegow\Di\_di_extend;
+use function Gzhegow\Di\_php_throw;
 use function Gzhegow\Di\_di_autowire;
 use function Gzhegow\Di\_di_get_lazy;
 use function Gzhegow\Di\_di_make_lazy;
 use function Gzhegow\Di\_di_bind_singleton;
-use function Gzhegow\Di\_php_throw;
 
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -43,11 +43,10 @@ set_error_handler(static function ($severity, $err, $file, $line) {
         throw new \ErrorException($err, -1, $severity, $file, $line);
     }
 });
-set_exception_handler('dd');
-// set_exception_handler(static function ($e) {
-//     var_dump($e);
-//     die();
-// });
+set_exception_handler(static function ($e) {
+    var_dump($e);
+    die();
+});
 
 
 // >>> Создаем контейнер
@@ -58,6 +57,11 @@ $di = _di();
 // $di = $di::getInstance();
 // $di::setInstance(new Di());
 
+// >>> Ставим режим работы контейнера
+$di->setSettings([
+    'injectorResolveUseTake' => true, // > будет использовать take(), то есть при незарегистированных зависимостях создаст новые экземпляры и передаст их в конструктор (test/staging)
+    // 'injectorResolveUseTake' => false, // > будет использовать get(), а значит при незарегистированных зависимостях выбросит исключение (production)
+]);
 
 // >>> Настраиваем кеш для рефлексии функций и конструкторов
 $cacheDir = __DIR__ . '/var/cache';
@@ -92,14 +96,11 @@ $di->setCacheSettings([
 
 
 // >>> Так можно очистить кеш принудительно (обычно для этого делают консольный скрипт и запускают вручную или кроном, но если использовать symfony/cache можно и просто установить TTL - время устаревания)
+print_r('Clearing cache...' . PHP_EOL);
 $di->clearCache();
+print_r('Cleared.' . PHP_EOL);
+print_r(PHP_EOL);
 
-
-// >>> Можно зарегистрировать класс в контейнере (смысл только в том, что метод get() не будет выбрасывать исключение)
-// _di_bind(MyClassOneOne::class);
-
-// >>> Можно привязать на интерфейс (а значит объект сможет пройти проверки зависимостей на входе конструктора)
-// _di_bind(MyClassOneInterface::class, MyClassOneOne::class);
 
 // >>> А тут при создании класса будет использоваться фабричный метод
 $fnNewMyClassOne = static function () {
@@ -110,13 +111,20 @@ $fnNewMyClassOne = static function () {
 // _di_bind(MyClassOneInterface::class, $fnNewMyClassOne);
 
 // >>> И его результат будет сохранен как одиночка, то есть при втором вызове get()/ask() вернется тот же экземпляр
-_di_bind_singleton(MyClassOneInterface::class, $fnNewMyClassOne);
+// >>> А также зарегистрируем алиас на наш интерфейс по имени (это позволяет нам использовать сервис-локатор не создавая интерфейсы под каждую настройку зависимости)
 
-// >>> Зарегистрируем алиас на наш интерфейс по имени (если мы задаем конфигурацию в виде строк, а не в виде Class::class, мы избегаем подгрузки классов через autoloader, точнее откладываем её)
-_di_bind('one', '\Gzhegow\Di\Demo\MyClassOneInterface');
+// >>> Можно зарегистрировать класс в контейнере (смысл только в том, что метод get() не будет выбрасывать исключение)
+// _di_bind(MyClassOneOne::class);
+// >>> Можно привязать на интерфейс (а значит объект сможет пройти проверки зависимостей на входе конструктора)
+// _di_bind(MyClassOneInterface::class, MyClassOneOne::class, $isSingleton = false);
+// >>> Можно сразу указать, что созданный экземпляр будет одиночкой
+// _di_bind_singleton(MyClassOneInterface::class, MyClassOneOne::class);
+
+_di_bind_singleton(MyClassOneInterface::class, $fnNewMyClassOne);
+_di_bind('one', '\Gzhegow\Di\Demo\MyClassOneInterface'); // > Если мы задаем конфигурацию в виде строк, а не в виде Class::class, мы избегаем подгрузки классов через autoloader, точнее откладываем её
 
 // >>> Мы знаем, что сервис MyClassTwo долго выполняет __construct(), например, соединяется по сети, и нам нужно отложить его запуск до первого вызова. Регистриуем как обычно, а дальше запросим через _di_get_lazy()
-_di_bind(MyClassTwoInterface::class, MyClassTwo::class);
+_di_bind_singleton(MyClassTwoInterface::class, MyClassTwo::class);
 _di_bind('two', '\Gzhegow\Di\Demo\MyClassTwoInterface');
 
 // >>> Зарегистрируем класс как синглтон (первый вызов создаст объект, второй - вернет созданный)
@@ -125,18 +133,10 @@ _di_bind('three', '\Gzhegow\Di\Demo\MyClassThree');
 
 // >>> MyClassThree требует сервисов One и Two, а чтобы не фиксировать сигнатуру конструктора, мы добавим их с помощью Интерфейсов и Трейтов
 _di_extend(MyClassOneAwareInterface::class, static function (MyClassOneAwareInterface $aware) {
-    $one = _di_get(MyClassOneInterface::class);
-
-    $aware->setOne($one);
-
-    return $aware;
+    $aware->setOne($one = _di_get(MyClassOneInterface::class));
 });
 _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInterface $aware) {
-    $two = _di_get_lazy('two');
-
-    $aware->setTwo($two);
-
-    return $aware;
+    $aware->setTwo($two = _di_get_lazy('two'));
 });
 
 
@@ -158,22 +158,35 @@ _assert_true($three1 === $threeByAlias);
 // $two = _di_ask(MyClassTwoInterface::class, MyClassTwo::class); // > get() если зарегистрировано, NULL если не зарегистрировано
 // $two = _di_make(MyClassTwoInterface::class, [], MyClassTwo::class); // > всегда новый экземпляр с параметрами
 // $two = _di_take(MyClassTwoInterface::class, [], MyClassTwo::class); // > get() если зарегистрировано, make() если не зарегистрировано
-print_r('');
+print_r(PHP_EOL);
 
 
 // >>> Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
 // >>> В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
 print_r('Case2:' . PHP_EOL);
+//
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
-$two = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
-var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
+//
+$two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class, [ 'hello' => 'User' ]);
+$two2 = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
+$two3 = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User2' ], MyClassTwo::class);
+var_dump(get_class($two));                             // string(27) "Gzhegow\Di\Lazy\LazyService"
+var_dump(get_class($two2));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
+_assert_true(get_class($two2) === 'Gzhegow\Di\Lazy\LazyService');
 //
 // >>> При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
-echo 'MyClassB загружается (3 секунды)...' . PHP_EOL; // MyClassB загружается (3 секунды)...
-$two->do();                                           // Hello, [ User ] !
-print_r('');
+echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;  // MyClassB загружается (3 секунды)...
+$two->do();                                            // Hello, [ User ] !
+$two2->do();                                           // Hello, [ User2 ] !
+_assert_true($two !== $two2);
+_assert_true($two->instance === $two2->instance);
+echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;  // MyClassB загружается (3 секунды)...
+$two3->do();                                           // Hello, [ User2 ] !
+_assert_true($two !== $two3);
+_assert_true($two->instance !== $two3->instance);
+print_r(PHP_EOL);
 
 
 // >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали"
@@ -184,22 +197,18 @@ $four = new MyClassFour();
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
 _di_autowire($four);
 //
-var_dump(get_class($four));                           // string(27) "Gzhegow\Di\Demo\MyClassFour"
-var_dump(get_class($four->one));                      // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
+var_dump(get_class($four));                            // string(27) "Gzhegow\Di\Demo\MyClassFour"
+var_dump(get_class($four->one));                       // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
 _assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
 _assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
 $four2 = new MyClassFour();
 _di_autowire($four2);
 _assert_true($four->one === $four2->one);              // > зависимость по интерфейсу, зарегистрированная как одиночка, будет равна в двух разных экземплярах
-print_r('');
+print_r(PHP_EOL);
 
 
 // >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали, и который имеет зависимости, которые мы тоже не регистрировали"
 print_r('Case4:' . PHP_EOL);
-$di->setSettings([
-    'injectorResolveUseTake' => true, // > будет использовать take(), то есть при незарегистированных зависимостях создаст новые экземпляры по классу
-    // 'injectorResolveUseTake' => false, // > будет использовать get(), а значит при незарегистированных зависимостях выбросит исключение
-]);
 $five = new MyClassFive();
 //
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
@@ -212,7 +221,7 @@ _assert_true(get_class($five->four) === 'Gzhegow\Di\Demo\MyClassFour');
 $five2 = new MyClassFive();
 _di_autowire($five2);
 _assert_true($five->four !== $five2->four); // > зависимость по классу, ранее не зарегистрированная, получит два разных экземпляра
-print_r('');
+print_r(PHP_EOL);
 
 
 // >>> Еще пример. "Вызовем функцию, подбросив в неё зависимости"
@@ -222,7 +231,10 @@ $result = _di_call(static function (MyClassThree $three) {
 });
 var_dump($result); // string(28) "Gzhegow\Di\Demo\MyClassThree"
 _assert_true($result === 'Gzhegow\Di\Demo\MyClassThree');
+print_r(PHP_EOL);
 
 
 // >>> Теперь сохраним кеш сделанной за скрипт рефлексии для следующего раза
+print_r('Saving cache...' . PHP_EOL);
 $di->flushCache();
+print_r('Saved.');

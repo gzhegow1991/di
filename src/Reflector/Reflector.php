@@ -530,7 +530,9 @@ class Reflector implements ReflectorInterface
                 $rfParamsResolved[ $i ] = [ $rpName, $rtList, $rtTree, $rpIsNullable ];
             }
 
-            $rfReturnResolved = $this->resolveReflectionType($rfReturn);
+            $rfReturnResolved = $rfReturn
+                ? $this->resolveReflectionType($rfReturn)
+                : null;
 
             $result = [];
             $result[ 'name' ] = $rfName;

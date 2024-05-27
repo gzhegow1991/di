@@ -13,13 +13,13 @@ use function Gzhegow\Di\_php_dump;
 class Injector implements InjectorInterface
 {
     const BIND_TYPE_ALIAS    = 'alias';
-    const BIND_TYPE_STRUCT   = 'struct';
+    const BIND_TYPE_CLASS    = 'class';
     const BIND_TYPE_FACTORY  = 'factory';
     const BIND_TYPE_INSTANCE = 'instance';
 
     const LIST_BIND_TYPE = [
         self::BIND_TYPE_ALIAS    => true,
-        self::BIND_TYPE_STRUCT   => true,
+        self::BIND_TYPE_CLASS    => true,
         self::BIND_TYPE_FACTORY  => true,
         self::BIND_TYPE_INSTANCE => true,
     ];
@@ -42,7 +42,7 @@ class Injector implements InjectorInterface
     /**
      * @var array<string, string>
      */
-    protected $structList = [];
+    protected $classList = [];
     /**
      * @var array<string, callable>
      */
@@ -163,18 +163,18 @@ class Injector implements InjectorInterface
         }
 
         $_id = $id->getValue();
-        $_alias = $aliasId->getValue();
+        $_aliasId = $aliasId->getValue();
 
-        if ($_id === $_alias) {
+        if ($_id === $_aliasId) {
             throw new LogicException(
                 'The `id` should be not equal to `aliasId`: '
                 . $_id
-                . ' / ' . $_alias
+                . ' / ' . $_aliasId
             );
         }
 
         $this->bindList[ $_id ] = static::BIND_TYPE_ALIAS;
-        $this->aliasList[ $_id ] = $_alias;
+        $this->aliasList[ $_id ] = $_aliasId;
 
         $_id = $id->getValue();
 
@@ -185,7 +185,7 @@ class Injector implements InjectorInterface
         return $this;
     }
 
-    public function bindItemStruct(Id $id, Id $structId, bool $isSingleton = false) // : static
+    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false) // : static
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -194,16 +194,24 @@ class Injector implements InjectorInterface
         }
 
         $_id = $id->getValue();
-        $_structId = $structId->getValue();
+        $_classId = $classId->getValue();
 
-        if (! $structId->isStruct()) {
+        if ($_id !== $_classId) {
             throw new LogicException(
-                'The `structId` should be existing class or interface: ' . $_structId
+                'The `id` should be equal to `classId`: '
+                . $_id
+                . ' / ' . $_classId
             );
         }
 
-        $this->bindList[ $_id ] = static::BIND_TYPE_STRUCT;
-        $this->structList[ $_id ] = $_structId;
+        if (! $classId->isClass()) {
+            throw new LogicException(
+                'The `classId` value should be valid class: ' . $_classId
+            );
+        }
+
+        $this->bindList[ $_id ] = static::BIND_TYPE_CLASS;
+        $this->classList[ $_id ] = $_classId;
 
         $_id = $id->getValue();
 
@@ -214,15 +222,13 @@ class Injector implements InjectorInterface
         return $this;
     }
 
-    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = null) // : static
+    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false) // : static
     {
         if ($this->has($id)) {
             throw new RuntimeException(
                 'Dependency already exists: ' . $id
             );
         }
-
-        $isSingleton = $isSingleton ?? false;
 
         $_id = $id->getValue();
 
@@ -238,15 +244,13 @@ class Injector implements InjectorInterface
         return $this;
     }
 
-    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = null) // : static
+    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false) // : static
     {
         if ($this->has($id)) {
             throw new RuntimeException(
                 'Dependency already exists: ' . $id
             );
         }
-
-        $isSingleton = $isSingleton ?? false;
 
         $_id = $id->getValue();
 
@@ -263,7 +267,7 @@ class Injector implements InjectorInterface
     }
 
 
-    public function bindItem(Id $id, $mixed = null, bool $isSingleton = false) // : static
+    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false) // : static
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -291,10 +295,10 @@ class Injector implements InjectorInterface
 
                 break;
 
-            case static::BIND_TYPE_STRUCT:
-                $structId = Id::from($mixed);
+            case static::BIND_TYPE_CLASS:
+                $classId = Id::from($mixed);
 
-                $this->bindItemStruct($id, $structId, $isSingleton);
+                $this->bindItemClass($id, $classId, $isSingleton);
 
                 break;
 
@@ -394,10 +398,12 @@ class Injector implements InjectorInterface
 
                 $instance = $this->makeItem($resolvedId, $parametersWhenNew);
             }
+        }
 
-            if (isset($this->isSingletonIndex[ $_id ])) {
-                $this->instanceList[ $_id ] = $instance;
-            }
+        if (isset($this->isSingletonIndex[ $_id ])
+            && ! isset($this->instanceList[ $_id ])
+        ) {
+            $this->instanceList[ $_id ] = $instance;
         }
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
@@ -406,6 +412,81 @@ class Injector implements InjectorInterface
                 . $contractT
                 . ' / ' . _php_dump($instance)
             );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object
+    {
+        $id = Id::from($id);
+
+        $_id = $id->getValue();
+
+        [ $bound, , $boundType ] = $resolved = $this->resolveItem($id);
+
+        if (static::BIND_TYPE_INSTANCE === $boundType) {
+            $instance = clone $bound;
+
+        } elseif (static::BIND_TYPE_CLASS === $boundType) {
+            $instance = $this->autowireConstructorArray($bound, $parameters);
+
+        } elseif (static::BIND_TYPE_FACTORY === $boundType) {
+            $instance = $this->autowireUserFuncArray($bound, $parameters);
+
+        } else {
+            throw new RuntimeException(
+                'Unknown `boundType` while making: '
+                . $boundType
+                . ' / ' . $_id
+            );
+        }
+
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+            throw new RuntimeException(
+                'Returned object should be instance of: '
+                . $contractT
+                . ' / ' . _php_dump($instance)
+            );
+        }
+
+        if (isset($this->isSingletonIndex[ $_id ])
+            && ! isset($this->instanceList[ $_id ])
+        ) {
+            $this->instanceList[ $_id ] = $instance;
+        }
+
+        $classmap = [ $_id => $_id ];
+
+        if ($id->isContract()) {
+            $classmap += class_parents($_id);
+            $classmap += class_implements($_id);
+        }
+
+        $classmap += class_parents($instance);
+        $classmap += class_implements($instance);
+
+        $intersect = array_intersect_key($this->extendList, $classmap);
+
+        if ($intersect) {
+            $callablesOrdered = [];
+
+            foreach ( $intersect as $extendClass => $callables ) {
+                $callablesOrdered += $callables;
+            }
+
+            ksort($callablesOrdered);
+
+            foreach ( $callablesOrdered as $callable ) {
+                $this->autowireUserFuncArray($callable, [ $instance ]);
+            }
         }
 
         return $instance;
@@ -435,75 +516,6 @@ class Injector implements InjectorInterface
         }
 
         return $instance;
-    }
-
-    /**
-     * @template-covariant T
-     *
-     * @param class-string<T>|null $contractT
-     *
-     * @return T
-     */
-    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object
-    {
-        $id = Id::from($id);
-
-        $_id = $id->getValue();
-
-        [ $bound, , $boundType ] = $this->resolveItem($id);
-
-        if (static::BIND_TYPE_INSTANCE === $boundType) {
-            $result = clone $bound;
-
-        } elseif (static::BIND_TYPE_STRUCT === $boundType) {
-            $result = $this->autowireConstructorArray($bound, $parameters);
-
-        } elseif (static::BIND_TYPE_FACTORY === $boundType) {
-            $result = $this->autowireUserFuncArray($bound, $parameters);
-
-        } else {
-            throw new RuntimeException(
-                'Unknown `boundType` while making: '
-                . $boundType
-                . ' / ' . $_id
-            );
-        }
-
-        $classmap = [ $_id => $_id ];
-
-        if ($id->isStruct()) {
-            $classmap += class_parents($_id);
-            $classmap += class_implements($_id);
-        }
-
-        $classmap += class_parents($result);
-        $classmap += class_implements($result);
-
-        $intersect = array_intersect_key($this->extendList, $classmap);
-
-        if ($intersect) {
-            $callablesOrdered = [];
-
-            foreach ( $intersect as $extendClass => $callables ) {
-                $callablesOrdered += $callables;
-            }
-
-            ksort($callablesOrdered);
-
-            foreach ( $callablesOrdered as $callable ) {
-                $this->autowireUserFuncArray($callable, [ $result ]);
-            }
-        }
-
-        if ($forceInstanceOf && ! is_a($result, $contractT)) {
-            throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $contractT
-                . ' / ' . _php_dump($result)
-            );
-        }
-
-        return $result;
     }
 
 
@@ -566,37 +578,35 @@ class Injector implements InjectorInterface
 
         $result = null;
 
-        if (is_callable($mixed)) {
+        if (null === $mixed) {
+            if ($id->isClass()) {
+                return [ $id, static::BIND_TYPE_CLASS ];
+            }
+
+        } elseif (is_callable($mixed)) {
             $fnFactory = $mixed;
 
             $result = [ $fnFactory, static::BIND_TYPE_FACTORY ];
 
         } elseif (is_object($mixed)) {
-            $instance = $mixed;
+            $object = $mixed;
 
-            $result = [ $instance, static::BIND_TYPE_INSTANCE ];
+            $result = [ $object, static::BIND_TYPE_INSTANCE ];
 
-        } elseif (is_string($mixed)) {
-            $stringId = Id::tryFrom($mixed);
+        } elseif (is_string($mixed) && ($mixed !== '')) {
+            $mixedId = Id::tryFrom($mixed);
 
-            $_stringId = $stringId->getValue();
+            if ($isAlias = ($_id !== $mixedId->getValue())) {
+                $result = [ $mixedId, static::BIND_TYPE_ALIAS ];
 
-            if ($isAlias = ($_id !== $_stringId)) {
-                $result = [ $stringId, static::BIND_TYPE_ALIAS ];
-
-            } elseif ($isStruct = $stringId->isStruct()) {
-                $result = [ $stringId, static::BIND_TYPE_STRUCT ];
-            }
-
-        } elseif (null === $mixed) {
-            if ($id->isStruct()) {
-                return [ $id, static::BIND_TYPE_STRUCT ];
+            } elseif ($isClass = $mixedId->isClass()) {
+                $result = [ $mixedId, static::BIND_TYPE_CLASS ];
             }
         }
 
         if (null === $result) {
             throw new LogicException(
-                'Unable to ' . __FUNCTION__ . ': '
+                'Unable to ' . __FUNCTION__ . '. '
                 . $_id
                 . ' / ' . _php_dump($mixed)
             );
@@ -621,7 +631,7 @@ class Injector implements InjectorInterface
         $itemProperty = "{$itemType}List";
         $itemPropertyValue = $this->{$itemProperty}[ $itemId ] ?? null;
 
-        if ($isStruct = ($itemType === static::BIND_TYPE_STRUCT)) {
+        if ($isClass = ($itemType === static::BIND_TYPE_CLASS)) {
             $itemPropertyValue = $itemId;
         }
 
@@ -658,9 +668,9 @@ class Injector implements InjectorInterface
      *     3: array<string, string>
      * }
      */
-    protected function resolveStruct(Id $id) : array
+    protected function resolveClass(Id $id) : array
     {
-        [ $itemId, $itemType, $itemFullpath ] = $this->resolveStructId($id);
+        [ $itemId, $itemType, $itemFullpath ] = $this->resolveClassId($id);
 
         $itemPropertyValue = $itemId;
 
@@ -683,7 +693,7 @@ class Injector implements InjectorInterface
 
         $result = isset($this->bindList[ $_id ])
             ? $this->resolveBoundId($id)
-            : $this->resolveStructId($id);
+            : $this->resolveClassId($id);
 
         return $result;
     }
@@ -701,7 +711,8 @@ class Injector implements InjectorInterface
 
         if (! isset($this->bindList[ $_id ])) {
             throw new RuntimeException(
-                'Missing `id`: ' . $_id
+                'Unable to ' . __FUNCTION__ . '. '
+                . 'Missing `id`: ' . $_id
             );
         }
 
@@ -722,7 +733,8 @@ class Injector implements InjectorInterface
 
             if (isset($boundPath[ $boundId ])) {
                 throw new RuntimeException(
-                    'Cyclic dependency resolving detected while resolving: '
+                    'Unable to ' . __FUNCTION__ . '. '
+                    . 'Cyclic dependency resolving detected while resolving: '
                     . '[ ' . implode(' -> ', array_keys($boundPath)) . ' ]'
                 );
             }
@@ -736,12 +748,13 @@ class Injector implements InjectorInterface
             if (null === $boundType) {
                 $boundIdObject = Id::from($boundId);
 
-                if ($boundIdObject->isStruct()) {
-                    $boundType = static::BIND_TYPE_STRUCT;
+                if ($boundIdObject->isClass()) {
+                    $boundType = static::BIND_TYPE_CLASS;
 
                 } else {
                     throw new RuntimeException(
-                        'Missing `boundId` while making: '
+                        'Unable to ' . __FUNCTION__ . '. '
+                        . 'Missing `boundId` while making: '
                         . '[ ' . implode(' -> ', array_keys($boundFullpath)) . ' ]'
                     );
                 }
@@ -762,24 +775,26 @@ class Injector implements InjectorInterface
      *     2: array<string, string>
      * }
      */
-    protected function resolveStructId(Id $id) : array
+    protected function resolveClassId(Id $id) : array
     {
         $_id = $id->getValue();
 
         if (isset($this->bindList[ $_id ])) {
             throw new RuntimeException(
-                'Bind exists, it is not a struct: ' . $_id
+                'Unable to ' . __FUNCTION__ . '. '
+                . 'Bind exists, so this `id` it is not a class: ' . $_id
             );
         }
 
-        if (! $id->isStruct()) {
+        if (! $id->isClass()) {
             throw new RuntimeException(
-                'The `id` is not struct: ' . $_id
+                'Unable to ' . __FUNCTION__ . '. '
+                . 'The `id` is not a class: ' . $_id
             );
         }
 
         $itemId = $_id;
-        $itemType = static::BIND_TYPE_STRUCT;
+        $itemType = static::BIND_TYPE_CLASS;
         $itemFullpath = [ $itemId => $itemType ];
 
         $result = [ $itemId, $itemType, $itemFullpath ];

@@ -16,7 +16,15 @@ class Id
     /**
      * @var bool
      */
-    protected $isStruct;
+    protected $isClass;
+    /**
+     * @var bool
+     */
+    protected $isInterface;
+    /**
+     * @var bool
+     */
+    protected $isContract;
 
 
     private function __construct()
@@ -86,16 +94,21 @@ class Id
             return null;
         }
 
-        $isStruct = interface_exists($id) || class_exists($id);
+        $isInterface = interface_exists($id);
+        $isClass = ! $isInterface && class_exists($id);
+
+        $isContract = $isInterface || $isClass;
 
         $_id = $id;
-        if ($isStruct) {
+        if ($isContract) {
             $_id = ltrim($_id, '\\');
         }
 
         $instance->value = $_id;
 
-        $instance->isStruct = $isStruct;
+        $instance->isClass = $isClass;
+        $instance->isInterface = $isInterface;
+        $instance->isContract = $isContract;
 
         return $instance;
     }
@@ -128,8 +141,18 @@ class Id
     }
 
 
-    public function isStruct() : bool
+    public function isClass() : bool
     {
-        return $this->isStruct;
+        return $this->isClass;
+    }
+
+    public function isInterface() : bool
+    {
+        return $this->isClass;
+    }
+
+    public function isContract() : bool
+    {
+        return $this->isContract;
     }
 }

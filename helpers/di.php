@@ -10,7 +10,7 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 /**
  * @return DiInterface
  */
-function _di(DiInterface $di = null)
+function _di(DiInterface $di = null) // : DiInterface
 {
     static $instance;
 
@@ -29,53 +29,45 @@ function _di(DiInterface $di = null)
 /**
  * @param string $id
  */
-function _di_has_bound($id, Id &$result = null) : bool
+function _di_has($id, Id &$result = null) : bool
 {
     return _di()->has($id, $result);
 }
 
-/**
- * @param string $id
- */
-function _di_has_item($id, Id &$result = null) : bool
-{
-    return _di()->hasItem($id, $result);
-}
 
-
-function _di_bind($id, $mixed = null, bool $isSingleton = null)
+function _di_bind($id, $mixed = null, bool $isSingleton = null) // : static
 {
     _di()->bind($id, $mixed, $isSingleton);
 }
 
-function _di_bind_singleton($id, $mixed = null)
+function _di_bind_singleton($id, $mixed = null) // : static
 {
     _di()->bindSingleton($id, $mixed);
 }
 
 
-function _di_bind_alias($id, $aliasId, bool $isSingleton = null)
+function _di_bind_alias($id, $aliasId, bool $isSingleton = null) // : static
 {
     return _di()->bindAlias($id, $aliasId, $isSingleton);
 }
 
 /**
- * @param class-string $structId
+ * @param class-string $classId
  */
-function _di_bind_struct($id, $structId, bool $isSingleton = null)
+function _di_bind_class($id, $classId, bool $isSingleton = null) // : static
 {
-    return _di()->bindStruct($id, $structId, $isSingleton);
+    return _di()->bindClass($id, $classId, $isSingleton);
 }
 
 /**
  * @param callable $fnFactory
  */
-function _di_bind_factory($id, $fnFactory, bool $isSingleton = null)
+function _di_bind_factory($id, $fnFactory, bool $isSingleton = null) // : static
 {
     return _di()->bindFactory($id, $fnFactory, $isSingleton);
 }
 
-function _di_bind_instance($id, object $instance, bool $isSingleton = null)
+function _di_bind_instance($id, object $instance, bool $isSingleton = null) // : static
 {
     return _di()->bindInstance($id, $instance, $isSingleton);
 }
@@ -84,7 +76,7 @@ function _di_bind_instance($id, object $instance, bool $isSingleton = null)
 /**
  * @param callable $fnExtend
  */
-function _di_extend($id, $fnExtend)
+function _di_extend($id, $fnExtend) // : static
 {
     return _di()->extend($id, $fnExtend);
 }

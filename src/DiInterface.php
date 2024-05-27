@@ -55,9 +55,9 @@ interface DiInterface
     public function bindAlias($id, $aliasId, bool $isSingleton = null);
 
     /**
-     * @param class-string $structId
+     * @param class-string $classId
      */
-    public function bindStruct($id, $structId, bool $isSingleton = null);
+    public function bindClass($id, $classId, bool $isSingleton = null);
 
     /**
      * @param callable $fnFactory
@@ -100,7 +100,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
 
     /**
      * @template-covariant T
@@ -109,7 +109,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
 
 
     /**

@@ -126,7 +126,7 @@ class Di implements DiInterface
 
         $id = Id::from($id);
 
-        $this->injector->bindItem($id, $mixed, $isSingleton);
+        $this->injector->bindItemAuto($id, $mixed, $isSingleton);
 
         return $this;
     }
@@ -152,16 +152,16 @@ class Di implements DiInterface
     }
 
     /**
-     * @param class-string $structId
+     * @param class-string $classId
      */
-    public function bindStruct($id, $structId, bool $isSingleton = null) // : static
+    public function bindClass($id, $classId, bool $isSingleton = null) // : static
     {
         $isSingleton = $isSingleton ?? false;
 
         $id = Id::from($id);
-        $structId = Id::from($structId);
+        $classId = Id::from($classId);
 
-        $this->injector->bindItemStruct($id, $structId, $isSingleton);
+        $this->injector->bindItemClass($id, $classId, $isSingleton);
 
         return $this;
     }
@@ -254,15 +254,15 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
-        $parametersWhenNew = $parametersWhenNew ?? [];
+        $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
         $id = Id::from($id);
 
-        $instance = $this->injector->takeItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+        $instance = $this->injector->makeItem($id, $parameters, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -274,15 +274,15 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
     {
-        $parameters = $parameters ?? [];
+        $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
         $id = Id::from($id);
 
-        $instance = $this->injector->makeItem($id, $parameters, $contractT, $forceInstanceOf);
+        $instance = $this->injector->takeItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
 
         return $instance;
     }

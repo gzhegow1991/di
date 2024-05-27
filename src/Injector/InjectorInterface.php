@@ -30,13 +30,13 @@ interface InjectorInterface
 
     public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false);
 
-    public function bindItemStruct(Id $id, Id $structId, bool $isSingleton = false);
+    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false);
 
-    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = null);
+    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false);
 
-    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = null);
+    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false);
 
-    public function bindItem(Id $id, $mixed = null, bool $isSingleton = false);
+    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false);
 
 
     public function extendItem(Id $id, callable $fnExtend);
@@ -69,7 +69,7 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
+    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
     /**
      * @template-covariant T
@@ -78,7 +78,7 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function makeItem(Id $id, array $parameters = [], string $contractT = '', bool $forceInstanceOf = false) : object;
+    public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
 
     /**

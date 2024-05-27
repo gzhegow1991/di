@@ -31,7 +31,7 @@ function _di(DiInterface $di = null)
  */
 function _di_has_bound($id, Id &$result = null) : bool
 {
-    return _di()->hasBound($id, $result);
+    return _di()->has($id, $result);
 }
 
 /**
@@ -186,5 +186,5 @@ function _di_autowire(object $instance, array $methodArgs = null, string $method
  */
 function _di_call($fn, array $args = null) // : mixed
 {
-    return _di()->call($fn, $args);
+    return _di()->callUserFuncArray($fn, $args);
 }

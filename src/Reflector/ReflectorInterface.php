@@ -25,7 +25,12 @@ interface ReflectorInterface
      * @noinspection PhpUndefinedNamespaceInspection
      * @noinspection PhpUndefinedClassInspection
      */
-    public function setCacheSettings(string $cacheMode = null, object $cacheAdapter = null, string $cacheDirpath = null, string $cacheFilename = null);
+    public function setCacheSettings(
+        string $cacheMode = null,
+        object $cacheAdapter = null,
+        string $cacheDirpath = null,
+        string $cacheFilename = null
+    );
 
 
     /**

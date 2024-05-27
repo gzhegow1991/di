@@ -12,19 +12,6 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 class Di implements DiInterface
 {
-    const BIND_TYPE_ALIAS    = 'alias';
-    const BIND_TYPE_STRUCT   = 'struct';
-    const BIND_TYPE_FACTORY  = 'factory';
-    const BIND_TYPE_INSTANCE = 'instance';
-
-    const LIST_BIND_TYPE = [
-        self::BIND_TYPE_ALIAS    => true,
-        self::BIND_TYPE_STRUCT   => true,
-        self::BIND_TYPE_FACTORY  => true,
-        self::BIND_TYPE_INSTANCE => true,
-    ];
-
-
     /**
      * @var DiFactoryInterface
      */
@@ -48,6 +35,23 @@ class Di implements DiInterface
         $this->factory = $factory;
         $this->injector = $injector;
         $this->reflector = $reflector;
+    }
+
+
+    /**
+     * @param array{
+     *     injectorResolveUseTake: string|null,
+     * }|null $settings
+     */
+    public function setSettings(array $settings = null) // : static
+    {
+        $resolveUseTake = $settings[ 'injectorResolveUseTake' ] ?? $settings[ 0 ] ?? null;
+
+        $this->injector->setSettings(
+            $resolveUseTake
+        );
+
+        return $this;
     }
 
 
@@ -108,19 +112,9 @@ class Di implements DiInterface
     /**
      * @param string $id
      */
-    public function hasBound($id, Id &$result = null) : bool
+    public function has($id, Id &$result = null) : bool
     {
-        $status = $this->injector->hasBound($id, $result);
-
-        return $status;
-    }
-
-    /**
-     * @param string $id
-     */
-    public function hasItem($id, Id &$result = null) : bool
-    {
-        $status = $this->injector->hasItem($id, $result);
+        $status = $this->injector->has($id, $result);
 
         return $status;
     }
@@ -358,11 +352,11 @@ class Di implements DiInterface
      *
      * @return mixed
      */
-    public function call($fn, array $args = null) // : mixed
+    public function callUserFuncArray($fn, array $args = null) // : mixed
     {
         $args = $args ?? [];
 
-        $result = $this->injector->autowireFunctionCall($fn, $args);
+        $result = $this->injector->autowireUserFuncArray($fn, $args);
 
         return $result;
     }

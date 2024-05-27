@@ -27,7 +27,7 @@ class ContainerPsr implements ContainerPsrInterface
 
     public function has(string $id) : bool
     {
-        return $this->di->hasBound($id);
+        return $this->di->has($id);
     }
 
     public function get(string $id) // : mixed

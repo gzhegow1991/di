@@ -12,6 +12,13 @@ interface DiInterface
 {
     /**
      * @param array{
+     *     injectorResolveUseTake: string|null,
+     * }|null $settings
+     */
+    public function setSettings(array $settings = null); // : static
+
+    /**
+     * @param array{
      *     reflectorCacheMode: string|null,
      *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
      *     reflectorCacheDirpath: string|null,
@@ -37,12 +44,7 @@ interface DiInterface
     /**
      * @param string $id
      */
-    public function hasBound($id, Id &$result = null) : bool;
-
-    /**
-     * @param string $id
-     */
-    public function hasItem($id, Id &$result = null) : bool;
+    public function has($id, Id &$result = null) : bool;
 
 
     public function bind($id, $mixed = null, bool $isSingleton = null);
@@ -146,5 +148,5 @@ interface DiInterface
      *
      * @return mixed
      */
-    public function call($fn, array $args = null);
+    public function callUserFuncArray($fn, array $args = null);
 }

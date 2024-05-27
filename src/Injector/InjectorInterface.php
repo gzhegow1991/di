@@ -12,6 +12,11 @@ interface InjectorInterface
     public function getReflector() : ReflectorInterface;
 
 
+    public function setSettings(
+        bool $resolveUseTake = null
+    ); // : static
+
+
     /**
      * @param static $di
      *
@@ -20,15 +25,8 @@ interface InjectorInterface
     public function merge($di);
 
 
-    public function hasBound($id, Id &$result = null) : bool;
+    public function has($id, Id &$result = null) : bool;
 
-    public function hasItem($id, Id &$result = null) : bool;
-
-
-    /**
-     * @param callable|object|array|class-string $mixed
-     */
-    public function bindItemOfType(string $type, Id $id, $mixed = null, bool $isSingleton = false) : void;
 
     public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false);
 
@@ -41,7 +39,7 @@ interface InjectorInterface
     public function bindItem(Id $id, $mixed = null, bool $isSingleton = false);
 
 
-    public function extendItem(Id $id, callable $fnExtend) : void;
+    public function extendItem(Id $id, callable $fnExtend);
 
 
     /**
@@ -93,7 +91,7 @@ interface InjectorInterface
     public function autowireItem(object $instance, array $methodArgs = [], string $methodName = '') : object;
 
 
-    public function autowireFunctionCall(callable $fn, array $args = []);
+    public function autowireUserFuncArray(callable $fn, array $args = []);
 
     /**
      * @template-covariant T
@@ -102,5 +100,5 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function autowireClassConstructor(string $class, array $parameters = []) : object;
+    public function autowireConstructorArray(string $class, array $parameters = []) : object;
 }

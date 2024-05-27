@@ -9,6 +9,7 @@ use Gzhegow\Di\Demo\MyClassOneInterface;
 use Gzhegow\Di\Demo\MyClassTwoInterface;
 use Gzhegow\Di\Demo\MyClassOneAwareInterface;
 use Gzhegow\Di\Demo\MyClassTwoAwareInterface;
+use Gzhegow\Di\Demo\MyClassFive;
 use function Gzhegow\Di\_di;
 use function Gzhegow\Di\_di_get;
 use function Gzhegow\Di\_di_bind;
@@ -140,49 +141,82 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 
 
 // >>> Пример. "Дай сервис c заполненными зависимостями"
+print_r('Case1:' . PHP_EOL);
 $three = _di_get(MyClassThree::class);
 var_dump(get_class($three));                          // string(28) "Gzhegow\Di\Demo\MyClassThree"
 _assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
-
-
+//
 // >>> Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
 $three1 = _di_get(MyClassThree::class);
 $three2 = _di_get(MyClassThree::class);
 $threeByAlias = _di_get('three');
 _assert_true($three1 === $three2);
 _assert_true($three1 === $threeByAlias);
-
+//
 // >>> Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
 // $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров, бросит исключение, если не зарегистрировано в контейнере
 // $two = _di_ask(MyClassTwoInterface::class, MyClassTwo::class); // > get() если зарегистрировано, NULL если не зарегистрировано
 // $two = _di_make(MyClassTwoInterface::class, [], MyClassTwo::class); // > всегда новый экземпляр с параметрами
 // $two = _di_take(MyClassTwoInterface::class, [], MyClassTwo::class); // > get() если зарегистрировано, make() если не зарегистрировано
+print_r('');
 
 
 // >>> Ранее мы говорили, что этот сервис слишком долго выполняет конструктор. Запросим его как ленивый. При этом подстановка в аргументы конструктора конечно будет невозможна, но как сервис-локатор - удобная вещь!
 // >>> В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
+print_r('Case2:' . PHP_EOL);
 // $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 // $two = _di_make_lazy(MyClassTwoInterface::class, [], MyClassTwo::class);
 $two = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User' ], MyClassTwo::class);
 var_dump(get_class($two));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
 _assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
-
+//
 // >>> При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
 echo 'MyClassB загружается (3 секунды)...' . PHP_EOL; // MyClassB загружается (3 секунды)...
 $two->do();                                           // Hello, [ User ] !
+print_r('');
 
 
-// >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали" - вызовет функцию на уже существующем объекте
+// >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали"
+print_r('Case3:' . PHP_EOL);
 $four = new MyClassFour();
+//
+// > вызовет функцию на уже существующем объекте
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
 _di_autowire($four);
+//
 var_dump(get_class($four));                           // string(27) "Gzhegow\Di\Demo\MyClassFour"
 var_dump(get_class($four->one));                      // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
 _assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
 _assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
+$four2 = new MyClassFour();
+_di_autowire($four2);
+_assert_true($four->one === $four2->one);              // > зависимость по интерфейсу, зарегистрированная как одиночка, будет равна в двух разных экземплярах
+print_r('');
+
+
+// >>> Еще пример. "Дозаполним аргументы уже существующего объекта, который мы не регистрировали, и который имеет зависимости, которые мы тоже не регистрировали"
+print_r('Case4:' . PHP_EOL);
+$di->setSettings([
+    'injectorResolveUseTake' => true, // > будет использовать take(), то есть при незарегистированных зависимостях создаст новые экземпляры по классу
+    // 'injectorResolveUseTake' => false, // > будет использовать get(), а значит при незарегистированных зависимостях выбросит исключение
+]);
+$five = new MyClassFive();
+//
+// _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
+_di_autowire($five);
+//
+var_dump(get_class($five));                            // string(27) "Gzhegow\Di\Demo\MyClassFive"
+var_dump(get_class($five->four));                      // string(27) "Gzhegow\Di\Demo\MyClassFour"
+_assert_true(get_class($five) === 'Gzhegow\Di\Demo\MyClassFive');
+_assert_true(get_class($five->four) === 'Gzhegow\Di\Demo\MyClassFour');
+$five2 = new MyClassFive();
+_di_autowire($five2);
+_assert_true($five->four !== $five2->four); // > зависимость по классу, ранее не зарегистрированная, получит два разных экземпляра
+print_r('');
 
 
 // >>> Еще пример. "Вызовем функцию, подбросив в неё зависимости"
+print_r('Case5:' . PHP_EOL);
 $result = _di_call(static function (MyClassThree $three) {
     return get_class($three);
 });

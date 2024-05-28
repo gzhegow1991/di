@@ -45,11 +45,11 @@ class Reflector implements ReflectorInterface
     /**
      * @var string
      */
-    protected $cacheDirpath;
+    protected $cacheDirpath = __DIR__ . '/../../var/cache/app.di';
     /**
      * @var string
      */
-    protected $cacheFilename = 'latest.cache';
+    protected $cacheFilename = 'reflector.cache';
 
     /**
      * @var ReflectorCacheRuntime
@@ -161,9 +161,8 @@ class Reflector implements ReflectorInterface
             } elseif ($this->cacheDirpath) {
                 $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
 
-                $status = true;
-
                 $before = error_reporting(0);
+                $status = true;
                 if (@is_file($cacheFilepath)) {
                     $status = @unlink($cacheFilepath);
                 }
@@ -209,6 +208,9 @@ class Reflector implements ReflectorInterface
                 $content = serialize($cache);
 
                 $before = error_reporting(0);
+                if (! @is_dir($this->cacheDirpath)) {
+                    @mkdir($this->cacheDirpath, 0775, true);
+                }
                 $status = @file_put_contents($cacheFilepath, $content);
                 error_reporting($before);
 
@@ -268,8 +270,8 @@ class Reflector implements ReflectorInterface
 
         $this->cacheMode = $cacheMode ?? static::CACHE_MODE_RUNTIME;
         $this->cacheAdapter = $cacheAdapter;
-        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache';
-        $this->cacheFilename = $cacheFilename ?? 'latest.cache';
+        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache/app.di';
+        $this->cacheFilename = $cacheFilename ?? 'reflector.cache';
 
         $this->resetCache();
 

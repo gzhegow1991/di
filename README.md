@@ -82,11 +82,11 @@ $di->setSettings([
 
 // >>> Настраиваем кеш для рефлексии функций и конструкторов
 $cacheDir = __DIR__ . '/var/cache';
-$cacheNamespace = 'php.reflect_cache';
+$cacheNamespace = 'app.di';
 
 // >>> Можно использовать путь к файлу, в этом случае кеш будет сделан через file_{get|put}_contents() + (un)serialize()
 $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
-$cacheFilename = "latest.cache";
+$cacheFilename = "reflector.cache";
 $di->setCacheSettings([
     // 'reflectorCacheMode'     => Reflector::CACHE_MODE_NO_CACHE, // > не использовать кеш совсем
     // 'reflectorCacheMode'     => Reflector::CACHE_MODE_RUNTIME, // > использовать только кеш памяти на время текущего скрипта

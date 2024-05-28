@@ -30,11 +30,6 @@ class Reflector implements ReflectorInterface
     protected $factory;
 
     /**
-     * @var ReflectorCacheRuntime
-     */
-    protected $cache;
-
-    /**
      * @var string
      */
     protected $cacheMode = self::CACHE_MODE_RUNTIME;
@@ -46,13 +41,6 @@ class Reflector implements ReflectorInterface
      * @noinspection PhpUndefinedClassInspection
      */
     protected $cacheAdapter;
-    /**
-     * @var object|\Psr\Cache\CacheItemInterface
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
-     */
-    protected $cacheItem;
 
     /**
      * @var string
@@ -62,6 +50,18 @@ class Reflector implements ReflectorInterface
      * @var string
      */
     protected $cacheFilename = 'latest.cache';
+
+    /**
+     * @var ReflectorCacheRuntime
+     */
+    protected $cache;
+    /**
+     * @var object|\Psr\Cache\CacheItemInterface
+     *
+     * @noinspection PhpUndefinedNamespaceInspection
+     * @noinspection PhpUndefinedClassInspection
+     */
+    protected $cacheItem;
 
 
     public function __construct(ReflectorFactoryInterface $factory)
@@ -73,6 +73,7 @@ class Reflector implements ReflectorInterface
     public function resetCache() // : static
     {
         $this->cache = null;
+        $this->cacheItem = null;
 
         return $this;
     }
@@ -269,6 +270,8 @@ class Reflector implements ReflectorInterface
         $this->cacheAdapter = $cacheAdapter;
         $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache';
         $this->cacheFilename = $cacheFilename ?? 'latest.cache';
+
+        $this->resetCache();
 
         return $this;
     }

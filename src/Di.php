@@ -87,8 +87,6 @@ class Di implements DiInterface
             $cacheFilename
         );
 
-        $this->reflector->resetCache();
-
         return $this;
     }
 

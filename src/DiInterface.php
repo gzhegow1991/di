@@ -1,4 +1,8 @@
 <?php
+/**
+ * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpUndefinedClassInspection
+ */
 
 namespace Gzhegow\Di;
 
@@ -27,9 +31,6 @@ interface DiInterface
      *     reflectorCacheDirpath: string|null,
      *     reflectorCacheFilename: string|null,
      * }|null $settings
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     public function setCacheSettings(array $settings = null);
 

@@ -1,4 +1,8 @@
 <?php
+/**
+ * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpUndefinedClassInspection
+ */
 
 namespace Gzhegow\Di\Reflector;
 
@@ -21,9 +25,6 @@ interface ReflectorInterface
      * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
      * @param string|null                                   $cacheDirpath
      * @param string|null                                   $cacheFilename
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     public function setCacheSettings(
         string $cacheMode = null,

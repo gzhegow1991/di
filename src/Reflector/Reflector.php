@@ -1,4 +1,8 @@
 <?php
+/**
+ * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpUndefinedClassInspection
+ */
 
 namespace Gzhegow\Di\Reflector;
 
@@ -36,9 +40,6 @@ class Reflector implements ReflectorInterface
 
     /**
      * @var object|\Psr\Cache\CacheItemPoolInterface
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     protected $cacheAdapter;
 
@@ -57,9 +58,6 @@ class Reflector implements ReflectorInterface
     protected $cache;
     /**
      * @var object|\Psr\Cache\CacheItemInterface
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     protected $cacheItem;
 
@@ -89,7 +87,12 @@ class Reflector implements ReflectorInterface
         if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
             if ($this->cacheAdapter) {
                 try {
-                    $cacheItem = $this->cacheAdapter->getItem(__CLASS__);
+                    try {
+                        $cacheItem = $this->cacheAdapter->getItem(__CLASS__);
+                    }
+                    catch ( \Psr\Cache\InvalidArgumentException $e ) {
+                        throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+                    }
 
                     $this->cacheItem = $cacheItem;
 
@@ -231,9 +234,6 @@ class Reflector implements ReflectorInterface
      * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
      * @param string|null                                   $cacheDirpath
      * @param string|null                                   $cacheFilename
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     public function setCacheSettings(
         string $cacheMode = null,

@@ -1,4 +1,8 @@
 <?php
+/**
+ * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpUndefinedClassInspection
+ */
 
 namespace Gzhegow\Di;
 
@@ -54,9 +58,6 @@ function _reflector_flush_cache() // : static
  *     cacheDirpath: string|null,
  *     cacheFilename: string|null,
  * }|null $settings
- *
- * @noinspection PhpUndefinedNamespaceInspection
- * @noinspection PhpUndefinedClassInspection
  */
 function _reflector_cache_settins(array $settings = null)
 {

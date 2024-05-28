@@ -1,4 +1,8 @@
 <?php
+/**
+ * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpUndefinedClassInspection
+ */
 
 namespace Gzhegow\Di;
 
@@ -69,9 +73,6 @@ class Di implements DiInterface
      *     reflectorCacheDirpath: string|null,
      *     reflectorCacheFilename: string|null,
      * }|null $settings
-     *
-     * @noinspection PhpUndefinedNamespaceInspection
-     * @noinspection PhpUndefinedClassInspection
      */
     public function setCacheSettings(array $settings = null) // : static
     {

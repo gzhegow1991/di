@@ -12,6 +12,7 @@ use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Reflector\ReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
+use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
 
 
 class Di implements DiInterface
@@ -66,6 +67,28 @@ class Di implements DiInterface
         return $this;
     }
 
+    public function loadCache(bool $readData = null) // : static
+    {
+        $this->reflector->loadCache($readData);
+
+        return $this;
+    }
+
+    public function clearCache() // : static
+    {
+        $this->reflector->clearCache();
+
+        return $this;
+    }
+
+    public function flushCache() // : static
+    {
+        $this->reflector->flushCache();
+
+        return $this;
+    }
+
+
     /**
      * @param array{
      *     reflectorCacheMode: string|null,
@@ -87,20 +110,6 @@ class Di implements DiInterface
             $cacheDirpath,
             $cacheFilename
         );
-
-        return $this;
-    }
-
-    public function clearCache() // : static
-    {
-        $this->reflector->clearCache();
-
-        return $this;
-    }
-
-    public function flushCache() // : static
-    {
-        $this->reflector->flushCache();
 
         return $this;
     }

@@ -6,14 +6,12 @@
 
 namespace Gzhegow\Di\Reflector;
 
-use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
-
 
 interface ReflectorInterface
 {
     public function resetCache();
 
-    public function loadCache(bool $readData = null) : ReflectorCacheRuntime;
+    public function loadCache(bool $readData = null);
 
     public function clearCache();
 

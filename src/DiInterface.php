@@ -19,10 +19,17 @@ interface DiInterface
      *     injectorResolveUseTake: string|null,
      * }|null $settings
      */
-    public function setSettings(array $settings = null); // : static
+    public function setSettings(array $settings = null);
 
 
-    public function resetCache(); // : static
+    public function resetCache();
+
+    public function loadCache(bool $readData = null);
+
+    public function clearCache();
+
+    public function flushCache();
+
 
     /**
      * @param array{
@@ -33,10 +40,6 @@ interface DiInterface
      * }|null $settings
      */
     public function setCacheSettings(array $settings = null);
-
-    public function clearCache();
-
-    public function flushCache();
 
 
     /**

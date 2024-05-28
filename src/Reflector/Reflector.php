@@ -76,7 +76,7 @@ class Reflector implements ReflectorInterface
         return $this;
     }
 
-    public function loadCache(bool $readData = null) : ReflectorCacheRuntime
+    public function loadCache(bool $readData = null)  // : static
     {
         $readData = $readData ?? true;
 
@@ -146,12 +146,14 @@ class Reflector implements ReflectorInterface
 
         $this->cache = $cache;
 
-        return $this->cache;
+        return $this;
     }
 
     public function clearCache() // : static
     {
-        $cache = $this->loadCache(true);
+        $this->loadCache(true);
+
+        $cache = $this->cache;
 
         $cache->reset();
 
@@ -184,7 +186,9 @@ class Reflector implements ReflectorInterface
 
     public function flushCache() // : static
     {
-        $cache = $this->loadCache();
+        $this->loadCache();
+
+        $cache = $this->cache;
 
         if ($this->cacheMode === static::CACHE_MODE_NO_CACHE) {
             $cache->reset();
@@ -323,7 +327,9 @@ class Reflector implements ReflectorInterface
             $reflectKey = get_class($object) . '::__invoke';
         }
 
-        $cache = $this->loadCache();
+        $this->loadCache();
+
+        $cache = $this->cache;
 
         if ($cache->has($reflectKey)) {
             $result = $cache->get($reflectKey);
@@ -360,7 +366,9 @@ class Reflector implements ReflectorInterface
 
         $reflectKey = $methodString;
 
-        $cache = $this->loadCache();
+        $this->loadCache();
+
+        $cache = $this->cache;
 
         if ($cache->has($reflectKey)) {
             $result = $cache->get($reflectKey);
@@ -405,7 +413,9 @@ class Reflector implements ReflectorInterface
             $reflectKey = "{$string}::__invoke";
         }
 
-        $cache = $this->loadCache();
+        $this->loadCache();
+
+        $cache = $this->cache;
 
         if ($cache->has($reflectKey)) {
             $result = $cache->get($reflectKey);
@@ -476,7 +486,9 @@ class Reflector implements ReflectorInterface
 
         $reflectKey = $class . '::__construct';
 
-        $cache = $this->loadCache();
+        $this->loadCache();
+
+        $cache = $this->cache;
 
         if ($cache->has($reflectKey)) {
             $result = $cache->get($reflectKey);

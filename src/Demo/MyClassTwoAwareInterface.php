@@ -2,7 +2,7 @@
 
 namespace Gzhegow\Di\Demo;
 
-use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\LazyService\LazyService;
 
 
 interface MyClassTwoAwareInterface

@@ -7,7 +7,7 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\LazyService\LazyService;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
@@ -89,6 +89,7 @@ interface DiInterface
      */
     public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
 
+
     /**
      * @template-covariant T
      *
@@ -138,6 +139,15 @@ interface DiInterface
      * @return LazyService<T>|T
      */
     public function makeLazy($id, array $parameters = null, string $contractT = null);
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $contractT
+     *
+     * @return LazyService<T>|T
+     */
+    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
 
     /**

@@ -7,12 +7,13 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\LazyService\LazyService;
+use Gzhegow\Di\LazyService\LazyServiceFactory;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Reflector\ReflectorInterface;
+use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
-use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
 
 
 class Di implements DiInterface
@@ -30,16 +31,25 @@ class Di implements DiInterface
      */
     protected $reflector;
 
+    /**
+     * @var LazyServiceFactoryInterface
+     */
+    protected $lazyServiceFactory;
+
 
     public function __construct(
         DiFactoryInterface $factory,
         InjectorInterface $injector,
-        ReflectorInterface $reflector
+        ReflectorInterface $reflector,
+        //
+        LazyServiceFactory $lazyServiceFactory = null
     )
     {
         $this->factory = $factory;
         $this->injector = $injector;
         $this->reflector = $reflector;
+
+        $this->lazyServiceFactory = $lazyServiceFactory ?? new LazyServiceFactory($this);
     }
 
 
@@ -242,6 +252,7 @@ class Di implements DiInterface
         return $instance;
     }
 
+
     /**
      * @template-covariant T
      *
@@ -345,6 +356,25 @@ class Di implements DiInterface
         return $lazyService;
     }
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $contractT
+     *
+     * @return LazyService<T>|T
+     */
+    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    {
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
+
+        $id = Id::from($id);
+
+        $lazyService = $this->takeItemLazy($id, $parametersWhenNew, $contractT);
+
+        return $lazyService;
+    }
+
 
     /**
      * @template T
@@ -404,7 +434,7 @@ class Di implements DiInterface
      */
     protected function getItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : LazyService
     {
-        $lazyService = $this->factory->newLazyServiceGet($id, $parametersWhenNew);
+        $lazyService = $this->lazyServiceFactory->newLazyServiceGet($id, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -420,7 +450,23 @@ class Di implements DiInterface
      */
     protected function makeItemLazy(Id $id, array $parameters = [], string $contractT = '') : LazyService
     {
-        $lazyService = $this->factory->newLazyServiceMake($id, $parameters);
+        $lazyService = $this->lazyServiceFactory->newLazyServiceMake($id, $parameters);
+
+        return $lazyService;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $contractT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function takeItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
+    {
+        $lazyService = $this->lazyServiceFactory->newLazyServiceTake($id, $parametersWhenNew);
 
         return $lazyService;
     }

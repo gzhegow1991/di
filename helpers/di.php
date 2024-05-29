@@ -3,7 +3,7 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\Lazy\LazyService;
+use Gzhegow\Di\LazyService\LazyService;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 

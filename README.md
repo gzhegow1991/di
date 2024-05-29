@@ -188,10 +188,10 @@ print_r('Case2:' . PHP_EOL);
 $two = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class, [ 'hello' => 'User' ]);
 $two2 = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 $two3 = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User2' ], MyClassTwo::class);
-var_dump(get_class($two));                             // string(27) "Gzhegow\Di\Lazy\LazyService"
-var_dump(get_class($two2));                            // string(27) "Gzhegow\Di\Lazy\LazyService"
-_assert_true(get_class($two) === 'Gzhegow\Di\Lazy\LazyService');
-_assert_true(get_class($two2) === 'Gzhegow\Di\Lazy\LazyService');
+var_dump(get_class($two));                             // string(34) "Gzhegow\Di\LazyService\LazyService"
+var_dump(get_class($two2));                            // string(34) "Gzhegow\Di\LazyService\LazyService"
+_assert_true(get_class($two) === 'Gzhegow\Di\LazyService\LazyService');
+_assert_true(get_class($two2) === 'Gzhegow\Di\LazyService\LazyService');
 //
 // >>> При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
 echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;  // MyClassB загружается (3 секунды)...

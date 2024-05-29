@@ -51,6 +51,7 @@ interface InjectorInterface
      */
     public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : ?object;
 
+
     /**
      * @template-covariant T
      *

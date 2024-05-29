@@ -1,6 +1,6 @@
 <?php
 
-namespace Gzhegow\Di\Lazy;
+namespace Gzhegow\Di\LazyService;
 
 use Gzhegow\Di\Struct\Id;
 
@@ -41,7 +41,10 @@ class LazyService
     public function __call($name, $arguments)
     {
         if (null === $this->instance) {
-            $this->instance = call_user_func($this->fnFactory, $this->id, $this->fnFactoryArguments);
+            $this->instance = call_user_func(
+                $this->fnFactory,
+                $this->id, $this->fnFactoryArguments
+            );
 
             unset($this->fnFactory);
             unset($this->fnFactoryArguments);

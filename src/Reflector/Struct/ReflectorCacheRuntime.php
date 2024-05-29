@@ -10,7 +10,7 @@ class ReflectorCacheRuntime implements \Serializable
     /**
      * @var array<string, array>
      */
-    protected $items = [];
+    protected $reflectResultDict = [];
 
     /**
      * @var bool
@@ -23,7 +23,7 @@ class ReflectorCacheRuntime implements \Serializable
      */
     public function reset() // : static
     {
-        $this->items = [];
+        $this->reflectResultDict = [];
 
         $this->isChanged = false;
 
@@ -37,22 +37,22 @@ class ReflectorCacheRuntime implements \Serializable
     }
 
 
-    public function has(string $key, array &$result = null) : bool
+    public function hasReflectResult(string $reflectKey, array &$result = null) : bool
     {
         $result = null;
 
-        $status = array_key_exists($key, $this->items);
+        $status = array_key_exists($reflectKey, $this->reflectResultDict);
 
         if ($status) {
-            $result = $this->items[ $key ];
+            $result = $this->reflectResultDict[ $reflectKey ];
         }
 
         return $status;
     }
 
-    public function get(string $key, array $fallback = []) : array
+    public function getReflectResult(string $reflectKey, array $fallback = []) : array
     {
-        $status = $this->has($key, $result);
+        $status = $this->hasReflectResult($reflectKey, $result);
 
         if (! $status) {
             if ($fallback) {
@@ -62,7 +62,7 @@ class ReflectorCacheRuntime implements \Serializable
             }
 
             throw new RuntimeException(
-                'Missing cache key: ' . $key
+                'Missing cache key: ' . $reflectKey
             );
         }
 
@@ -73,15 +73,15 @@ class ReflectorCacheRuntime implements \Serializable
     /**
      * @return static
      */
-    public function set(string $reflectKey, array $reflectResult) // : static
+    public function setReflectResult(string $reflectKey, array $reflectResult) // : static
     {
-        if (array_key_exists($reflectKey, $this->items)) {
+        if (array_key_exists($reflectKey, $this->reflectResultDict)) {
             throw new RuntimeException(
                 'Cache key already exists: ' . $reflectKey
             );
         }
 
-        $this->items[ $reflectKey ] = $reflectResult;
+        $this->reflectResultDict[ $reflectKey ] = $reflectResult;
 
         $this->isChanged = true;
 
@@ -91,12 +91,14 @@ class ReflectorCacheRuntime implements \Serializable
 
     public function __serialize() : array
     {
-        return [ 'items' => $this->items ];
+        return [
+            'reflectResultDict' => $this->reflectResultDict,
+        ];
     }
 
     public function __unserialize(array $data) : void
     {
-        $this->items = $data[ 'items' ];
+        $this->reflectResultDict = $data[ 'reflectResultDict' ];
     }
 
     public function serialize()

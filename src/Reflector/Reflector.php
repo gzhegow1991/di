@@ -331,8 +331,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->has($reflectKey)) {
-            $result = $cache->get($reflectKey);
+        if ($cache->hasReflectResult($reflectKey)) {
+            $result = $cache->getReflectResult($reflectKey);
 
         } else {
             if ($isClosure) {
@@ -350,7 +350,7 @@ class Reflector implements ReflectorInterface
                 $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->set($reflectKey, $result);
+            $cache->setReflectResult($reflectKey, $result);
         }
 
         return $result;
@@ -370,8 +370,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->has($reflectKey)) {
-            $result = $cache->get($reflectKey);
+        if ($cache->hasReflectResult($reflectKey)) {
+            $result = $cache->getReflectResult($reflectKey);
 
         } else {
             try {
@@ -383,7 +383,7 @@ class Reflector implements ReflectorInterface
 
             $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
-            $cache->set($reflectKey, $result);
+            $cache->setReflectResult($reflectKey, $result);
         }
 
         return $result;
@@ -417,8 +417,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->has($reflectKey)) {
-            $result = $cache->get($reflectKey);
+        if ($cache->hasReflectResult($reflectKey)) {
+            $result = $cache->getReflectResult($reflectKey);
 
         } else {
             if ($isFunction) {
@@ -443,7 +443,7 @@ class Reflector implements ReflectorInterface
                 $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->set($reflectKey, $result);
+            $cache->setReflectResult($reflectKey, $result);
         }
 
         return $result;
@@ -490,8 +490,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->has($reflectKey)) {
-            $result = $cache->get($reflectKey);
+        if ($cache->hasReflectResult($reflectKey)) {
+            $result = $cache->getReflectResult($reflectKey);
 
         } else {
             try {
@@ -505,7 +505,7 @@ class Reflector implements ReflectorInterface
 
             $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
-            $cache->set($reflectKey, $result);
+            $cache->setReflectResult($reflectKey, $result);
         }
 
         return $result;

@@ -1,5 +1,6 @@
 <?php
 
+use Gzhegow\Di\Lib;
 use Gzhegow\Di\Demo\MyClassTwo;
 use Gzhegow\Di\Demo\MyClassFour;
 use Gzhegow\Di\Demo\MyClassFive;
@@ -16,7 +17,6 @@ use function Gzhegow\Di\_di_bind;
 use function Gzhegow\Di\_di_make;
 use function Gzhegow\Di\_di_call;
 use function Gzhegow\Di\_di_extend;
-use function Gzhegow\Di\_php_throw;
 use function Gzhegow\Di\_di_autowire;
 use function Gzhegow\Di\_di_get_lazy;
 use function Gzhegow\Di\_di_make_lazy;
@@ -25,12 +25,9 @@ use function Gzhegow\Di\_di_bind_singleton;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-function _assert_true(bool $bool, ...$errors)
-{
-    if (! $bool) {
-        throw _php_throw(...$errors);
-    }
-}
+// > подключение файлов хелперов не обязательно (используется в демонстрационных целях)
+require_once __DIR__ . '/helpers/di.example.php';
+require_once __DIR__ . '/helpers/reflector.example.php';
 
 
 // >>> Настраиваем PHP
@@ -44,7 +41,10 @@ set_error_handler(static function ($severity, $err, $file, $line) {
     }
 });
 set_exception_handler(static function ($e) {
-    var_dump($e);
+    var_dump(Lib::php_dump($e));
+    var_dump($e->getMessage());
+    var_dump(($e->getFile() ?? '{file}') . ': ' . ($e->getLine() ?? '{line}'));
+
     die();
 });
 
@@ -144,14 +144,14 @@ _di_extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInte
 print_r('Case1:' . PHP_EOL);
 $three = _di_get(MyClassThree::class);
 var_dump(get_class($three));                          // string(28) "Gzhegow\Di\Demo\MyClassThree"
-_assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
+Lib::assert_true(get_class($three) === 'Gzhegow\Di\Demo\MyClassThree');
 //
 // >>> Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
 $three1 = _di_get(MyClassThree::class);
 $three2 = _di_get(MyClassThree::class);
 $threeByAlias = _di_get('three');
-_assert_true($three1 === $three2);
-_assert_true($three1 === $threeByAlias);
+Lib::assert_true($three1 === $three2);
+Lib::assert_true($three1 === $threeByAlias);
 //
 // >>> Еще можно использовать синтаксис указывая выходной тип, чтобы PHPStorm корректно работал с подсказками ("генерики")
 // $two = _di_get(MyClassTwoInterface::class, MyClassTwo::class); // > без параметров, бросит исключение, если не зарегистрировано в контейнере
@@ -173,19 +173,19 @@ $two2 = _di_get_lazy(MyClassTwoInterface::class, MyClassTwo::class);
 $two3 = _di_make_lazy(MyClassTwoInterface::class, [ 'hello' => 'User2' ], MyClassTwo::class);
 var_dump(get_class($two));                             // string(34) "Gzhegow\Di\LazyService\LazyService"
 var_dump(get_class($two2));                            // string(34) "Gzhegow\Di\LazyService\LazyService"
-_assert_true(get_class($two) === 'Gzhegow\Di\LazyService\LazyService');
-_assert_true(get_class($two2) === 'Gzhegow\Di\LazyService\LazyService');
+Lib::assert_true(get_class($two) === 'Gzhegow\Di\LazyService\LazyService');
+Lib::assert_true(get_class($two2) === 'Gzhegow\Di\LazyService\LazyService');
 //
 // >>> При вызове первого метода объект внутри LazyService будет создан с аргументами, что указали в __configure() или без них (только зависимости), если не указали
 echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;  // MyClassB загружается (3 секунды)...
 $two->do();                                            // Hello, [ User ] !
 $two2->do();                                           // Hello, [ User2 ] !
-_assert_true($two !== $two2);
-_assert_true($two->instance === $two2->instance);
+Lib::assert_true($two !== $two2);
+Lib::assert_true($two->instance === $two2->instance);
 echo 'MyClassB загружается (3 секунды)...' . PHP_EOL;  // MyClassB загружается (3 секунды)...
 $two3->do();                                           // Hello, [ User2 ] !
-_assert_true($two !== $two3);
-_assert_true($two->instance !== $two3->instance);
+Lib::assert_true($two !== $two3);
+Lib::assert_true($two->instance !== $two3->instance);
 print_r(PHP_EOL);
 
 
@@ -199,11 +199,11 @@ _di_autowire($four);
 //
 var_dump(get_class($four));                            // string(27) "Gzhegow\Di\Demo\MyClassFour"
 var_dump(get_class($four->one));                       // string(29) "Gzhegow\Di\Demo\MyClassOneOne"
-_assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
-_assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
+Lib::assert_true(get_class($four) === 'Gzhegow\Di\Demo\MyClassFour');
+Lib::assert_true(get_class($four->one) === 'Gzhegow\Di\Demo\MyClassOneOne');
 $four2 = new MyClassFour();
 _di_autowire($four2);
-_assert_true($four->one === $four2->one);              // > зависимость по интерфейсу, зарегистрированная как одиночка, будет равна в двух разных экземплярах
+Lib::assert_true($four->one === $four2->one);              // > зависимость по интерфейсу, зарегистрированная как одиночка, будет равна в двух разных экземплярах
 print_r(PHP_EOL);
 
 
@@ -214,13 +214,13 @@ $five = new MyClassFive();
 // _di_autowire($four, $customArgs = [], $customMethod = '__myCustomAutowire'); // > поддерживает несколько дополнительных аргументов
 _di_autowire($five);
 //
-var_dump(get_class($five));                            // string(27) "Gzhegow\Di\Demo\MyClassFive"
-var_dump(get_class($five->four));                      // string(27) "Gzhegow\Di\Demo\MyClassFour"
-_assert_true(get_class($five) === 'Gzhegow\Di\Demo\MyClassFive');
-_assert_true(get_class($five->four) === 'Gzhegow\Di\Demo\MyClassFour');
+var_dump(get_class($five));                                // string(27) "Gzhegow\Di\Demo\MyClassFive"
+var_dump(get_class($five->four));                          // string(27) "Gzhegow\Di\Demo\MyClassFour"
+Lib::assert_true(get_class($five) === 'Gzhegow\Di\Demo\MyClassFive');
+Lib::assert_true(get_class($five->four) === 'Gzhegow\Di\Demo\MyClassFour');
 $five2 = new MyClassFive();
 _di_autowire($five2);
-_assert_true($five->four !== $five2->four); // > зависимость по классу, ранее не зарегистрированная, получит два разных экземпляра
+Lib::assert_true($five->four !== $five2->four); // > зависимость по классу, ранее не зарегистрированная, получит два разных экземпляра
 print_r(PHP_EOL);
 
 
@@ -230,7 +230,7 @@ $result = _di_call(static function (MyClassThree $three) {
     return get_class($three);
 });
 var_dump($result); // string(28) "Gzhegow\Di\Demo\MyClassThree"
-_assert_true($result === 'Gzhegow\Di\Demo\MyClassThree');
+Lib::assert_true($result === 'Gzhegow\Di\Demo\MyClassThree');
 print_r(PHP_EOL);
 
 

@@ -69,36 +69,6 @@ class Di implements DiInterface
         return $this;
     }
 
-
-    public function resetCache() // : static
-    {
-        $this->reflector->resetCache();
-
-        return $this;
-    }
-
-    public function loadCache(bool $readData = null) // : static
-    {
-        $this->reflector->loadCache($readData);
-
-        return $this;
-    }
-
-    public function clearCache() // : static
-    {
-        $this->reflector->clearCache();
-
-        return $this;
-    }
-
-    public function flushCache() // : static
-    {
-        $this->reflector->flushCache();
-
-        return $this;
-    }
-
-
     /**
      * @param array{
      *     reflectorCacheMode: string|null,
@@ -120,6 +90,21 @@ class Di implements DiInterface
             $cacheDirpath,
             $cacheFilename
         );
+
+        return $this;
+    }
+
+
+    public function clearCache() // : static
+    {
+        $this->reflector->clearCache();
+
+        return $this;
+    }
+
+    public function flushCache() // : static
+    {
+        $this->reflector->flushCache();
 
         return $this;
     }
@@ -495,7 +480,7 @@ class Di implements DiInterface
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
                 'The `di` should be instance of: ' . static::class
-                . ' / ' . _php_dump($di)
+                . ' / ' . Lib::php_dump($di)
             );
         }
 

@@ -8,7 +8,6 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Reflector\Reflector;
 use Gzhegow\Di\Reflector\ReflectorFactory;
-use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
 
 
 /**
@@ -35,9 +34,14 @@ function _reflector_reset_cache() // : static
     return _reflector()->resetCache();
 }
 
-function _reflector_load_cache(bool $readData = null) : ReflectorCacheRuntime
+function _reflector_init_cache() // : static
 {
-    return _reflector()->loadCache($readData);
+    return _reflector()->initCache();
+}
+
+function _reflector_load_cache() // : static
+{
+    return _reflector()->loadCache();
 }
 
 function _reflector_clear_cache() // : static
@@ -59,7 +63,7 @@ function _reflector_flush_cache() // : static
  *     cacheFilename: string|null,
  * }|null $settings
  */
-function _reflector_cache_settins(array $settings = null)
+function _reflector_cache_settings(array $settings = null)
 {
     $settings = $settings ?? [];
 

@@ -2,8 +2,8 @@
 
 namespace Gzhegow\Di\Struct;
 
+use Gzhegow\Di\Lib;
 use Gzhegow\Di\Exception\LogicException;
-use function Gzhegow\Di\_php_dump;
 
 
 class Id
@@ -45,7 +45,7 @@ class Id
 
         if (null === $instance) {
             throw new LogicException(
-                'Unknown `from`: ' . _php_dump($from)
+                'Unknown `from`: ' . Lib::php_dump($from)
             );
         }
 
@@ -56,7 +56,7 @@ class Id
     {
         if (null === ($instance = static::tryFromString($string))) {
             throw new LogicException(
-                'Invalid `from`: ' . _php_dump($string)
+                'Invalid `from`: ' . Lib::php_dump($string)
             );
         }
 

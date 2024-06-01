@@ -6,13 +6,10 @@
 
 namespace Gzhegow\Di\Reflector;
 
+use Gzhegow\Di\Lib;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
-use function Gzhegow\Di\_php_dump;
-use function Gzhegow\Di\_filter_dirpath;
-use function Gzhegow\Di\_filter_filename;
-use function Gzhegow\Di\_php_method_exists;
 
 
 class Reflector implements ReflectorInterface
@@ -37,12 +34,10 @@ class Reflector implements ReflectorInterface
      * @var string
      */
     protected $cacheMode = self::CACHE_MODE_RUNTIME;
-
     /**
      * @var object|\Psr\Cache\CacheItemPoolInterface
      */
     protected $cacheAdapter;
-
     /**
      * @var string
      */
@@ -56,10 +51,11 @@ class Reflector implements ReflectorInterface
      * @var ReflectorCacheRuntime
      */
     protected $cache;
+
     /**
      * @var object|\Psr\Cache\CacheItemInterface
      */
-    protected $cacheItem;
+    protected $cacheAdapterItem;
 
 
     public function __construct(ReflectorFactoryInterface $factory)
@@ -68,38 +64,95 @@ class Reflector implements ReflectorInterface
     }
 
 
-    public function resetCache() // : static
+    /**
+     * @param string|null                                   $cacheMode
+     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
+     * @param string|null                                   $cacheDirpath
+     * @param string|null                                   $cacheFilename
+     */
+    public function setCacheSettings(
+        string $cacheMode = null,
+        object $cacheAdapter = null,
+        string $cacheDirpath = null,
+        string $cacheFilename = null
+    ) // : static
     {
-        $this->cache = null;
-        $this->cacheItem = null;
+        if ((null !== $cacheMode) && ! isset(static::LIST_CACHE_MODE[ $cacheMode ])) {
+            throw new LogicException(
+                'The `cacheMode` should be one of: ' . implode('|', array_keys(static::LIST_CACHE_MODE))
+                . ' / ' . $cacheMode
+            );
+        }
+
+        if ((null !== $cacheAdapter) && ! is_a($cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
+            throw new LogicException(
+                'The `cacheAdapter` should be instance of: ' . $class
+                . ' / ' . Lib::php_dump($cacheAdapter)
+            );
+        }
+
+        if ((null !== $cacheDirpath) && (null === Lib::filter_dirpath($cacheDirpath))) {
+            throw new LogicException(
+                'The `cacheDirpath` should be valid directory path: ' . $cacheDirpath
+            );
+        }
+
+        if ((null !== $cacheFilename) && (null === Lib::filter_filename($cacheFilename))) {
+            throw new LogicException(
+                'The `cacheFilename` should be valid filename: ' . $cacheFilename
+            );
+        }
+
+        $this->cacheMode = $cacheMode ?? static::CACHE_MODE_RUNTIME;
+        $this->cacheAdapter = $cacheAdapter;
+        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache/app.di';
+        $this->cacheFilename = $cacheFilename ?? 'reflector.cache';
+
+        $this->resetCache();
 
         return $this;
     }
 
-    public function loadCache(bool $readData = null)  // : static
-    {
-        $readData = $readData ?? true;
 
-        if ($this->cache) {
-            return $this->cache;
+    public function resetCache() // : static
+    {
+        $this->cache = null;
+        $this->cacheAdapterItem = null;
+
+        return $this;
+    }
+
+    public function initCache()  // : static
+    {
+        if ($this->cacheMode !== static::CACHE_MODE_STORAGE) return $this;
+        if (! $this->cacheAdapter) return $this;
+        if ($this->cacheAdapterItem) return $this;
+
+        try {
+            $cacheItem = $this->cacheAdapter->getItem(__CLASS__);
         }
+        catch ( \Psr\Cache\InvalidArgumentException $e ) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        $this->cacheAdapterItem = $cacheItem;
+
+        return $this;
+    }
+
+    public function loadCache() // : static
+    {
+        if ($this->cache) return $this;
+
+        $this->initCache();
+
+        $cache = null;
 
         if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
             if ($this->cacheAdapter) {
                 try {
-                    try {
-                        $cacheItem = $this->cacheAdapter->getItem(__CLASS__);
-                    }
-                    catch ( \Psr\Cache\InvalidArgumentException $e ) {
-                        throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-                    }
-
-                    $this->cacheItem = $cacheItem;
-
-                    if ($readData) {
-                        if ($cacheItem->isHit()) {
-                            $cache = $cacheItem->get();
-                        }
+                    if ($this->cacheAdapterItem->isHit()) {
+                        $cache = $this->cacheAdapterItem->get();
                     }
                 }
                 catch ( \Throwable $e ) {
@@ -111,28 +164,27 @@ class Reflector implements ReflectorInterface
             } elseif ($this->cacheDirpath) {
                 $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
 
-                $cache = null;
+                $before = error_reporting(0);
+                if (@is_file($cacheFilepath)) {
+                    if (false !== ($content = @file_get_contents($cacheFilepath))) {
+                        $cache = $content;
 
-                if ($readData) {
-                    $before = error_reporting(0);
-                    if (@is_file($cacheFilepath)) {
-                        if (false !== ($content = @file_get_contents($cacheFilepath))) {
-                            $cache = $content;
-
-                        } else {
-                            throw new RuntimeException(
-                                'Unable to read file: ' . $cacheFilepath
-                            );
-                        }
-
-                        $cache = unserialize($cache);
-
-                        if (get_class($cache) === '__PHP_Incomplete_Class') {
-                            $cache = null;
-                        }
+                    } else {
+                        throw new RuntimeException(
+                            'Unable to read file: ' . $cacheFilepath
+                        );
                     }
-                    error_reporting($before);
+
+                    $cache = $this->unserializeCacheData($cache);
+
+                    if (false === $cache) {
+                        $cache = null;
+
+                    } elseif (get_class($cache) === '__PHP_Incomplete_Class') {
+                        $cache = null;
+                    }
                 }
+                error_reporting($before);
 
                 $cache = $cache ?? $this->factory->newReflectorCacheRuntime();
 
@@ -151,11 +203,7 @@ class Reflector implements ReflectorInterface
 
     public function clearCache() // : static
     {
-        $this->loadCache(true);
-
-        $cache = $this->cache;
-
-        $cache->reset();
+        $this->resetCache();
 
         if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
             if ($this->cacheAdapter) {
@@ -203,7 +251,7 @@ class Reflector implements ReflectorInterface
 
             if ($this->cacheAdapter) {
                 $cacheAdapter = $this->cacheAdapter;
-                $cacheItem = $this->cacheItem;
+                $cacheItem = $this->cacheAdapterItem;
 
                 $cacheItem->set($cache);
 
@@ -212,7 +260,7 @@ class Reflector implements ReflectorInterface
             } elseif ($this->cacheDirpath) {
                 $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
 
-                $content = serialize($cache);
+                $content = $this->serializeCacheData($cache);
 
                 $before = error_reporting(0);
                 if (! @is_dir($this->cacheDirpath)) {
@@ -228,56 +276,6 @@ class Reflector implements ReflectorInterface
                 }
             }
         }
-
-        return $this;
-    }
-
-
-    /**
-     * @param string|null                                   $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
-     * @param string|null                                   $cacheDirpath
-     * @param string|null                                   $cacheFilename
-     */
-    public function setCacheSettings(
-        string $cacheMode = null,
-        object $cacheAdapter = null,
-        string $cacheDirpath = null,
-        string $cacheFilename = null
-    ) // : static
-    {
-        if ((null !== $cacheMode) && ! isset(static::LIST_CACHE_MODE[ $cacheMode ])) {
-            throw new LogicException(
-                'The `cacheMode` should be one of: ' . implode('|', array_keys(static::LIST_CACHE_MODE))
-                . ' / ' . $cacheMode
-            );
-        }
-
-        if ((null !== $cacheAdapter) && ! is_a($cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
-            throw new LogicException(
-                'The `cacheAdapter` should be instance of: ' . $class
-                . ' / ' . _php_dump($cacheAdapter)
-            );
-        }
-
-        if ((null !== $cacheDirpath) && (null === _filter_dirpath($cacheDirpath))) {
-            throw new LogicException(
-                'The `cacheDirpath` should be valid directory path: ' . $cacheDirpath
-            );
-        }
-
-        if ((null !== $cacheFilename) && (null === _filter_filename($cacheFilename))) {
-            throw new LogicException(
-                'The `cacheFilename` should be valid filename: ' . $cacheFilename
-            );
-        }
-
-        $this->cacheMode = $cacheMode ?? static::CACHE_MODE_RUNTIME;
-        $this->cacheAdapter = $cacheAdapter;
-        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache/app.di';
-        $this->cacheFilename = $cacheFilename ?? 'reflector.cache';
-
-        $this->resetCache();
 
         return $this;
     }
@@ -362,7 +360,7 @@ class Reflector implements ReflectorInterface
     protected function reflectArgumentsCallableArray($array) : ?array
     {
         if (! is_array($array)) return null;
-        if (! _php_method_exists($array, '', $methodArray, $methodString)) return null;
+        if (! Lib::php_method_exists($array, '', $methodArray, $methodString)) return null;
 
         $reflectKey = $methodString;
 
@@ -663,6 +661,17 @@ class Reflector implements ReflectorInterface
     }
 
 
+    protected function serializeCacheData($cacheData) // : false|string
+    {
+        return @serialize($cacheData);
+    }
+
+    protected function unserializeCacheData($cacheData) // : false|array|__PHP_Incomplete_Class
+    {
+        return @unserialize($cacheData);
+    }
+
+
     public static function getInstance() // : static
     {
         $instance = static::$instances[ static::class ];
@@ -686,7 +695,7 @@ class Reflector implements ReflectorInterface
         if (! is_a($reflector, static::class)) {
             throw new RuntimeException(
                 'The `reflector` should be instance of: ' . static::class
-                . ' / ' . _php_dump($reflector)
+                . ' / ' . Lib::php_dump($reflector)
             );
         }
 

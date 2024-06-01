@@ -2,12 +2,12 @@
 
 namespace Gzhegow\Di\Injector;
 
+use Gzhegow\Di\Lib;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Reflector\ReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
-use function Gzhegow\Di\_php_dump;
 
 
 class Injector implements InjectorInterface
@@ -110,7 +110,7 @@ class Injector implements InjectorInterface
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
                 'The `di` should be instance of: ' . static::class
-                . ' / ' . _php_dump($di)
+                . ' / ' . Lib::php_dump($di)
             );
         }
 
@@ -322,7 +322,7 @@ class Injector implements InjectorInterface
 
             default:
                 throw new LogicException(
-                    'The `mixed` should be callable|object|array|class-string: ' . _php_dump($mixed)
+                    'The `mixed` should be callable|object|array|class-string: ' . Lib::php_dump($mixed)
                 );
 
         endswitch;
@@ -362,7 +362,7 @@ class Injector implements InjectorInterface
             throw new RuntimeException(
                 'Returned object should be instance of: '
                 . $contractT
-                . ' / ' . _php_dump($instance)
+                . ' / ' . Lib::php_dump($instance)
             );
         }
 
@@ -399,7 +399,7 @@ class Injector implements InjectorInterface
                 throw new RuntimeException(
                     'Returned object should be instance of: '
                     . $contractT
-                    . ' / ' . _php_dump($instance)
+                    . ' / ' . Lib::php_dump($instance)
                 );
             }
 
@@ -438,7 +438,7 @@ class Injector implements InjectorInterface
                 throw new RuntimeException(
                     'Returned object should be instance of: '
                     . $contractT
-                    . ' / ' . _php_dump($instance)
+                    . ' / ' . Lib::php_dump($instance)
                 );
             }
 
@@ -469,7 +469,7 @@ class Injector implements InjectorInterface
             throw new RuntimeException(
                 'Returned object should be instance of: '
                 . $contractT
-                . ' / ' . _php_dump($instance)
+                . ' / ' . Lib::php_dump($instance)
             );
         }
 
@@ -501,7 +501,7 @@ class Injector implements InjectorInterface
             throw new RuntimeException(
                 'Returned object should be instance of: '
                 . $contractT
-                . ' / ' . _php_dump($instance)
+                . ' / ' . Lib::php_dump($instance)
             );
         }
 
@@ -609,7 +609,7 @@ class Injector implements InjectorInterface
             throw new LogicException(
                 'Unable to ' . __FUNCTION__ . '. '
                 . $_id
-                . ' / ' . _php_dump($mixed)
+                . ' / ' . Lib::php_dump($mixed)
             );
         }
 
@@ -830,14 +830,14 @@ class Injector implements InjectorInterface
                             throw new RuntimeException(
                                 'Resolving UNION / INTERSECT parameters is not implemented: '
                                 . "[ {$i} ] \${$argName}"
-                                . ' / ' . _php_dump($reflectable)
+                                . ' / ' . Lib::php_dump($reflectable)
                             );
 
                         } else {
                             throw new RuntimeException(
                                 'Unable to resolve parameter: '
                                 . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
-                                . ' / ' . _php_dump($reflectable)
+                                . ' / ' . Lib::php_dump($reflectable)
                             );
                         }
                     }
@@ -856,7 +856,7 @@ class Injector implements InjectorInterface
                         throw new NotFoundException(
                             'Missing bound `argReflectionTypeClass` to resolve parameter: '
                             . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
-                            . ' / ' . _php_dump($reflectable)
+                            . ' / ' . Lib::php_dump($reflectable)
                         );
                     }
                 }

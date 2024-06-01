@@ -21,16 +21,6 @@ interface DiInterface
      */
     public function setSettings(array $settings = null);
 
-
-    public function resetCache();
-
-    public function loadCache(bool $readData = null);
-
-    public function clearCache();
-
-    public function flushCache();
-
-
     /**
      * @param array{
      *     reflectorCacheMode: string|null,
@@ -40,6 +30,11 @@ interface DiInterface
      * }|null $settings
      */
     public function setCacheSettings(array $settings = null);
+
+
+    public function clearCache();
+
+    public function flushCache();
 
 
     /**

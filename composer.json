@@ -21,13 +21,7 @@
   "autoload": {
     "psr-4": {
       "Gzhegow\\Di\\": "src/"
-    },
-    "files": [
-      "helpers/assert.php",
-      "helpers/di.php",
-      "helpers/reflector.php",
-      "helpers/php.php"
-    ]
+    }
   },
 
   "config": {

@@ -11,7 +11,9 @@ interface ReflectorInterface
 {
     public function resetCache();
 
-    public function loadCache(bool $readData = null);
+    public function initCache();
+
+    public function loadCache();
 
     public function clearCache();
 

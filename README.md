@@ -18,7 +18,6 @@ composer require gzhegow/di;
 <?php
 
 use Gzhegow\Di\Lib;
-use Gzhegow\Di\Demo\MyClassTwo;
 use Gzhegow\Di\Demo\MyClassFour;
 use Gzhegow\Di\Demo\MyClassFive;
 use Gzhegow\Di\Demo\MyClassThree;
@@ -148,10 +147,11 @@ $di->extend(MyClassTwoAwareInterface::class, static function (MyClassTwoAwareInt
 // >>> Пример. "Дай сервис c заполненными зависимостями"
 print_r('Case1:' . PHP_EOL);
 //
-// $two = $di->get(MyClassTwoInterface::class, $contractT = MyClassTwo::class, $forceInstanceOf = false, $parametersWhenNew = []); // > get() бросит исключение, если не зарегистрировано в контейнере
-// $two = $di->ask(MyClassTwoInterface::class, $contractT = MyClassTwo::class, $forceInstanceOf = false, $parametersWhenNew = []); // > использует get() если зарегистрировано, NULL если не зарегистрировано
-// $two = $di->make(MyClassTwoInterface::class, $parameters = [], $contractT = MyClassTwo::class); // > всегда новый экземпляр с параметрами
-// $two = $di->take(MyClassTwoInterface::class, $parametersWhenNew = [], $contractT = MyClassTwo::class); // > get() если зарегистрировано, make() если не зарегистрировано
+// > Используя параметр $contractT можно задавать имя класса, который поймет PHPStorm как генерик и будет давать подсказки
+// $object = $di->get(MyInterface::class, $contractT = MyClass::class, $forceInstanceOf = false, $parametersWhenNew = []); // > get() бросит исключение, если не зарегистрировано в контейнере
+// $object = $di->ask(MyInterface::class, $contractT = MyClass::class, $forceInstanceOf = false, $parametersWhenNew = []); // > использует get() если зарегистрировано, NULL если не зарегистрировано
+// $object = $di->make(MyInterface::class, $parameters = [], $contractT = MyClass::class); // > всегда новый экземпляр с параметрами
+// $object = $di->take(MyInterface::class, $parametersWhenNew = [], $contractT = MyClass::class); // > get() если зарегистрировано, make() если не зарегистрировано
 //
 $three = $di->get('three');
 //
@@ -171,13 +171,13 @@ print_r(PHP_EOL);
 // >>> В PHP к сожалению нет возможности создать анонимный класс, который расширяет ("extend") имя класса, который лежит в переменной. Поэтому, к сожалению, только такие LazyService...
 print_r('Case2:' . PHP_EOL);
 //
-// $two = $di->getLazy(MyClassTwoInterface::class, $contractT = MyClassTwo::class, $parametersWhenNew = []);
-// $two = $di->makeLazy(MyClassTwoInterface::class, $parameters = [], $contractT = MyClassTwo::class);
-// $two = $di->takeLazy(MyClassTwoInterface::class, $parametersWhenNew = [], $contractT = MyClassTwo::class);
+// $object = $di->getLazy(MyInterface::class, $contractT = MyClass::class, $parametersWhenNew = []);
+// $object = $di->makeLazy(MyInterface::class, $parameters = [], $contractT = MyClass::class);
+// $object = $di->takeLazy(MyInterface::class, $parametersWhenNew = [], $contractT = MyClass::class);
 //
-$two1 = $di->getLazy('two', MyClassTwo::class, [ 'hello' => 'User1' ]);
-$two2 = $di->makeLazy('two', [ 'hello' => 'User2' ], MyClassTwo::class);   // > make создаст новый объект, но не перепишет имеющийся синглтон
-$two1Again = $di->getLazy('two', MyClassTwo::class);                       // > то есть тут мы получим $twoWithUser, а не $twoWithUser2
+$two1 = $di->getLazy('two', $contractT = null, [ 'hello' => 'User1' ]);
+$two2 = $di->makeLazy('two', [ 'hello' => 'User2' ]);                      // > make создаст новый объект, но не перепишет имеющийся синглтон
+$two1Again = $di->getLazy('two');                                          // > то есть тут мы получим $twoWithUser, а не $twoWithUser2
 //
 var_dump(get_class($two1));                                                // string(34) "Gzhegow\Di\LazyService\LazyService"
 var_dump(get_class($two2));                                                // string(34) "Gzhegow\Di\LazyService\LazyService"

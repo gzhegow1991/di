@@ -7,60 +7,28 @@
 namespace Gzhegow\Di\Reflector;
 
 use Gzhegow\Di\Lib;
-use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
-use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
 
 
 class Reflector implements ReflectorInterface
 {
-    const CACHE_MODE_RUNTIME  = 'RUNTIME';
-    const CACHE_MODE_NO_CACHE = 'NO_CACHE';
-    const CACHE_MODE_STORAGE  = 'STORAGE';
-
-    const LIST_CACHE_MODE = [
-        self::CACHE_MODE_RUNTIME  => true,
-        self::CACHE_MODE_NO_CACHE => true,
-        self::CACHE_MODE_STORAGE  => true,
-    ];
-
-
     /**
      * @var ReflectorFactoryInterface
      */
     protected $factory;
-
     /**
-     * @var string
-     */
-    protected $cacheMode = self::CACHE_MODE_RUNTIME;
-    /**
-     * @var object|\Psr\Cache\CacheItemPoolInterface
-     */
-    protected $cacheAdapter;
-    /**
-     * @var string
-     */
-    protected $cacheDirpath = __DIR__ . '/../../var/cache/app.di';
-    /**
-     * @var string
-     */
-    protected $cacheFilename = 'reflector.cache';
-
-    /**
-     * @var ReflectorCacheRuntime
+     * @var ReflectorCacheInterface
      */
     protected $cache;
 
-    /**
-     * @var object|\Psr\Cache\CacheItemInterface
-     */
-    protected $cacheAdapterItem;
 
-
-    public function __construct(ReflectorFactoryInterface $factory)
+    public function __construct(
+        ReflectorFactoryInterface $factory,
+        ReflectorCacheInterface $cache
+    )
     {
         $this->factory = $factory;
+        $this->cache = $cache;
     }
 
 
@@ -68,214 +36,51 @@ class Reflector implements ReflectorInterface
      * @param string|null                                   $cacheMode
      * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
      * @param string|null                                   $cacheDirpath
-     * @param string|null                                   $cacheFilename
+     *
+     * @return static
      */
     public function setCacheSettings(
         string $cacheMode = null,
         object $cacheAdapter = null,
-        string $cacheDirpath = null,
-        string $cacheFilename = null
+        string $cacheDirpath = null
     ) // : static
     {
-        if ((null !== $cacheMode) && ! isset(static::LIST_CACHE_MODE[ $cacheMode ])) {
-            throw new LogicException(
-                'The `cacheMode` should be one of: ' . implode('|', array_keys(static::LIST_CACHE_MODE))
-                . ' / ' . $cacheMode
-            );
-        }
-
-        if ((null !== $cacheAdapter) && ! is_a($cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
-            throw new LogicException(
-                'The `cacheAdapter` should be instance of: ' . $class
-                . ' / ' . Lib::php_dump($cacheAdapter)
-            );
-        }
-
-        if ((null !== $cacheDirpath) && (null === Lib::filter_dirpath($cacheDirpath))) {
-            throw new LogicException(
-                'The `cacheDirpath` should be valid directory path: ' . $cacheDirpath
-            );
-        }
-
-        if ((null !== $cacheFilename) && (null === Lib::filter_filename($cacheFilename))) {
-            throw new LogicException(
-                'The `cacheFilename` should be valid filename: ' . $cacheFilename
-            );
-        }
-
-        $this->cacheMode = $cacheMode ?? static::CACHE_MODE_RUNTIME;
-        $this->cacheAdapter = $cacheAdapter;
-        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache/app.di';
-        $this->cacheFilename = $cacheFilename ?? 'reflector.cache';
-
-        $this->resetCache();
+        $this->cache->setCacheSettings(
+            $cacheMode,
+            $cacheAdapter,
+            $cacheDirpath
+        );
 
         return $this;
     }
 
 
+    /**
+     * @return static
+     */
     public function resetCache() // : static
     {
-        $this->cache = null;
-        $this->cacheAdapterItem = null;
+        $this->cache->reset();
 
         return $this;
     }
 
-    public function initCache()  // : static
-    {
-        if ($this->cacheMode !== static::CACHE_MODE_STORAGE) return $this;
-        if (! $this->cacheAdapter) return $this;
-        if ($this->cacheAdapterItem) return $this;
-
-        try {
-            $cacheItem = $this->cacheAdapter->getItem(__CLASS__);
-        }
-        catch ( \Psr\Cache\InvalidArgumentException $e ) {
-            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-        }
-
-        $this->cacheAdapterItem = $cacheItem;
-
-        return $this;
-    }
-
-    public function loadCache() // : static
-    {
-        if ($this->cache) return $this;
-
-        $this->initCache();
-
-        $cache = null;
-
-        if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
-            if ($this->cacheAdapter) {
-                try {
-                    if ($this->cacheAdapterItem->isHit()) {
-                        $cache = $this->cacheAdapterItem->get();
-                    }
-                }
-                catch ( \Throwable $e ) {
-                    $cache = null;
-                }
-
-                $cache = $cache ?? $this->factory->newReflectorCacheRuntime();
-
-            } elseif ($this->cacheDirpath) {
-                $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
-
-                $before = error_reporting(0);
-                if (@is_file($cacheFilepath)) {
-                    if (false !== ($content = @file_get_contents($cacheFilepath))) {
-                        $cache = $content;
-
-                    } else {
-                        throw new RuntimeException(
-                            'Unable to read file: ' . $cacheFilepath
-                        );
-                    }
-
-                    $cache = $this->unserializeCacheData($cache);
-
-                    if (false === $cache) {
-                        $cache = null;
-
-                    } elseif (get_class($cache) === '__PHP_Incomplete_Class') {
-                        $cache = null;
-                    }
-                }
-                error_reporting($before);
-
-                $cache = $cache ?? $this->factory->newReflectorCacheRuntime();
-
-            } else {
-                $cache = $this->factory->newReflectorCacheRuntime();
-            }
-
-        } else {
-            $cache = $this->factory->newReflectorCacheRuntime();
-        }
-
-        $this->cache = $cache;
-
-        return $this;
-    }
-
+    /**
+     * @return static
+     */
     public function clearCache() // : static
     {
-        $this->resetCache();
-
-        if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
-            if ($this->cacheAdapter) {
-                $cacheAdapter = $this->cacheAdapter;
-
-                $cacheAdapter->clear();
-
-            } elseif ($this->cacheDirpath) {
-                $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
-
-                $before = error_reporting(0);
-                $status = true;
-                if (@is_file($cacheFilepath)) {
-                    $status = @unlink($cacheFilepath);
-                }
-                error_reporting($before);
-
-                if (! $status) {
-                    throw new RuntimeException(
-                        'Unable to delete file: ' . $cacheFilepath
-                    );
-                }
-            }
-        }
+        $this->cache->clear();
 
         return $this;
     }
 
+    /**
+     * @return static
+     */
     public function flushCache() // : static
     {
-        $this->loadCache();
-
-        $cache = $this->cache;
-
-        if ($this->cacheMode === static::CACHE_MODE_NO_CACHE) {
-            $cache->reset();
-
-            return $this;
-        }
-
-        if ($this->cacheMode === static::CACHE_MODE_STORAGE) {
-            if (! $cache->isChanged()) {
-                return $this;
-            }
-
-            if ($this->cacheAdapter) {
-                $cacheAdapter = $this->cacheAdapter;
-                $cacheItem = $this->cacheAdapterItem;
-
-                $cacheItem->set($cache);
-
-                $cacheAdapter->save($cacheItem);
-
-            } elseif ($this->cacheDirpath) {
-                $cacheFilepath = "{$this->cacheDirpath}/{$this->cacheFilename}";
-
-                $content = $this->serializeCacheData($cache);
-
-                $before = error_reporting(0);
-                if (! @is_dir($this->cacheDirpath)) {
-                    @mkdir($this->cacheDirpath, 0775, true);
-                }
-                $status = @file_put_contents($cacheFilepath, $content);
-                error_reporting($before);
-
-                if (! $status) {
-                    throw new RuntimeException(
-                        'Unable to write file: ' . $cacheFilepath
-                    );
-                }
-            }
-        }
+        $this->cache->flush();
 
         return $this;
     }
@@ -310,6 +115,10 @@ class Reflector implements ReflectorInterface
 
         if (! ($isClosure || $isInvokable)) return null;
 
+        $reflectKey = null;
+        $reflectNamespace = null;
+        $reflectResult = null;
+
         if ($isClosure) {
             try {
                 $rf = new \ReflectionFunction($object);
@@ -322,22 +131,25 @@ class Reflector implements ReflectorInterface
 
         } else {
             // } elseif ($isInvokable) {
-            $reflectKey = get_class($object) . '::__invoke';
-        }
 
-        $this->loadCache();
+            $class = get_class($object);
+
+            $reflectKey = $class . '::__invoke';
+            $reflectNamespace = Lib::php_dirname($class, '\\');
+        }
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey)) {
-            $result = $cache->getReflectResult($reflectKey);
+        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
 
         } else {
             if ($isClosure) {
-                $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
+                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
             } else {
                 // } elseif ($isInvokable) {
+
                 try {
                     $rm = new \ReflectionMethod($object, '__invoke');
                 }
@@ -345,13 +157,13 @@ class Reflector implements ReflectorInterface
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
                 }
 
-                $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
+                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->setReflectResult($reflectKey, $result);
+            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
-        return $result;
+        return $reflectResult;
     }
 
     /**
@@ -363,13 +175,13 @@ class Reflector implements ReflectorInterface
         if (! Lib::php_method_exists($array, '', $methodArray, $methodString)) return null;
 
         $reflectKey = $methodString;
-
-        $this->loadCache();
+        $reflectNamespace = Lib::php_dirname($methodArray[ 0 ], '\\');
+        $reflectResult = null;
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey)) {
-            $result = $cache->getReflectResult($reflectKey);
+        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -379,12 +191,12 @@ class Reflector implements ReflectorInterface
                 throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
             }
 
-            $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
+            $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
-            $cache->setReflectResult($reflectKey, $result);
+            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
-        return $result;
+        return $reflectResult;
     }
 
     /**
@@ -403,20 +215,24 @@ class Reflector implements ReflectorInterface
 
         if (! ($isFunction || $isInvokable)) return null;
 
+        $reflectKey = null;
+        $reflectNamespace = null;
+        $reflectResult = null;
+
         if ($isFunction) {
             $reflectKey = $string;
 
         } else {
             // } elseif ($isInvokable) {
-            $reflectKey = "{$string}::__invoke";
-        }
 
-        $this->loadCache();
+            $reflectKey = "{$string}::__invoke";
+            $reflectNamespace = Lib::php_dirname($string, '\\');
+        }
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey)) {
-            $result = $cache->getReflectResult($reflectKey);
+        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
 
         } else {
             if ($isFunction) {
@@ -427,10 +243,11 @@ class Reflector implements ReflectorInterface
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
                 }
 
-                $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
+                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
             } else {
                 // } elseif ($isInvokable) {
+
                 try {
                     $rm = new \ReflectionMethod($string, '__invoke');
                 }
@@ -438,13 +255,13 @@ class Reflector implements ReflectorInterface
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
                 }
 
-                $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
+                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->setReflectResult($reflectKey, $result);
+            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
-        return $result;
+        return $reflectResult;
     }
 
 
@@ -483,13 +300,13 @@ class Reflector implements ReflectorInterface
         if (! class_exists($class)) return null;
 
         $reflectKey = $class . '::__construct';
-
-        $this->loadCache();
+        $reflectNamespace = Lib::php_dirname($class, '\\');
+        $reflectResult = null;
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey)) {
-            $result = $cache->getReflectResult($reflectKey);
+        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -501,12 +318,12 @@ class Reflector implements ReflectorInterface
 
             $rm = $rc->getConstructor();
 
-            $result = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
+            $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
-            $cache->setReflectResult($reflectKey, $result);
+            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
-        return $result;
+        return $reflectResult;
     }
 
 
@@ -658,17 +475,6 @@ class Reflector implements ReflectorInterface
             'tree'       => $tree,
             'isNullable' => $isNullable,
         ];
-    }
-
-
-    protected function serializeCacheData($cacheData) // : false|string
-    {
-        return @serialize($cacheData);
-    }
-
-    protected function unserializeCacheData($cacheData) // : false|array|__PHP_Incomplete_Class
-    {
-        return @unserialize($cacheData);
     }
 
 

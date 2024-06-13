@@ -2,21 +2,21 @@
 
 namespace Gzhegow\Di\Reflector;
 
-use Gzhegow\Di\Reflector\Struct\ReflectorCacheRuntime;
-
 
 class ReflectorFactory implements ReflectorFactoryInterface
 {
     public function newReflector() : ReflectorInterface
     {
-        $reflector = new Reflector($this);
+        $reflectorCache = $this->newReflectorCache();
+
+        $reflector = new Reflector($this, $reflectorCache);
 
         return $reflector;
     }
 
-    public function newReflectorCacheRuntime() : ReflectorCacheRuntime
+    public function newReflectorCache() : ReflectorCacheInterface
     {
-        $reflectorCacheRuntime = new ReflectorCacheRuntime();
+        $reflectorCacheRuntime = new ReflectorCache();
 
         return $reflectorCacheRuntime;
     }

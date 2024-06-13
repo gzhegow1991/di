@@ -34,16 +34,6 @@ function _reflector_reset_cache() // : static
     return _reflector()->resetCache();
 }
 
-function _reflector_init_cache() // : static
-{
-    return _reflector()->initCache();
-}
-
-function _reflector_load_cache() // : static
-{
-    return _reflector()->loadCache();
-}
-
 function _reflector_clear_cache() // : static
 {
     return _reflector()->clearCache();

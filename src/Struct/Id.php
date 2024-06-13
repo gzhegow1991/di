@@ -68,11 +68,11 @@ class Id
     {
         $instance = null;
 
-        if (is_a($from, static::class)) {
-            $instance = $from;
-
-        } elseif (is_string($from)) {
+        if (is_string($from)) {
             $instance = static::tryFromString($from);
+
+        } elseif (is_a($from, static::class)) {
+            $instance = $from;
         }
 
         if (null === $instance) {
@@ -94,21 +94,9 @@ class Id
             return null;
         }
 
-        $isInterface = interface_exists($id);
-        $isClass = ! $isInterface && class_exists($id);
-
-        $isContract = $isInterface || $isClass;
-
-        $_id = $id;
-        if ($isContract) {
-            $_id = ltrim($_id, '\\');
-        }
+        $_id = ltrim($id, '\\');
 
         $instance->value = $_id;
-
-        $instance->isClass = $isClass;
-        $instance->isInterface = $isInterface;
-        $instance->isContract = $isContract;
 
         return $instance;
     }
@@ -120,21 +108,6 @@ class Id
     }
 
 
-    /**
-     * @param static $id
-     *
-     * @return bool
-     */
-    public function isSame($id) : bool
-    {
-        if (! static::tryFrom($id)) {
-            return false;
-        }
-
-        return $id->getValue() === $this->getValue();
-    }
-
-
     public function getValue() : string
     {
         return $this->value;
@@ -143,16 +116,28 @@ class Id
 
     public function isClass() : bool
     {
+        if (null === $this->isClass) {
+            $this->isClass = class_exists($this->value);
+        }
+
         return $this->isClass;
     }
 
     public function isInterface() : bool
     {
-        return $this->isClass;
+        if (null === $this->isInterface) {
+            $this->isInterface = interface_exists($this->value);
+        }
+
+        return $this->isInterface;
     }
 
     public function isContract() : bool
     {
+        if (null === $this->isContract) {
+            $this->isContract = $this->isInterface() || $this->isClass();
+        }
+
         return $this->isContract;
     }
 }

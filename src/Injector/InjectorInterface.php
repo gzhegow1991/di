@@ -12,6 +12,9 @@ interface InjectorInterface
     public function getReflector() : ReflectorInterface;
 
 
+    /**
+     * @return static
+     */
     public function setSettings(
         bool $resolveUseTake = null
     ); // : static
@@ -28,17 +31,35 @@ interface InjectorInterface
     public function has($id, Id &$result = null) : bool;
 
 
+    /**
+     * @return static
+     */
     public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false);
 
+    /**
+     * @return static
+     */
     public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false);
 
+    /**
+     * @return static
+     */
     public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false);
 
+    /**
+     * @return static
+     */
     public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false);
 
+    /**
+     * @return static
+     */
     public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false);
 
 
+    /**
+     * @return static
+     */
     public function extendItem(Id $id, callable $fnExtend);
 
 

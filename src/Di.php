@@ -57,8 +57,10 @@ class Di implements DiInterface
      * @param array{
      *     injectorResolveUseTake: string|null,
      * }|null $settings
+     *
+     * @return static
      */
-    public function setSettings(array $settings = null) // : static
+    public function setInjectorSettings(array $settings = null) // : static
     {
         $resolveUseTake = $settings[ 'injectorResolveUseTake' ] ?? $settings[ 0 ] ?? null;
 
@@ -76,25 +78,38 @@ class Di implements DiInterface
      *     reflectorCacheDirpath: string|null,
      *     reflectorCacheFilename: string|null,
      * }|null $settings
+     *
+     * @return static
      */
     public function setCacheSettings(array $settings = null) // : static
     {
         $cacheMode = $settings[ 'reflectorCacheMode' ] ?? $settings[ 0 ] ?? null;
         $cacheAdapter = $settings[ 'reflectorCacheAdapter' ] ?? $settings[ 1 ] ?? null;
         $cacheDirpath = $settings[ 'reflectorCacheDirpath' ] ?? $settings[ 2 ] ?? null;
-        $cacheFilename = $settings[ 'reflectorCacheFilename' ] ?? $settings[ 3 ] ?? null;
 
         $this->reflector->setCacheSettings(
             $cacheMode,
             $cacheAdapter,
-            $cacheDirpath,
-            $cacheFilename
+            $cacheDirpath
         );
 
         return $this;
     }
 
 
+    /**
+     * @return static
+     */
+    public function resetCache() // : static
+    {
+        $this->reflector->resetCache();
+
+        return $this;
+    }
+
+    /**
+     * @return static
+     */
     public function clearCache() // : static
     {
         $this->reflector->clearCache();
@@ -102,6 +117,9 @@ class Di implements DiInterface
         return $this;
     }
 
+    /**
+     * @return static
+     */
     public function flushCache() // : static
     {
         $this->reflector->flushCache();
@@ -132,6 +150,9 @@ class Di implements DiInterface
     }
 
 
+    /**
+     * @return static
+     */
     public function bind($id, $mixed = null, bool $isSingleton = null) // : static
     {
         $isSingleton = $isSingleton ?? false;
@@ -143,6 +164,9 @@ class Di implements DiInterface
         return $this;
     }
 
+    /**
+     * @return static
+     */
     public function bindSingleton($id, $mixed = null) // : static
     {
         $this->bind($id, $mixed, true);
@@ -151,6 +175,9 @@ class Di implements DiInterface
     }
 
 
+    /**
+     * @return static
+     */
     public function bindAlias($id, $aliasId, bool $isSingleton = null) // : static
     {
         $isSingleton = $isSingleton ?? false;
@@ -165,6 +192,8 @@ class Di implements DiInterface
 
     /**
      * @param class-string $classId
+     *
+     * @return static
      */
     public function bindClass($id, $classId, bool $isSingleton = null) // : static
     {
@@ -180,6 +209,8 @@ class Di implements DiInterface
 
     /**
      * @param callable $fnFactory
+     *
+     * @return static
      */
     public function bindFactory($id, $fnFactory, bool $isSingleton = null) // : static
     {
@@ -192,6 +223,9 @@ class Di implements DiInterface
         return $this;
     }
 
+    /**
+     * @return static
+     */
     public function bindInstance($id, object $instance, bool $isSingleton = null) // : static
     {
         $isSingleton = $isSingleton ?? false;
@@ -206,6 +240,8 @@ class Di implements DiInterface
 
     /**
      * @param callable $fnExtend
+     *
+     * @return static
      */
     public function extend($id, $fnExtend) // : static
     {
@@ -457,6 +493,9 @@ class Di implements DiInterface
     }
 
 
+    /**
+     * @return static
+     */
     public static function getInstance() // : static
     {
         $instance = static::$instances[ static::class ];

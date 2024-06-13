@@ -2,6 +2,9 @@
 
 namespace Gzhegow\Di;
 
+use Gzhegow\Di\Exception\RuntimeException;
+
+
 class Lib
 {
     /**
@@ -235,6 +238,38 @@ class Lib
     }
 
 
+    public static function php_dirname(?string $path, string $separator = null, int $levels = null) : ?string
+    {
+        $separator = $separator ?? DIRECTORY_SEPARATOR;
+        $levels = $levels ?? 1;
+
+        if (null === $path) return null;
+        if ('' === $path) return null;
+
+        $_value = $path;
+
+        $hasSeparator = (false !== strpos($_value, $separator));
+
+        $_value = $hasSeparator
+            ? str_replace([ '\\', DIRECTORY_SEPARATOR, $separator ], '/', $_value)
+            : str_replace([ '\\', DIRECTORY_SEPARATOR ], '/', $_value);
+
+        $_value = ltrim($_value, '/');
+
+        if (false === strpos($_value, '/')) {
+            $_value = null;
+
+        } else {
+            $_value = preg_replace('~/+~', '/', $_value);
+
+            $_value = dirname($_value);
+            $_value = str_replace('/', $separator, $_value);
+        }
+
+        return $_value;
+    }
+
+
     /**
      * > gzhegow, вызывает произвольный колбэк с аргументами, если колбэк вернул не TRUE, бросает исключение, иначе $args[0]
      * > _assert_true('is_int', [ $input ], 'Переменная `input` должна быть числом')
@@ -362,20 +397,152 @@ class Lib
     }
 
 
-    public static function filter_filename($value) : ?string
+    public static function fs_file_get_contents(
+        string $filepath,
+        bool $use_include_path = null, $context = null, int $offset = null, int $length = null
+    ) : ?string
     {
-        if (null === ($_value = Lib::filter_string($value))) {
-            return null;
+        $use_include_path = $use_include_path ?? false;
+        $offset = $offset ?? 0;
+
+        $filepath = static::assert_true([ static::class, 'filter_path' ], [ $filepath ]);
+
+        $result = null;
+
+        $before = error_reporting(0);
+
+        if (@is_file($filepath)) {
+            $content = @file_get_contents(
+                $filepath,
+                $use_include_path,
+                $context,
+                $offset,
+                $length
+            );
+
+            if (false === $content) {
+                throw new RuntimeException(
+                    'Unable to read file: ' . $filepath
+                );
+            }
+
+            $result = $content;
         }
 
-        $forbidden = [ "\0", "/", "\\", DIRECTORY_SEPARATOR ];
+        error_reporting($before);
 
-        foreach ( $forbidden as $f ) {
-            if (false !== strpos($_value, $f)) {
-                return null;
+        return $result;
+    }
+
+    public static function fs_file_put_contents(
+        string $filepath, $data,
+        int $flags = null, $context = null,
+        array $mkdirArgs = null,
+        array $chmodArgs = null
+    ) : ?int
+    {
+        $flags = $flags ?? 0;
+        $mkdirArgs = $mkdirArgs ?? [ 0775, true ];
+        $chmodArgs = $chmodArgs ?? [ 0664 ];
+
+        $filepath = static::assert_true([ static::class, 'filter_path' ], [ $filepath ]);
+
+        $dirname = static::php_dirname($filepath);
+
+        $before = error_reporting(0);
+
+        if (! @is_dir($dirname)) {
+            $status = @mkdir(
+                $dirname,
+                ...$mkdirArgs
+            );
+
+            if (false === $status) {
+                throw new RuntimeException(
+                    'Unable to make directory: ' . $filepath
+                );
             }
         }
 
-        return $_value;
+        if (! @is_file($filepath) && @file_exists($filepath)) {
+            throw new RuntimeException(
+                'Unable to overwrite existing node: ' . $filepath
+            );
+        }
+
+        $aContext = $context ? [ $context ] : [];
+
+        $status = @file_put_contents(
+            $filepath, $data,
+            $flags, ...$aContext
+        );
+
+        if (false === $status) {
+            throw new RuntimeException(
+                'Unable to write file: ' . $filepath
+            );
+        }
+
+        $status = @chmod(
+            $filepath,
+            ...$chmodArgs
+        );
+
+        if (false === $status) {
+            throw new RuntimeException(
+                'Unable to perform chmod() on file: ' . $filepath
+            );
+        }
+
+        error_reporting($before);
+
+        return $status;
+    }
+
+    public static function fs_clear_dir(
+        string $dirpath,
+        $context = null
+    ) : array
+    {
+        $dirpath = static::assert_true([ static::class, 'filter_path' ], [ $dirpath ]);
+
+        if (! is_dir($dirpath)) {
+            return [];
+        }
+
+        $before = error_reporting(0);
+
+        $removed = [];
+
+        $it = new \RecursiveDirectoryIterator(
+            $dirpath,
+            \FilesystemIterator::SKIP_DOTS
+        );
+
+        $iit = new \RecursiveIteratorIterator(
+            $it,
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+
+        $aContext = $context ? [ $context ] : [];
+
+        foreach ( $iit as $fileInfo ) {
+            /** @var \SplFileInfo $fileInfo */
+
+            $realpath = $fileInfo->getRealPath();
+
+            if ($fileInfo->isDir()) {
+                @rmdir($realpath, ...$aContext);
+
+            } else {
+                @unlink($realpath, ...$aContext);
+            }
+
+            $removed[ $realpath ] = true;
+        }
+
+        error_reporting($before);
+
+        return $removed;
     }
 }

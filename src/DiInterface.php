@@ -16,24 +16,34 @@ interface DiInterface
 {
     /**
      * @param array{
-     *     injectorResolveUseTake: string|null,
-     * }|null $settings
-     */
-    public function setSettings(array $settings = null);
-
-    /**
-     * @param array{
      *     reflectorCacheMode: string|null,
      *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
      *     reflectorCacheDirpath: string|null,
-     *     reflectorCacheFilename: string|null,
      * }|null $settings
      */
     public function setCacheSettings(array $settings = null);
 
+    /**
+     * @param array{
+     *     injectorResolveUseTake: string|null,
+     * }|null $settings
+     */
+    public function setInjectorSettings(array $settings = null);
 
+
+    /**
+     * @return static
+     */
+    public function resetCache();
+
+    /**
+     * @return static
+     */
     public function clearCache();
 
+    /**
+     * @return static
+     */
     public function flushCache();
 
 
@@ -49,28 +59,46 @@ interface DiInterface
     public function has($id, Id &$result = null) : bool;
 
 
+    /**
+     * @return static
+     */
     public function bind($id, $mixed = null, bool $isSingleton = null);
 
+    /**
+     * @return static
+     */
     public function bindSingleton($id, $mixed = null);
 
 
+    /**
+     * @return static
+     */
     public function bindAlias($id, $aliasId, bool $isSingleton = null);
 
     /**
      * @param class-string $classId
+     *
+     * @return static
      */
     public function bindClass($id, $classId, bool $isSingleton = null);
 
     /**
      * @param callable $fnFactory
+     *
+     * @return static
      */
     public function bindFactory($id, $fnFactory, bool $isSingleton = null);
 
+    /**
+     * @return static
+     */
     public function bindInstance($id, object $instance, bool $isSingleton = null);
 
 
     /**
      * @param callable $fnExtend
+     *
+     * @return static
      */
     public function extend($id, $fnExtend);
 

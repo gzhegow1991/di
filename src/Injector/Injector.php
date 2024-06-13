@@ -607,7 +607,7 @@ class Injector implements InjectorInterface
 
         if (null === $result) {
             throw new LogicException(
-                'Unable to ' . __FUNCTION__ . '. '
+                'Unable to ' . __FUNCTION__ . '(). '
                 . $_id
                 . ' / ' . Lib::php_dump($mixed)
             );
@@ -716,7 +716,7 @@ class Injector implements InjectorInterface
 
         if (! isset($this->bindToTypeList[ $_id ])) {
             throw new RuntimeException(
-                'Unable to ' . __FUNCTION__ . '. '
+                'Unable to ' . __FUNCTION__ . '(). '
                 . 'Missing `id`: ' . $_id
             );
         }
@@ -734,7 +734,7 @@ class Injector implements InjectorInterface
 
             if (isset($boundPath[ $boundId ])) {
                 throw new RuntimeException(
-                    'Unable to ' . __FUNCTION__ . '. '
+                    'Unable to ' . __FUNCTION__ . '(). '
                     . 'Cyclic dependency resolving detected while resolving: '
                     . '[ ' . implode(' -> ', array_keys($boundPath)) . ' ]'
                 );
@@ -754,7 +754,7 @@ class Injector implements InjectorInterface
 
                     } else {
                         throw new RuntimeException(
-                            'Unable to ' . __FUNCTION__ . '. '
+                            'Unable to ' . __FUNCTION__ . '(). '
                             . 'Missing `boundId` while making: '
                             . '[ ' . implode(' -> ', array_keys($boundPathChild)) . ' ]'
                         );
@@ -779,14 +779,14 @@ class Injector implements InjectorInterface
 
         if (isset($this->bindToTypeList[ $_id ])) {
             throw new RuntimeException(
-                'Unable to ' . __FUNCTION__ . '. '
+                'Unable to ' . __FUNCTION__ . '(). '
                 . 'Bind exists, so this `id` it is not a class: ' . $_id
             );
         }
 
         if (! $id->isClass()) {
             throw new RuntimeException(
-                'Unable to ' . __FUNCTION__ . '. '
+                'Unable to ' . __FUNCTION__ . '(). '
                 . 'The `id` is not a class: ' . $_id
             );
         }
@@ -800,19 +800,21 @@ class Injector implements InjectorInterface
     }
 
 
-    protected function resolveArguments(array $reflectResult, $reflectable, array $arguments = []) : array
+    protected function resolveArguments(array $reflectResult, $reflectable, array $parameters = []) : array
     {
         [ 'arguments' => $reflectArguments ] = $reflectResult;
 
         $reflectArguments = $reflectArguments ?? [];
 
         $_arguments = [];
-        foreach ( $reflectArguments as $i => [ $argName, $argReflectionTypeList, $argReflectionTypeTree, $argIsNullable ] ) {
-            if (array_key_exists($argName, $arguments)) {
-                $_arguments[ $i ] = $arguments[ $argName ];
+        foreach ( $reflectArguments as $i => $reflectArgument ) {
+            [ $argName, $argReflectionTypeList, $argReflectionTypeTree, $argIsNullable ] = $reflectArgument;
 
-            } elseif (isset($arguments[ $i ])) {
-                $_arguments[ $i ] = $arguments[ $i ];
+            if (array_key_exists($argName, $parameters)) {
+                $_arguments[ $i ] = $parameters[ $argName ];
+
+            } elseif (isset($parameters[ $i ])) {
+                $_arguments[ $i ] = $parameters[ $i ];
 
             } else {
                 $argReflectionTypeIsMulti = (count($argReflectionTypeTree[ '' ]) > 2);

@@ -101,7 +101,7 @@ class Lib
      *
      * @return array{
      *     messageList: string[],
-     *     odeList: int[],
+     *     codeList: int[],
      *     previousList: string[],
      *     messageCodeList: array[],
      *     messageDataList: array[],
@@ -178,10 +178,8 @@ class Lib
             }
 
             if (isset($messageList[ $i ])) {
-                if (null !== $messageList[ $i ]) {
-                    if (preg_match('/^[a-z](?!.*\s)/i', $messageList[ $i ])) {
-                        $messageCode = $messageCodeList[ $i ] = strtoupper($messageList[ $i ]);
-                    }
+                if (preg_match('/^[a-z](?!.*\s)/i', $messageList[ $i ])) {
+                    $messageCode = $messageCodeList[ $i ] = strtoupper($messageList[ $i ]);
                 }
             }
 

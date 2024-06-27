@@ -105,14 +105,13 @@ class Lib
      *     previousList: string[],
      *     messageCodeList: array[],
      *     messageDataList: array[],
-     *     messageObjectList: object[],
      *     message: ?string,
      *     code: ?int,
      *     previous: ?string,
      *     messageCode: ?string,
      *     messageData: ?array,
      *     messageObject: ?object,
-     *     unresolved: array,
+     *     __unresolved: array,
      * }
      */
     public static function php_throwable_args($arg = null, ...$args) : array
@@ -126,34 +125,31 @@ class Lib
         $previousList = null;
         $messageCodeList = null;
         $messageDataList = null;
-        $messageObjectList = null;
 
         $message = null;
         $code = null;
         $previous = null;
         $messageCode = null;
-        $messageData = null;
-        $messageObject = null;
 
-        $unresolved = [];
+        $__unresolved = [];
 
         for ( $i = 0; $i < $len; $i++ ) {
             $a = $args[ $i ];
 
             if (is_int($a)) {
-                $code = $codeList[ $i ] = $a;
+                $codeList[ $i ] = $a;
 
                 continue;
             }
 
             if (is_a($a, \Throwable::class)) {
-                $previous = $previousList[ $i ] = $a;
+                $previousList[ $i ] = $a;
 
                 continue;
             }
 
-            if (null !== ($vString = static::filter_string($a))) {
-                $message = $messageList[ $i ] = $vString;
+            if ('' !== ($vString = (string) $a)) {
+                $messageList[ $i ] = $vString;
 
                 continue;
             }
@@ -162,39 +158,28 @@ class Lib
                 is_array($a)
                 || is_a($a, \stdClass::class)
             ) {
-                $messageData = $messageDataList[ $i ] = (array) $a;
+                $messageDataList[ $i ] = (array) $a;
+
+                if ('' !== ($messageString = (string) $messageDataList[ $i ][ 0 ])) {
+                    $messageList[ $i ] = $messageString;
+
+                    unset($messageDataList[ $i ][ 0 ]);
+
+                    if (! $messageDataList[ $i ]) {
+                        unset($messageDataList[ $i ]);
+                    }
+                }
 
                 continue;
             }
 
-            $unresolved[ $i ] = $a;
+            $__unresolved[ $i ] = $a;
         }
 
-        for ( $i = $len - 1; $i >= 0; $i-- ) {
-            if (isset($messageDataList[ $i ][ 0 ])) {
-                if ($messageString = static::filter_string($messageDataList[ $i ][ 0 ])) {
-                    $message = $messageList[ $i ] = $messageString;
-                }
-            }
-
+        for ( $i = 0; $i < $len; $i++ ) {
             if (isset($messageList[ $i ])) {
                 if (preg_match('/^[a-z](?!.*\s)/i', $messageList[ $i ])) {
-                    $messageCode = $messageCodeList[ $i ] = strtoupper($messageList[ $i ]);
-                }
-            }
-
-            if (null !== $messageDataList[ $i ]) {
-                $messageObject = $messageObjectList[ $i ] = (object) $messageDataList[ $i ];
-
-            } elseif (null !== $messageList[ $i ]) {
-                $messageObject = $messageObjectList[ $i ] = (object) [ $messageList[ $i ] ];
-            }
-
-            if (null !== $messageDataList[ $i ]) {
-                unset($messageDataList[ $i ][ 0 ]);
-
-                if (empty($messageDataList[ $i ])) {
-                    $messageDataList[ $i ] = null;
+                    $messageCodeList[ $i ] = strtoupper($messageList[ $i ]);
                 }
             }
         }
@@ -204,16 +189,22 @@ class Lib
         $result[ 'messageList' ] = $messageList;
         $result[ 'codeList' ] = $codeList;
         $result[ 'previousList' ] = $previousList;
+        $result[ 'messageCodeList' ] = $messageCodeList;
         $result[ 'messageDataList' ] = $messageDataList;
-        $result[ 'messageObjectList' ] = $messageObjectList;
+
+        $messageDataList = $messageDataList ?? [];
+        $messageData = array_replace(...$messageDataList);
+        $messageObject = (object) ([ $message ] + $messageData);
 
         $result[ 'message' ] = $message;
         $result[ 'code' ] = $code;
         $result[ 'previous' ] = $previous;
+        $result[ 'messageCode' ] = $messageCode;
         $result[ 'messageData' ] = $messageData;
+
         $result[ 'messageObject' ] = $messageObject;
 
-        $result[ 'unresolved' ] = $unresolved;
+        $result[ '__unresolved' ] = $__unresolved;
 
         return $result;
     }

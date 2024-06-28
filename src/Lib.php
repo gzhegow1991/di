@@ -126,11 +126,6 @@ class Lib
         $messageCodeList = null;
         $messageDataList = null;
 
-        $message = null;
-        $code = null;
-        $previous = null;
-        $messageCode = null;
-
         $__unresolved = [];
 
         for ( $i = 0; $i < $len; $i++ ) {

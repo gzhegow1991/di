@@ -10,6 +10,8 @@ interface LazyServiceFactoryInterface
 
     public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : LazyService;
 
+    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : LazyService;
+
 
     /**
      * @return object
@@ -25,4 +27,9 @@ interface LazyServiceFactoryInterface
      * @return object
      */
     public function fnFactoryTake($lazyId, array $parametersWhenNew = null);
+
+    /**
+     * @return object
+     */
+    public function fnFactoryFetch($lazyId, array $parametersWhenNew = null);
 }

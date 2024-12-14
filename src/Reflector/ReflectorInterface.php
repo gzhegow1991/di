@@ -10,20 +10,6 @@ namespace Gzhegow\Di\Reflector;
 interface ReflectorInterface
 {
     /**
-     * @param string|null                                   $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
-     * @param string|null                                   $cacheDirpath
-     *
-     * @return static
-     */
-    public function setCacheSettings(
-        string $cacheMode = null,
-        object $cacheAdapter = null,
-        string $cacheDirpath = null
-    );
-
-
-    /**
      * @return static
      */
     public function resetCache();
@@ -31,12 +17,12 @@ interface ReflectorInterface
     /**
      * @return static
      */
-    public function clearCache();
+    public function saveCache();
 
     /**
      * @return static
      */
-    public function flushCache();
+    public function clearCache();
 
 
     /**

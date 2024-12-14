@@ -3,23 +3,11 @@
 namespace Gzhegow\Di\Injector;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\Reflector\ReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
 interface InjectorInterface
 {
-    public function getReflector() : ReflectorInterface;
-
-
-    /**
-     * @return static
-     */
-    public function setSettings(
-        bool $resolveUseTake = null
-    ); // : static
-
-
     /**
      * @param static $di
      *
@@ -102,6 +90,15 @@ interface InjectorInterface
      */
     public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T> $contractT
+     *
+     * @return T
+     */
+    public function fetchItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object;
+
 
     /**
      * @template T
@@ -110,12 +107,12 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function autowireItem(object $instance, array $methodArgs = [], string $methodName = '') : object;
+    public function autowireInstance(object $instance, array $methodArgs = [], string $methodName = '') : object;
 
 
-    public function autowireUserFunc(callable $fn, ...$args);
+    public function callUserFuncAutowired(callable $fn, ...$args);
 
-    public function autowireUserFuncArray(callable $fn, array $args = []);
+    public function callUserFuncArrayAutowired(callable $fn, array $args = []);
 
 
     /**
@@ -125,5 +122,5 @@ interface InjectorInterface
      *
      * @return T
      */
-    public function autowireConstructorArray(string $class, array $parameters = []) : object;
+    public function callConstructorArrayAutowired(string $class, array $parameters = []) : object;
 }

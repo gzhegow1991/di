@@ -6,16 +6,12 @@
 
 namespace Gzhegow\Di\Reflector;
 
-use Gzhegow\Di\Lib;
+use Gzhegow\Lib\Lib;
 use Gzhegow\Di\Exception\RuntimeException;
 
 
 class Reflector implements ReflectorInterface
 {
-    /**
-     * @var ReflectorFactoryInterface
-     */
-    protected $factory;
     /**
      * @var ReflectorCacheInterface
      */
@@ -23,35 +19,10 @@ class Reflector implements ReflectorInterface
 
 
     public function __construct(
-        ReflectorFactoryInterface $factory,
         ReflectorCacheInterface $cache
     )
     {
-        $this->factory = $factory;
         $this->cache = $cache;
-    }
-
-
-    /**
-     * @param string|null                                   $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
-     * @param string|null                                   $cacheDirpath
-     *
-     * @return static
-     */
-    public function setCacheSettings(
-        string $cacheMode = null,
-        object $cacheAdapter = null,
-        string $cacheDirpath = null
-    ) // : static
-    {
-        $this->cache->setCacheSettings(
-            $cacheMode,
-            $cacheAdapter,
-            $cacheDirpath
-        );
-
-        return $this;
     }
 
 
@@ -60,7 +31,17 @@ class Reflector implements ReflectorInterface
      */
     public function resetCache() // : static
     {
-        $this->cache->reset();
+        $this->cache->resetCache();
+
+        return $this;
+    }
+
+    /**
+     * @return static
+     */
+    public function saveCache() // : static
+    {
+        $this->cache->saveCache();
 
         return $this;
     }
@@ -70,17 +51,7 @@ class Reflector implements ReflectorInterface
      */
     public function clearCache() // : static
     {
-        $this->cache->clear();
-
-        return $this;
-    }
-
-    /**
-     * @return static
-     */
-    public function flushCache() // : static
-    {
-        $this->cache->flush();
+        $this->cache->clearCache();
 
         return $this;
     }
@@ -140,8 +111,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
+        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             if ($isClosure) {
@@ -160,7 +131,7 @@ class Reflector implements ReflectorInterface
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
+            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -180,8 +151,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
+        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -193,7 +164,7 @@ class Reflector implements ReflectorInterface
 
             $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
-            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
+            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -231,8 +202,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
+        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             if ($isFunction) {
@@ -258,7 +229,7 @@ class Reflector implements ReflectorInterface
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
+            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -305,8 +276,8 @@ class Reflector implements ReflectorInterface
 
         $cache = $this->cache;
 
-        if ($cache->hasReflectResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectResult($reflectKey, $reflectNamespace);
+        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -320,7 +291,7 @@ class Reflector implements ReflectorInterface
 
             $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
-            $cache->setReflectResult($reflectResult, $reflectKey, $reflectNamespace);
+            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -476,40 +447,4 @@ class Reflector implements ReflectorInterface
             'isNullable' => $isNullable,
         ];
     }
-
-
-    public static function getInstance() // : static
-    {
-        $instance = static::$instances[ static::class ];
-
-        if (! is_a($instance, static::class)) {
-            throw new RuntimeException(
-                'No instance bound. Please, call Di::setInstance() first.'
-            );
-        }
-
-        return $instance;
-    }
-
-    /**
-     * @param static $reflector
-     *
-     * @return void
-     */
-    public static function setInstance($reflector) : void
-    {
-        if (! is_a($reflector, static::class)) {
-            throw new RuntimeException(
-                'The `reflector` should be instance of: ' . static::class
-                . ' / ' . Lib::php_dump($reflector)
-            );
-        }
-
-        static::$instances[ get_class($reflector) ] = $reflector;
-    }
-
-    /**
-     * @var array<class-string, static>
-     */
-    protected static $instances = [];
 }

@@ -2,7 +2,6 @@
 
 namespace Gzhegow\Di\Injector;
 
-use Gzhegow\Di\Lib;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
@@ -12,10 +11,13 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 class Injector implements InjectorInterface
 {
-    const BIND_TYPE_ALIAS    = 'alias';
-    const BIND_TYPE_CLASS    = 'class';
-    const BIND_TYPE_FACTORY  = 'factory';
-    const BIND_TYPE_INSTANCE = 'instance';
+    const BIND_TYPE_ALIAS    = 'ALIAS';
+    const BIND_TYPE_CLASS    = 'CLASS';
+    const BIND_TYPE_FACTORY  = 'FACTORY';
+    const BIND_TYPE_INSTANCE = 'INSTANCE';
+
+    const FETCH_FUNC_GET  = 'GET';
+    const FETCH_FUNC_TAKE = 'TAKE';
 
     const LIST_BIND_TYPE = [
         self::BIND_TYPE_ALIAS    => true,
@@ -24,11 +26,21 @@ class Injector implements InjectorInterface
         self::BIND_TYPE_INSTANCE => true,
     ];
 
+    const LIST_FETCH_FUNC = [
+        self::FETCH_FUNC_GET  => true,
+        self::FETCH_FUNC_TAKE => true,
+    ];
+
 
     /**
      * @var ReflectorInterface
      */
     protected $reflector;
+
+    /**
+     * @var InjectorConfig
+     */
+    protected $config;
 
     /**
      * @var array<string, string>
@@ -70,33 +82,16 @@ class Injector implements InjectorInterface
      */
     protected $isSingletonIndex = [];
 
-    /**
-     * @var bool
-     */
-    protected $settingsResolveArgumentsUseTake = false;
 
-
-    public function __construct(ReflectorInterface $reflector)
+    public function __construct(
+        ReflectorInterface $reflector,
+        //
+        InjectorConfig $config
+    )
     {
         $this->reflector = $reflector;
-    }
 
-
-    public function getReflector() : ReflectorInterface
-    {
-        return $this->reflector;
-    }
-
-
-    public function setSettings(
-        bool $resolveUseTake = null
-    ) // : static
-    {
-        $resolveUseTake = $resolveUseTake ?? false;
-
-        $this->settingsResolveArgumentsUseTake = $resolveUseTake;
-
-        return $this;
+        $this->config = $config;
     }
 
 
@@ -109,8 +104,10 @@ class Injector implements InjectorInterface
     {
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
-                'The `di` should be instance of: ' . static::class
-                . ' / ' . Lib::php_dump($di)
+                [
+                    'The `di` should be instance of: ' . static::class,
+                    $di,
+                ]
             );
         }
 
@@ -322,7 +319,10 @@ class Injector implements InjectorInterface
 
             default:
                 throw new LogicException(
-                    'The `mixed` should be callable|object|array|class-string: ' . Lib::php_dump($mixed)
+                    [
+                        'The `mixed` should be callable|object|array|class-string',
+                        $mixed,
+                    ]
                 );
 
         endswitch;
@@ -360,9 +360,10 @@ class Injector implements InjectorInterface
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $contractT
-                . ' / ' . Lib::php_dump($instance)
+                [
+                    'Returned object should be instance of: ' . $contractT,
+                    $instance,
+                ]
             );
         }
 
@@ -397,13 +398,17 @@ class Injector implements InjectorInterface
 
             if ($forceInstanceOf && ! is_a($instance, $contractT)) {
                 throw new RuntimeException(
-                    'Returned object should be instance of: '
-                    . $contractT
-                    . ' / ' . Lib::php_dump($instance)
+                    [
+                        'Returned object should be instance of: ' . $contractT,
+                        $instance,
+                    ]
                 );
             }
 
-            if (isset($this->isSingletonIndex[ $_id ])) {
+            if (true
+                && isset($this->isSingletonIndex[ $_id ])
+                && ! isset($this->singletonList[ $_id ])
+            ) {
                 $this->singletonList[ $_id ] = $instance;
             }
 
@@ -436,14 +441,18 @@ class Injector implements InjectorInterface
 
             if ($forceInstanceOf && ! is_a($instance, $contractT)) {
                 throw new RuntimeException(
-                    'Returned object should be instance of: '
-                    . $contractT
-                    . ' / ' . Lib::php_dump($instance)
+                    [
+                        'Returned object should be instance of: ' . $contractT,
+                        $instance,
+                    ]
                 );
             }
 
             foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
-                if (isset($this->isSingletonIndex[ $_resolvedId ])) {
+                if (true
+                    && isset($this->isSingletonIndex[ $_resolvedId ])
+                    && ! isset($this->singletonList[ $_resolvedId ])
+                ) {
                     $this->singletonList[ $_resolvedId ] = $instance;
                 }
             }
@@ -467,14 +476,18 @@ class Injector implements InjectorInterface
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $contractT
-                . ' / ' . Lib::php_dump($instance)
+                [
+                    'Returned object should be instance of: ' . $contractT,
+                    $instance,
+                ]
             );
         }
 
         foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
-            if (isset($this->isSingletonIndex[ $_resolvedId ])) {
+            if (true
+                && isset($this->isSingletonIndex[ $_resolvedId ])
+                && ! isset($this->singletonList[ $_resolvedId ])
+            ) {
                 $this->singletonList[ $_resolvedId ] = $instance;
             }
         }
@@ -499,9 +512,54 @@ class Injector implements InjectorInterface
 
         if ($forceInstanceOf && ! is_a($instance, $contractT)) {
             throw new RuntimeException(
-                'Returned object should be instance of: '
-                . $contractT
-                . ' / ' . Lib::php_dump($instance)
+                [
+                    'Returned object should be instance of: ' . $contractT,
+                    $instance,
+                ]
+            );
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T> $contractT
+     *
+     * @return T
+     */
+    public function fetchItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
+    {
+        $paremeters = $paremeters ?? [];
+
+        switch ( $this->config->fetchFunc ):
+            case static::FETCH_FUNC_GET:
+                $instance = $this->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
+
+                break;
+
+            case static::FETCH_FUNC_TAKE:
+                $instance = $this->takeItem($id, $parametersWhenNew, $forceInstanceOf, $forceInstanceOf);
+
+                break;
+
+            default:
+                throw new RuntimeException(
+                    [
+                        'Unknown `fetchFunc`',
+                        $this->config->fetchFunc,
+                    ]
+                );
+
+        endswitch;
+
+        if ($forceInstanceOf && ! is_a($instance, $contractT)) {
+            throw new RuntimeException(
+                [
+                    'Returned object should be instance of: ' . $contractT,
+                    $instance,
+                ]
             );
         }
 
@@ -516,17 +574,17 @@ class Injector implements InjectorInterface
      *
      * @return T
      */
-    public function autowireItem(object $instance, array $methodArgs = [], string $methodName = '') : object
+    public function autowireInstance(object $instance, array $methodArgs = [], string $methodName = '') : object
     {
         $methodName = $methodName ?: '__autowire';
 
-        $this->autowireUserFuncArray([ $instance, $methodName ], $methodArgs);
+        $this->callUserFuncArrayAutowired([ $instance, $methodName ], $methodArgs);
 
         return $instance;
     }
 
 
-    public function autowireUserFunc(callable $fn, ...$args) // : mixed
+    public function callUserFuncAutowired(callable $fn, ...$args) // : mixed
     {
         $reflectResult = $this->reflector->reflectArgumentsCallable($fn);
 
@@ -537,7 +595,7 @@ class Injector implements InjectorInterface
         return $result;
     }
 
-    public function autowireUserFuncArray(callable $fn, array $args = []) // : mixed
+    public function callUserFuncArrayAutowired(callable $fn, array $args = []) // : mixed
     {
         $reflectResult = $this->reflector->reflectArgumentsCallable($fn);
 
@@ -555,7 +613,7 @@ class Injector implements InjectorInterface
      *
      * @return T
      */
-    public function autowireConstructorArray(string $class, array $parameters = []) : object
+    public function callConstructorArrayAutowired(string $class, array $parameters = []) : object
     {
         $reflectResult = $this->reflector->reflectArgumentsConstructor($class);
 
@@ -607,9 +665,10 @@ class Injector implements InjectorInterface
 
         if (null === $result) {
             throw new LogicException(
-                'Unable to ' . __FUNCTION__ . '(). '
-                . $_id
-                . ' / ' . Lib::php_dump($mixed)
+                [
+                    'Unable to resolve bind: ' . $_id,
+                    $_id,
+                ]
             );
         }
 
@@ -632,12 +691,12 @@ class Injector implements InjectorInterface
         } elseif (static::BIND_TYPE_CLASS === $lastResolvedType) {
             $resolvedClass = $this->classList[ $lastResolvedId ] ?? $lastResolvedId;
 
-            $instance = $this->autowireConstructorArray($resolvedClass, $parameters);
+            $instance = $this->callConstructorArrayAutowired($resolvedClass, $parameters);
 
         } elseif (static::BIND_TYPE_FACTORY === $lastResolvedType) {
             $resolvedFnFactory = $this->factoryList[ $lastResolvedId ];
 
-            $instance = $this->autowireUserFuncArray($resolvedFnFactory, $parameters);
+            $instance = $this->callUserFuncArrayAutowired($resolvedFnFactory, $parameters);
 
         } else {
             // } elseif (static::BIND_TYPE_ALIAS === $lastResolvedType) {
@@ -686,7 +745,7 @@ class Injector implements InjectorInterface
             ksort($callablesOrdered);
 
             foreach ( $callablesOrdered as $callable ) {
-                $this->autowireUserFuncArray($callable, [ $instance ]);
+                $this->callUserFuncArrayAutowired($callable, [ $instance ]);
             }
         }
 
@@ -830,16 +889,18 @@ class Injector implements InjectorInterface
                     if (! $argIsNullable) {
                         if ($argReflectionTypeIsMulti) {
                             throw new RuntimeException(
-                                'Resolving UNION / INTERSECT parameters is not implemented: '
-                                . "[ {$i} ] \${$argName}"
-                                . ' / ' . Lib::php_dump($reflectable)
+                                [
+                                    'Resolving UNION / INTERSECT parameters is not implemented: ' . "[ {$i} ] \${$argName}",
+                                    $reflectable,
+                                ]
                             );
 
                         } else {
                             throw new RuntimeException(
-                                'Unable to resolve parameter: '
-                                . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
-                                . ' / ' . Lib::php_dump($reflectable)
+                                [
+                                    'Unable to resolve parameter: ' . "[ {$i} ] \${$argName} : {$argReflectionTypeName}",
+                                    $reflectable,
+                                ]
                             );
                         }
                     }
@@ -850,15 +911,14 @@ class Injector implements InjectorInterface
                     $id = Id::from($argReflectionTypeClass);
 
                     try {
-                        $_arguments[ $i ] = $this->settingsResolveArgumentsUseTake
-                            ? $this->takeItem($id)
-                            : $this->getItem($id);
+                        $_arguments[ $i ] = $this->fetchItem($id);
                     }
                     catch ( NotFoundException $e ) {
                         throw new NotFoundException(
-                            'Missing bound `argReflectionTypeClass` to resolve parameter: '
-                            . "[ {$i} ] \${$argName} : {$argReflectionTypeName}"
-                            . ' / ' . Lib::php_dump($reflectable)
+                            [
+                                'Missing bound `argReflectionTypeClass` to resolve parameter: ' . "[ {$i} ] \${$argName} : {$argReflectionTypeName}",
+                                $reflectable,
+                            ]
                         );
                     }
                 }

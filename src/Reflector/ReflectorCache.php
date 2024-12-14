@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @noinspection PhpUndefinedNamespaceInspection
  * @noinspection PhpUndefinedClassInspection
@@ -6,214 +7,103 @@
 
 namespace Gzhegow\Di\Reflector;
 
-use Gzhegow\Di\Lib;
-use Gzhegow\Di\Exception\LogicException;
+use Gzhegow\Lib\Lib;
 use Gzhegow\Di\Exception\RuntimeException;
 
 
 class ReflectorCache implements ReflectorCacheInterface
 {
-    const CACHE_MODE_RUNTIME  = 'RUNTIME';
     const CACHE_MODE_NO_CACHE = 'NO_CACHE';
+    const CACHE_MODE_RUNTIME  = 'RUNTIME';
     const CACHE_MODE_STORAGE  = 'STORAGE';
 
     const LIST_CACHE_MODE = [
-        self::CACHE_MODE_RUNTIME  => true,
         self::CACHE_MODE_NO_CACHE => true,
+        self::CACHE_MODE_RUNTIME  => true,
         self::CACHE_MODE_STORAGE  => true,
     ];
 
 
     /**
-     * @var string
+     * @var ReflectorCacheConfig
      */
-    protected $cacheMode = self::CACHE_MODE_RUNTIME;
-    /**
-     * @var object|\Psr\Cache\CacheItemPoolInterface
-     */
-    protected $cacheAdapter;
-    /**
-     * @var string
-     */
-    protected $cacheDirpath = __DIR__ . '/../../var/cache/app.di';
+    protected $config;
 
     /**
      * @var array<string, array<string, array>>
      */
-    protected $cacheDict = [];
-
+    protected $reflectionResults = [];
     /**
      * @var bool
      */
     protected $isChanged = false;
 
 
-    /**
-     * @param string|null                                   $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
-     * @param string|null                                   $cacheDirpath
-     *
-     * @return static
-     */
-    public function setCacheSettings(
-        string $cacheMode = null,
-        object $cacheAdapter = null,
-        string $cacheDirpath = null
-    ) // : static
+    public function __construct(ReflectorCacheConfig $config)
     {
-        if ((null !== $cacheMode) && ! isset(static::LIST_CACHE_MODE[ $cacheMode ])) {
-            throw new LogicException(
-                'The `cacheMode` should be one of: ' . implode('|', array_keys(static::LIST_CACHE_MODE))
-                . ' / ' . $cacheMode
-            );
-        }
-
-        if ((null !== $cacheAdapter) && ! is_a($cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
-            throw new LogicException(
-                'The `cacheAdapter` should be instance of: ' . $class
-                . ' / ' . Lib::php_dump($cacheAdapter)
-            );
-        }
-
-        if ((null !== $cacheDirpath) && (null === Lib::filter_dirpath($cacheDirpath))) {
-            throw new LogicException(
-                'The `cacheDirpath` should be valid directory path: ' . $cacheDirpath
-            );
-        }
-
-        $this->cacheMode = $cacheMode ?? static::CACHE_MODE_RUNTIME;
-        $this->cacheAdapter = $cacheAdapter;
-        $this->cacheDirpath = $cacheDirpath ?? __DIR__ . '/../../var/cache/app.di';
-
-        $this->reset();
-
-        return $this;
+        $this->config = $config;
+        $this->config->validate();
     }
 
 
-    /**
-     * @return static
-     */
-    public function reset() // : static
-    {
-        $this->cacheDict = [];
-
-        $this->isChanged = false;
-
-        return $this;
-    }
-
-    /**
-     * @return static
-     */
-    public function clear() // : static
-    {
-        $isStorage = ($this->cacheMode === static::CACHE_MODE_STORAGE);
-        $isAdapter = (null !== $this->cacheAdapter);
-
-        $this->reset();
-
-        if (! $isStorage) return $this;
-
-        if ($isStorage) {
-            if ($isAdapter) {
-                $this->cacheAdapter->clear();
-
-            } else {
-                Lib::fs_clear_dir($this->cacheDirpath);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return static
-     */
-    public function flush() // : static
-    {
-        if (! $this->isChanged) return $this;
-
-        $isStorage = ($this->cacheMode === static::CACHE_MODE_STORAGE);
-        $isAdapter = (null !== $this->cacheAdapter);
-
-        if (! $isStorage) return $this;
-
-        if ($isStorage) {
-            if ($isAdapter) {
-                foreach ( $this->cacheDict as $reflectNamespace => $cacheData ) {
-                    $cacheItem = $this->cacheAdapterGetItem($reflectNamespace);
-
-                    $cacheItem->set($cacheData);
-
-                    $this->cacheAdapter->saveDeferred($cacheItem);
-                }
-
-                $this->cacheAdapter->commit();
-
-            } else {
-                foreach ( $this->cacheDict as $reflectNamespace => $cacheData ) {
-                    $cacheKey = $reflectNamespace;
-
-                    $cacheFilename = $this->cacheFilename($cacheKey);
-                    $cacheFilepath = "{$this->cacheDirpath}/{$cacheFilename}";
-
-                    $content = $this->serializeData($cacheData);
-
-                    Lib::fs_file_put_contents($cacheFilepath, $content);
-                }
-            }
-        }
-
-        return $this;
-    }
-
-
-    public function hasReflectResult(string $reflectKey, string $reflectNamespace = null, array &$result = null) : bool
+    public function hasReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array &$result = null) : bool
     {
         $result = null;
 
-        $reflectNamespace = $reflectNamespace ?? '-';
+        $reflectionNamespace = $reflectionNamespace ?? '-';
 
-        if (! isset($this->cacheDict[ $reflectNamespace ][ $reflectKey ])) {
-            $isStorage = ($this->cacheMode === static::CACHE_MODE_STORAGE);
-            $isAdapter = (null !== $this->cacheAdapter);
+        $isNoCache = $this->config->cacheMode === static::CACHE_MODE_NO_CACHE;
+        $isRuntime = $this->config->cacheMode === static::CACHE_MODE_RUNTIME;
+        $isStorage = $this->config->cacheMode === static::CACHE_MODE_STORAGE;
 
+        if ($isNoCache) {
+            return false;
+        }
+
+        if (! isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ])) {
             if ($isStorage) {
-                $cacheKey = $reflectNamespace;
+                $cacheKey = $reflectionNamespace;
 
-                if ($isAdapter) {
+                if (null !== $this->config->cacheAdapter) {
                     $cacheItem = $this->cacheAdapterGetItem($cacheKey);
 
                     if ($cacheItem->isHit()) {
-                        $this->cacheDict += $cacheItem->get();
+                        $unserializedArray = $cacheItem->get();
+
+                        $this->reflectionResults += $unserializedArray;
                     }
 
                 } else {
                     $cacheFilename = $this->cacheFilename($cacheKey);
-                    $cacheFilepath = "{$this->cacheDirpath}/{$cacheFilename}";
+                    $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
-                    $content = Lib::fs_file_get_contents($cacheFilepath);
+                    $content = null;
+                    if (is_file($cacheFilepath)) {
+                        $content = Lib::fs_file_get_contents($cacheFilepath);
+                    }
 
                     if (null !== $content) {
-                        $this->cacheDict += $this->unserializeData($content) ?? [];
+                        $unserializedArray = Lib::php_unserialize($content);
+                        $unserializedArray = $unserializedArray ?? [];
+
+                        $this->reflectionResults += $unserializedArray;
                     }
                 }
             }
         }
 
-        $status = isset($this->cacheDict[ $reflectNamespace ][ $reflectKey ]);
+        $status = isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ]);
 
         if ($status) {
-            $result = $this->cacheDict[ $reflectNamespace ][ $reflectKey ];
+            $result = $this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ];
         }
 
         return $status;
     }
 
-    public function getReflectResult(string $reflectKey, string $reflectNamespace = null, array $fallback = []) : array
+    public function getReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array $fallback = []) : array
     {
-        $status = $this->hasReflectResult($reflectKey, $reflectNamespace, $result);
+        $status = $this->hasReflectionResult($reflectionKey, $reflectionNamespace, $result);
 
         if (! $status) {
             if ($fallback) {
@@ -223,30 +113,29 @@ class ReflectorCache implements ReflectorCacheInterface
             }
 
             throw new RuntimeException(
-                'Missing cache key: ' . $reflectKey
+                'Missing cache key: ' . $reflectionKey
             );
         }
 
         return $result;
     }
 
-
     /**
      * @return static
      */
-    public function setReflectResult(array $reflectResult, string $reflectKey, string $reflectNamespace = null) // : static
+    public function setReflectionResult(array $reflectionResult, string $reflectionKey, string $reflectionNamespace = null) // : static
     {
-        $reflectNamespace = $reflectNamespace ?? '-';
+        $reflectionNamespace = $reflectionNamespace ?? '-';
 
-        $current = $this->cacheDict[ $reflectNamespace ][ $reflectKey ] ?? null;
+        $current = $this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ] ?? null;
 
         if (null !== $current) {
             throw new RuntimeException(
-                'Cache key already exists: ' . $reflectKey
+                'Cache key already exists: ' . $reflectionKey
             );
         }
 
-        $this->cacheDict[ $reflectNamespace ][ $reflectKey ] = $reflectResult;
+        $this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ] = $reflectionResult;
 
         $this->isChanged = true;
 
@@ -255,39 +144,97 @@ class ReflectorCache implements ReflectorCacheInterface
 
 
     /**
-     * @noinspection PhpStrictComparisonWithOperandsOfDifferentTypesInspection
+     * @return static
      */
-    protected function serializeData(array $data) : ?string
+    public function resetCache() // : static
     {
-        $before = error_reporting(0);
+        $this->reflectionResults = [];
 
-        $result = @serialize($data);
+        $this->isChanged = false;
 
-        if (false === $result) {
-            throw new RuntimeException(
-                'Unable to serialize data: ' . Lib::php_dump($data)
-            );
-        }
-
-        error_reporting($before);
-
-        return $result;
+        return $this;
     }
 
-    protected function unserializeData(string $data) : ?array
+    /**
+     * @return static
+     */
+    public function saveCache() // : static
     {
-        $result = null;
-
-        $unserialized = @unserialize($data);
-
-        if (! (
-            (false === $unserialized)
-            || (get_class($unserialized) === '__PHP_Incomplete_Class')
-        )) {
-            $result = $unserialized;
+        if (! $this->isChanged) {
+            return $this;
         }
 
-        return $result;
+        if ($this->config->cacheMode !== static::CACHE_MODE_STORAGE) {
+            return $this;
+        }
+
+        if (null !== $this->config->cacheAdapter) {
+            foreach ( $this->reflectionResults as $reflectNamespace => $cacheData ) {
+                $cacheItem = $this->cacheAdapterGetItem($reflectNamespace);
+                $cacheItem->set($cacheData);
+
+                $this->config->cacheAdapter->saveDeferred($cacheItem);
+            }
+
+            $this->config->cacheAdapter->commit();
+
+        } else {
+            foreach ( $this->reflectionResults as $reflectNamespace => $cacheData ) {
+                $cacheKey = $reflectNamespace;
+
+                $cacheFilename = $this->cacheFilename($cacheKey);
+                $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
+
+                $content = Lib::php_serialize($cacheData);
+
+                Lib::fs_file_put_contents($cacheFilepath, $content, [ 0755, true ]);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return static
+     */
+    public function clearCache() // : static
+    {
+        $this->resetCache();
+
+        if ($this->config->cacheMode !== static::CACHE_MODE_STORAGE) {
+            return $this;
+        }
+
+        if (null !== $this->config->cacheAdapter) {
+            $this->config->cacheAdapter->clear();
+
+        } else {
+            foreach ( Lib::fs_dir_walk($this->config->cacheDirpath) as $spl ) {
+                $spl->isDir()
+                    ? rmdir($spl->getRealPath())
+                    : unlink($spl->getRealPath());
+            };
+        }
+
+        return $this;
+    }
+
+
+    /**
+     * @param string $key
+     *
+     * @return object|\Psr\Cache\CacheItemInterface
+     */
+    protected function cacheAdapterGetItem(string $key) : object
+    {
+        try {
+            $cacheItem = $this->config->cacheAdapter->getItem($key);
+        }
+        catch ( \Psr\Cache\InvalidArgumentException $e ) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        return $cacheItem;
     }
 
 
@@ -311,23 +258,5 @@ class ReflectorCache implements ReflectorCacheInterface
         $result = implode('/', $parts) . ".cache";
 
         return $result;
-    }
-
-
-    /**
-     * @param string $key
-     *
-     * @return object|\Psr\Cache\CacheItemInterface
-     */
-    protected function cacheAdapterGetItem(string $key) : object
-    {
-        try {
-            $cacheItem = $this->cacheAdapter->getItem($key);
-        }
-        catch ( \Psr\Cache\InvalidArgumentException $e ) {
-            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-        }
-
-        return $cacheItem;
     }
 }

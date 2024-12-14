@@ -50,6 +50,16 @@ class LazyServiceFactory implements LazyServiceFactoryInterface
         return $lazyService;
     }
 
+    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : LazyService
+    {
+        $lazyId = Id::from($lazyId);
+        $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $lazyService = new LazyService($lazyId, [ $this, 'fnFactoryFetch' ], $parametersWhenNew);
+
+        return $lazyService;
+    }
+
 
     /**
      * @return object
@@ -77,6 +87,16 @@ class LazyServiceFactory implements LazyServiceFactoryInterface
     public function fnFactoryTake($lazyId, array $parametersWhenNew = null) // : object
     {
         $instance = $this->di->take($lazyId, $parametersWhenNew);
+
+        return $instance;
+    }
+
+    /**
+     * @return object
+     */
+    public function fnFactoryFetch($lazyId, array $parametersWhenNew = null) // : object
+    {
+        $instance = $this->di->fetch($lazyId, $parametersWhenNew);
 
         return $instance;
     }

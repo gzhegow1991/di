@@ -2,13 +2,10 @@
 
 namespace Gzhegow\Di;
 
-use Gzhegow\Di\Injector\InjectorInterface;
-use Gzhegow\Di\Reflector\ReflectorInterface;
+use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 
 
 interface DiFactoryInterface
 {
-    public function newDi(InjectorInterface $injector = null) : DiInterface;
-
-    public function newInjector(ReflectorInterface $reflector = null) : InjectorInterface;
+    public function newLazyServiceFactory(DiInterface $di) : LazyServiceFactoryInterface;
 }

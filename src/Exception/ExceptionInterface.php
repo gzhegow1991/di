@@ -5,6 +5,7 @@ namespace Gzhegow\Di\Exception;
 use Psr\Container\ContainerExceptionInterface;
 
 
-interface ExceptionInterface extends ContainerExceptionInterface
+interface ExceptionInterface extends
+    ContainerExceptionInterface
 {
 }

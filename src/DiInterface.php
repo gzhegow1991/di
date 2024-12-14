@@ -15,23 +15,6 @@ use Gzhegow\Di\Exception\Runtime\NotFoundException;
 interface DiInterface
 {
     /**
-     * @param array{
-     *     reflectorCacheMode: string|null,
-     *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
-     *     reflectorCacheDirpath: string|null,
-     * }|null $settings
-     */
-    public function setCacheSettings(array $settings = null);
-
-    /**
-     * @param array{
-     *     injectorResolveUseTake: string|null,
-     * }|null $settings
-     */
-    public function setInjectorSettings(array $settings = null);
-
-
-    /**
      * @return static
      */
     public function resetCache();
@@ -44,7 +27,7 @@ interface DiInterface
     /**
      * @return static
      */
-    public function flushCache();
+    public function saveCache();
 
 
     /**
@@ -142,6 +125,15 @@ interface DiInterface
      */
     public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+
 
     /**
      * @template-covariant T
@@ -172,6 +164,15 @@ interface DiInterface
      */
     public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $contractT
+     *
+     * @return LazyService<T>|T
+     */
+    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null);
+
 
     /**
      * @template T
@@ -180,7 +181,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function autowire(object $instance, array $methodArgs = null, string $methodName = null);
+    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null);
 
 
     /**
@@ -188,12 +189,12 @@ interface DiInterface
      *
      * @return mixed
      */
-    public function callUserFunc($fn, ...$args);
+    public function callUserFuncAutowired($fn, ...$args);
 
     /**
      * @param callable $fn
      *
      * @return mixed
      */
-    public function callUserFuncArray($fn, array $args = null);
+    public function callUserFuncArrayAutowired($fn, array $args = null);
 }

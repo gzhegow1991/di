@@ -8,12 +8,11 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\LazyService\LazyService;
-use Gzhegow\Di\LazyService\LazyServiceFactory;
 use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Injector\InjectorInterface;
 use Gzhegow\Di\Reflector\ReflectorInterface;
-use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
+use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 
 
 class Di implements DiInterface
@@ -22,6 +21,7 @@ class Di implements DiInterface
      * @var DiFactoryInterface
      */
     protected $factory;
+
     /**
      * @var InjectorInterface
      */
@@ -39,61 +39,17 @@ class Di implements DiInterface
 
     public function __construct(
         DiFactoryInterface $factory,
-        InjectorInterface $injector,
-        ReflectorInterface $reflector,
         //
-        LazyServiceFactory $lazyServiceFactory = null
+        InjectorInterface $injector,
+        ReflectorInterface $reflector
     )
     {
         $this->factory = $factory;
+
         $this->injector = $injector;
         $this->reflector = $reflector;
 
-        $this->lazyServiceFactory = $lazyServiceFactory ?? new LazyServiceFactory($this);
-    }
-
-
-    /**
-     * @param array{
-     *     injectorResolveUseTake: string|null,
-     * }|null $settings
-     *
-     * @return static
-     */
-    public function setInjectorSettings(array $settings = null) // : static
-    {
-        $resolveUseTake = $settings[ 'injectorResolveUseTake' ] ?? $settings[ 0 ] ?? null;
-
-        $this->injector->setSettings(
-            $resolveUseTake
-        );
-
-        return $this;
-    }
-
-    /**
-     * @param array{
-     *     reflectorCacheMode: string|null,
-     *     reflectorCacheAdapter: object|\Psr\Cache\CacheItemPoolInterface|null,
-     *     reflectorCacheDirpath: string|null,
-     *     reflectorCacheFilename: string|null,
-     * }|null $settings
-     *
-     * @return static
-     */
-    public function setCacheSettings(array $settings = null) // : static
-    {
-        $cacheMode = $settings[ 'reflectorCacheMode' ] ?? $settings[ 0 ] ?? null;
-        $cacheAdapter = $settings[ 'reflectorCacheAdapter' ] ?? $settings[ 1 ] ?? null;
-        $cacheDirpath = $settings[ 'reflectorCacheDirpath' ] ?? $settings[ 2 ] ?? null;
-
-        $this->reflector->setCacheSettings(
-            $cacheMode,
-            $cacheAdapter,
-            $cacheDirpath
-        );
-
-        return $this;
+        $this->lazyServiceFactory = $this->factory->newLazyServiceFactory($this);
     }
 
 
@@ -110,9 +66,9 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function clearCache() // : static
+    public function saveCache() // : static
     {
-        $this->reflector->clearCache();
+        $this->reflector->saveCache();
 
         return $this;
     }
@@ -120,9 +76,9 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function flushCache() // : static
+    public function clearCache() // : static
     {
-        $this->reflector->flushCache();
+        $this->reflector->clearCache();
 
         return $this;
     }
@@ -336,6 +292,26 @@ class Di implements DiInterface
         return $instance;
     }
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|null $contractT
+     *
+     * @return T
+     */
+    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    {
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
+        $forceInstanceOf = $forceInstanceOf ?? false;
+
+        $id = Id::from($id);
+
+        $instance = $this->injector->fetchItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+
+        return $instance;
+    }
+
 
     /**
      * @template-covariant T
@@ -396,6 +372,25 @@ class Di implements DiInterface
         return $lazyService;
     }
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T|null $contractT
+     *
+     * @return LazyService<T>|T
+     */
+    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    {
+        $parametersWhenNew = $parametersWhenNew ?? [];
+        $contractT = $contractT ?? '';
+
+        $id = Id::from($id);
+
+        $lazyService = $this->fetchItemLazy($id, $parametersWhenNew, $contractT);
+
+        return $lazyService;
+    }
+
 
     /**
      * @template T
@@ -404,12 +399,12 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function autowire(object $instance, array $methodArgs = null, string $methodName = null) // : object
+    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null) // : object
     {
         $methodArgs = $methodArgs ?? [];
         $methodName = $methodName ?? '';
 
-        $this->injector->autowireItem($instance, $methodArgs, $methodName);
+        $this->injector->autowireInstance($instance, $methodArgs, $methodName);
 
         return $instance;
     }
@@ -420,9 +415,9 @@ class Di implements DiInterface
      *
      * @return mixed
      */
-    public function callUserFunc($fn, ...$args) // : mixed
+    public function callUserFuncAutowired($fn, ...$args) // : mixed
     {
-        $result = $this->injector->autowireUserFunc($fn, ...$args);
+        $result = $this->injector->callUserFuncAutowired($fn, ...$args);
 
         return $result;
     }
@@ -432,11 +427,11 @@ class Di implements DiInterface
      *
      * @return mixed
      */
-    public function callUserFuncArray($fn, array $args = null) // : mixed
+    public function callUserFuncArrayAutowired($fn, array $args = null) // : mixed
     {
         $args = $args ?? [];
 
-        $result = $this->injector->autowireUserFuncArray($fn, $args);
+        $result = $this->injector->callUserFuncArrayAutowired($fn, $args);
 
         return $result;
     }
@@ -492,6 +487,22 @@ class Di implements DiInterface
         return $lazyService;
     }
 
+    /**
+     * @template-covariant T
+     *
+     * @param class-string<T>|T $contractT
+     *
+     * @return LazyService<T>|T
+     *
+     * @noinspection PhpUnusedParameterInspection
+     */
+    protected function fetchItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : LazyService
+    {
+        $lazyService = $this->lazyServiceFactory->newLazyServiceFetch($id, $parametersWhenNew);
+
+        return $lazyService;
+    }
+
 
     /**
      * @return static
@@ -518,8 +529,10 @@ class Di implements DiInterface
     {
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
-                'The `di` should be instance of: ' . static::class
-                . ' / ' . Lib::php_dump($di)
+                [
+                    'The `di` should be instance of: ' . static::class,
+                    $di,
+                ]
             );
         }
 

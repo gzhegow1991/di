@@ -2,33 +2,14 @@
 
 namespace Gzhegow\Di;
 
-use Gzhegow\Di\Injector\Injector;
-use Gzhegow\Di\Reflector\ReflectorFactory;
-use Gzhegow\Di\Injector\InjectorInterface;
-use Gzhegow\Di\Reflector\ReflectorInterface;
+use Gzhegow\Di\LazyService\LazyServiceFactory;
+use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 
 
 class DiFactory implements DiFactoryInterface
 {
-    public function newDi(InjectorInterface $injector = null) : DiInterface
+    public function newLazyServiceFactory(DiInterface $di) : LazyServiceFactoryInterface
     {
-        $injector = $injector ?? $this->newInjector();
-
-        $di = new Di(
-            $this,
-            $injector,
-            $injector->getReflector()
-        );
-
-        return $di;
-    }
-
-    public function newInjector(ReflectorInterface $reflector = null) : InjectorInterface
-    {
-        $reflector = $reflector ?? (new ReflectorFactory())->newReflector();
-
-        $injector = new Injector($reflector);
-
-        return $injector;
+        return new LazyServiceFactory($di);
     }
 }

@@ -1,42 +1,35 @@
 <?php
+/**
+ * @noinspection PhpUndefinedClassInspection
+ * @noinspection PhpUndefinedNamespaceInspection
+ */
 
 namespace Gzhegow\Di\Reflector;
 
 interface ReflectorCacheInterface
 {
     /**
-     * @param string|null                                   $cacheMode
-     * @param object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
-     * @param string|null                                   $cacheDirpath
-     *
      * @return static
      */
-    public function setCacheSettings(string $cacheMode = null, object $cacheAdapter = null, string $cacheDirpath = null);
-
+    public function resetCache();
 
     /**
      * @return static
      */
-    public function reset();
+    public function saveCache();
 
     /**
      * @return static
      */
-    public function clear();
+    public function clearCache();
+
+
+    public function hasReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array &$result = null) : bool;
+
+    public function getReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array $fallback = []) : array;
 
     /**
      * @return static
      */
-    public function flush();
-
-
-    public function hasReflectResult(string $reflectKey, string $reflectNamespace = null, array &$result = null) : bool;
-
-    public function getReflectResult(string $reflectKey, string $reflectNamespace = null, array $fallback = []) : array;
-
-
-    /**
-     * @return static
-     */
-    public function setReflectResult(array $reflectResult, string $reflectKey, string $reflectNamespace = null);
+    public function setReflectionResult(array $reflectionResult, string $reflectionKey, string $reflectionNamespace = null);
 }

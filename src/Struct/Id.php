@@ -2,7 +2,7 @@
 
 namespace Gzhegow\Di\Struct;
 
-use Gzhegow\Di\Lib;
+use Gzhegow\Lib\Lib;
 use Gzhegow\Di\Exception\LogicException;
 
 
@@ -32,70 +32,81 @@ class Id
     }
 
 
-    public static function from($from)
+    /**
+     * @return static
+     */
+    public static function from($from) : self
     {
-        $instance = null;
-
-        if (is_a($from, static::class)) {
-            $instance = $from;
-
-        } elseif (is_string($from)) {
-            $instance = static::fromString($from);
-        }
+        $instance = static::tryFrom($from, $error);
 
         if (null === $instance) {
-            throw new LogicException(
-                'Unknown `from`: ' . Lib::php_dump($from)
+            throw $error;
+        }
+
+        return $instance;
+    }
+
+    /**
+     * @return static|null
+     */
+    public static function tryFrom($from, \Throwable &$last = null) : ?self
+    {
+        $last = null;
+
+        Lib::php_errors_start($b);
+
+        $instance = null
+            ?? static::tryFromInstance($from)
+            ?? static::tryFromString($from);
+
+        $errors = Lib::php_errors_end($b);
+
+        if (null === $instance) {
+            foreach ( $errors as $error ) {
+                $last = new LogicException($error, null, $last);
+            }
+        }
+
+        return $instance;
+    }
+
+
+    /**
+     * @return static|null
+     */
+    public static function tryFromInstance($instance) : ?self
+    {
+        if (! is_a($instance, static::class)) {
+            return Lib::php_error(
+                [
+                    'The `from` should be instance of: ' . static::class,
+                    $instance,
+                ]
             );
         }
 
         return $instance;
     }
 
-    protected static function fromString($string)
+    /**
+     * @return static|null
+     */
+    public static function tryFromString($string) : ?self
     {
-        if (null === ($instance = static::tryFromString($string))) {
-            throw new LogicException(
-                'Invalid `from`: ' . Lib::php_dump($string)
+        $_id = Lib::parse_string_not_empty($string);
+
+        $_id = ltrim($_id, '\\');
+
+        if ('' === $_id) {
+            return Lib::php_error(
+                [
+                    'The `from` should be non-empty string',
+                    $string,
+                ]
             );
         }
 
-        return $instance;
-    }
-
-
-    public static function tryFrom($from)
-    {
-        $instance = null;
-
-        if (is_string($from)) {
-            $instance = static::tryFromString($from);
-
-        } elseif (is_a($from, static::class)) {
-            $instance = $from;
-        }
-
-        if (null === $instance) {
-            return null;
-        }
-
-        return $instance;
-    }
-
-    protected static function tryFromString($id)
-    {
         $instance = new static();
-
-        if (! is_string($id)) {
-            return null;
-        }
-
-        if ('' === $id) {
-            return null;
-        }
-
-        $_id = ltrim($id, '\\');
-
         $instance->value = $_id;
 
         return $instance;

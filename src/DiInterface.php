@@ -4,7 +4,7 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\LazyService\LazyService;
-use Gzhegow\Di\Injector\InjectorInterface;
+use Gzhegow\Di\Injector\DiInjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
@@ -29,7 +29,7 @@ interface DiInterface
     /**
      * @return static
      */
-    public function merge(InjectorInterface $di);
+    public function merge(DiInjectorInterface $di);
 
 
     /**

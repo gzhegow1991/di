@@ -18,16 +18,16 @@ use Gzhegow\Lib\Config\Config;
  *
  * @property string|null                                   $cacheDirpath
  */
-class ReflectorCacheConfig extends Config
+class DiReflectorCacheConfig extends Config
 {
     /**
      * > тип кеширования - кешировать или не использовать кэш
      *
-     * @see ReflectorCache::LIST_CACHE_MODE
+     * @see DiReflectorCache::LIST_CACHE_MODE
      *
      * @var string|null
      */
-    protected $cacheMode = ReflectorCache::CACHE_MODE_NO_CACHE;
+    protected $cacheMode = DiReflectorCache::CACHE_MODE_NO_CACHE;
 
     /**
      * > можно установить пакет `composer require symfony/cache` и использовать адаптер, чтобы хранить кэш в redis или любым другим способом
@@ -50,11 +50,11 @@ class ReflectorCacheConfig extends Config
 
     public function validate() : void
     {
-        if (! isset(ReflectorCache::LIST_CACHE_MODE[ $this->cacheMode ])) {
+        if (! isset(DiReflectorCache::LIST_CACHE_MODE[ $this->cacheMode ])) {
             throw new LogicException(
                 [
                     'The `cacheMode` should be one of: '
-                    . implode('|', array_keys(ReflectorCache::LIST_CACHE_MODE)),
+                    . implode('|', array_keys(DiReflectorCache::LIST_CACHE_MODE)),
                     $this,
                 ]
             );

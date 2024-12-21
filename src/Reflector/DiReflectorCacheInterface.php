@@ -2,7 +2,7 @@
 
 namespace Gzhegow\Di\Reflector;
 
-interface ReflectorCacheInterface
+interface DiReflectorCacheInterface
 {
     /**
      * @return static

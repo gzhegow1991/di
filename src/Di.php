@@ -5,8 +5,8 @@ namespace Gzhegow\Di;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\LazyService\LazyService;
 use Gzhegow\Di\Exception\RuntimeException;
-use Gzhegow\Di\Injector\InjectorInterface;
-use Gzhegow\Di\Reflector\ReflectorInterface;
+use Gzhegow\Di\Injector\DiInjectorInterface;
+use Gzhegow\Di\Reflector\DiReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
 
@@ -19,11 +19,11 @@ class Di implements DiInterface
     protected $factory;
 
     /**
-     * @var InjectorInterface
+     * @var DiInjectorInterface
      */
     protected $injector;
     /**
-     * @var ReflectorInterface
+     * @var DiReflectorInterface
      */
     protected $reflector;
 
@@ -36,8 +36,8 @@ class Di implements DiInterface
     public function __construct(
         DiFactoryInterface $factory,
         //
-        InjectorInterface $injector,
-        ReflectorInterface $reflector
+        DiInjectorInterface $injector,
+        DiReflectorInterface $reflector
     )
     {
         $this->factory = $factory;
@@ -83,7 +83,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function merge(InjectorInterface $di) // : static
+    public function merge(DiInjectorInterface $di) // : static
     {
         $this->injector->merge($di);
 

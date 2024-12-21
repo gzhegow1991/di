@@ -11,7 +11,7 @@ use Gzhegow\Lib\Lib;
 use Gzhegow\Di\Exception\RuntimeException;
 
 
-class ReflectorCache implements ReflectorCacheInterface
+class DiReflectorCache implements DiReflectorCacheInterface
 {
     const CACHE_MODE_NO_CACHE = 'NO_CACHE';
     const CACHE_MODE_RUNTIME  = 'RUNTIME';
@@ -25,7 +25,7 @@ class ReflectorCache implements ReflectorCacheInterface
 
 
     /**
-     * @var ReflectorCacheConfig
+     * @var DiReflectorCacheConfig
      */
     protected $config;
 
@@ -39,7 +39,7 @@ class ReflectorCache implements ReflectorCacheInterface
     protected $isChanged = false;
 
 
-    public function __construct(ReflectorCacheConfig $config)
+    public function __construct(DiReflectorCacheConfig $config)
     {
         $this->config = $config;
         $this->config->validate();

@@ -3,7 +3,7 @@
 namespace Gzhegow\Di\Reflector;
 
 
-interface ReflectorInterface
+interface DiReflectorInterface
 {
     /**
      * @return static

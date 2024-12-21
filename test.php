@@ -103,10 +103,10 @@ $factory = new \Gzhegow\Di\DiFactory();
 $config = new \Gzhegow\Di\DiConfig();
 $config->configure(function (\Gzhegow\Di\DiConfig $config) {
     // > инжектор
-    $config->injector->fetchFunc = \Gzhegow\Di\Injector\Injector::FETCH_FUNC_GET;
+    $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
 
     // > кэш рефлектора
-    $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\ReflectorCache::CACHE_MODE_STORAGE;
+    $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
     //
     $cacheDir = __DIR__ . '/var/cache';
     $cacheNamespace = 'gzhegow.di';
@@ -128,15 +128,15 @@ $config->configure(function (\Gzhegow\Di\DiConfig $config) {
 
 // > создаем кэш рефлектора
 // > кэш наполняется и сохраняется автоматически по мере наполнения контейнера
-$reflectorCache = new \Gzhegow\Di\Reflector\ReflectorCache(
+$reflectorCache = new \Gzhegow\Di\Reflector\DiReflectorCache(
     $config->reflectorCache
 );
 
 // > создаем рефлектор
-$reflector = new \Gzhegow\Di\Reflector\Reflector($reflectorCache);
+$reflector = new \Gzhegow\Di\Reflector\DiReflector($reflectorCache);
 
 // > создаем инжектор
-$injector = new \Gzhegow\Di\Injector\Injector(
+$injector = new \Gzhegow\Di\Injector\DiInjector(
     $reflector,
     $config->injector
 );
@@ -307,7 +307,7 @@ $fn = function () use ($di, $config) {
 
     // > переключаем режим (на продакшене лучше включить его в начале приложения и динамически не менять)
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
-        $config->injector->fetchFunc = \Gzhegow\Di\Injector\Injector::FETCH_FUNC_TAKE;
+        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
     });
     $config->validate();
 
@@ -324,7 +324,7 @@ $fn = function () use ($di, $config) {
     _dump($five1->four !== $five2->four);
 
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
-        $config->injector->fetchFunc = \Gzhegow\Di\Injector\Injector::FETCH_FUNC_GET;
+        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
     $config->validate();
 

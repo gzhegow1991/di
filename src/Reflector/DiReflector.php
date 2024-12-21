@@ -6,16 +6,16 @@ use Gzhegow\Lib\Lib;
 use Gzhegow\Di\Exception\RuntimeException;
 
 
-class Reflector implements ReflectorInterface
+class DiReflector implements DiReflectorInterface
 {
     /**
-     * @var ReflectorCacheInterface
+     * @var DiReflectorCacheInterface
      */
     protected $cache;
 
 
     public function __construct(
-        ReflectorCacheInterface $cache
+        DiReflectorCacheInterface $cache
     )
     {
         $this->cache = $cache;

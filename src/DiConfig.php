@@ -3,30 +3,30 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Lib\Config\Config;
-use Gzhegow\Di\Injector\InjectorConfig;
-use Gzhegow\Di\Reflector\ReflectorCacheConfig;
+use Gzhegow\Di\Injector\DiInjectorConfig;
+use Gzhegow\Di\Reflector\DiReflectorCacheConfig;
 
 
 /**
- * @property InjectorConfig       $injector
- * @property ReflectorCacheConfig $reflectorCache
+ * @property DiInjectorConfig       $injector
+ * @property DiReflectorCacheConfig $reflectorCache
  */
 class DiConfig extends Config
 {
     /**
-     * @var InjectorConfig
+     * @var DiInjectorConfig
      */
     protected $injector;
     /**
-     * @var ReflectorCacheConfig
+     * @var DiReflectorCacheConfig
      */
     protected $reflectorCache;
 
 
     public function __construct()
     {
-        $this->__sections[ 'injector' ] = $this->injector = new InjectorConfig();
-        $this->__sections[ 'reflectorCache' ] = $this->reflectorCache = new ReflectorCacheConfig();
+        $this->__sections[ 'injector' ] = $this->injector = new DiInjectorConfig();
+        $this->__sections[ 'reflectorCache' ] = $this->reflectorCache = new DiReflectorCacheConfig();
     }
 
     public function validate() : void

@@ -5,11 +5,11 @@ namespace Gzhegow\Di\Injector;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
-use Gzhegow\Di\Reflector\ReflectorInterface;
+use Gzhegow\Di\Reflector\DiReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
-class Injector implements InjectorInterface
+class DiInjector implements DiInjectorInterface
 {
     const BIND_TYPE_ALIAS    = 'ALIAS';
     const BIND_TYPE_CLASS    = 'CLASS';
@@ -33,12 +33,12 @@ class Injector implements InjectorInterface
 
 
     /**
-     * @var ReflectorInterface
+     * @var DiReflectorInterface
      */
     protected $reflector;
 
     /**
-     * @var InjectorConfig
+     * @var DiInjectorConfig
      */
     protected $config;
 
@@ -84,9 +84,9 @@ class Injector implements InjectorInterface
 
 
     public function __construct(
-        ReflectorInterface $reflector,
+        DiReflectorInterface $reflector,
         //
-        InjectorConfig $config
+        DiInjectorConfig $config
     )
     {
         $this->reflector = $reflector;

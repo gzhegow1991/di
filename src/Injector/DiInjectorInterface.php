@@ -6,7 +6,7 @@ use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
 
-interface InjectorInterface
+interface DiInjectorInterface
 {
     /**
      * @param static $di

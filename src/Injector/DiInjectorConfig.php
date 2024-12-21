@@ -9,25 +9,25 @@ use Gzhegow\Di\Exception\LogicException;
 /**
  * @property string $fetchFunc
  */
-class InjectorConfig extends Config
+class DiInjectorConfig extends Config
 {
     /**
      * > использовать get()/take() в качестве основной функции во время рекрурсивного разбора
      *
-     * @see Injector::LIST_FETCH_FUNC
+     * @see DiInjector::LIST_FETCH_FUNC
      *
      * @var string
      */
-    protected $fetchFunc = Injector::FETCH_FUNC_GET;
+    protected $fetchFunc = DiInjector::FETCH_FUNC_GET;
 
 
     public function validate() : void
     {
-        if (! isset(Injector::LIST_FETCH_FUNC[ $this->fetchFunc ])) {
+        if (! isset(DiInjector::LIST_FETCH_FUNC[ $this->fetchFunc ])) {
             throw new LogicException(
                 [
                     'The `fetchFunc` should be one of: '
-                    . implode('|', array_keys(Injector::LIST_FETCH_FUNC)),
+                    . implode('|', array_keys(DiInjector::LIST_FETCH_FUNC)),
                     $this,
                 ]
             );

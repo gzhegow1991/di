@@ -500,39 +500,15 @@ class Di implements DiInterface
     }
 
 
-    /**
-     * @return static
-     */
-    public static function getInstance() // : static
+    public static function setInstance(DiInterface $di) : ?DiInterface
     {
-        $instance = static::$instances[ static::class ];
+        $diClass = get_class($di);
 
-        if (! is_a($instance, static::class)) {
-            throw new RuntimeException(
-                'No instance bound. Please, call Di::setInstance() first.'
-            );
-        }
+        $last = static::$instances[ $diClass ] ?? null;
 
-        return $instance;
-    }
+        static::$instances[ $diClass ] = $di;
 
-    /**
-     * @param static $di
-     *
-     * @return void
-     */
-    public static function setInstance($di) : void
-    {
-        if (! is_a($di, static::class)) {
-            throw new RuntimeException(
-                [
-                    'The `di` should be instance of: ' . static::class,
-                    $di,
-                ]
-            );
-        }
-
-        static::$instances[ get_class($di) ] = $di;
+        return $last;
     }
 
     /**

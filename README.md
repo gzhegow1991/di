@@ -41,10 +41,10 @@ set_exception_handler(function (\Throwable $e) {
 
         echo \Gzhegow\Lib\Lib::debug_var_dump($current) . PHP_EOL;
         echo $current->getMessage() . PHP_EOL;
-        
+
         $file = $current->getFile() ?? '{file}';
         $line = $current->getLine() ?? '{line}';
-        echo "{$file} : {$line}" . PHP_EOL;        
+        echo "{$file} : {$line}" . PHP_EOL;
 
         foreach ( $e->getTrace() as $traceItem ) {
             $file = $traceItem[ 'file' ] ?? '{file}';
@@ -61,16 +61,6 @@ set_exception_handler(function (\Throwable $e) {
 
 
 // > добавляем несколько функция для тестирования
-function _dump(...$values) : void
-{
-    $lines = [];
-    foreach ( $values as $value ) {
-        $lines[] = \Gzhegow\Lib\Lib::debug_value($value);
-    }
-
-    echo implode(' | ', $lines) . PHP_EOL;
-}
-
 function _debug(...$values) : void
 {
     $lines = [];
@@ -81,13 +71,32 @@ function _debug(...$values) : void
     echo implode(' | ', $lines) . PHP_EOL;
 }
 
+function _dump(...$values) : void
+{
+    $lines = [];
+    foreach ( $values as $value ) {
+        $lines[] = \Gzhegow\Lib\Lib::debug_value($value);
+    }
+
+    echo implode(' | ', $lines) . PHP_EOL;
+}
+
+function _dump_array($value, int $maxLevel = null, bool $multiline = false) : void
+{
+    $content = $multiline
+        ? \Gzhegow\Lib\Lib::debug_array_multiline($value, $maxLevel)
+        : \Gzhegow\Lib\Lib::debug_array($value, $maxLevel);
+
+    echo $content . PHP_EOL;
+}
+
 function _assert_output(
     \Closure $fn, string $expect = null
 ) : void
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert_stdout([ STDOUT ]);
+    \Gzhegow\Lib\Lib::assert_resource_static(STDOUT);
     \Gzhegow\Lib\Lib::assert_output($trace, $fn, $expect);
 }
 
@@ -97,7 +106,7 @@ function _assert_microtime(
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert_stdout([ STDOUT ]);
+    \Gzhegow\Lib\Lib::assert_resource_static(STDOUT);
     \Gzhegow\Lib\Lib::assert_microtime($trace, $fn, $expectMax, $expectMin);
 }
 

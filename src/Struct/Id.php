@@ -35,7 +35,7 @@ class Id
     /**
      * @return static
      */
-    public static function from($from) : self
+    public static function from($from) // : static
     {
         $instance = static::tryFrom($from, $error);
 
@@ -49,7 +49,7 @@ class Id
     /**
      * @return static|null
      */
-    public static function tryFrom($from, \Throwable &$last = null) : ?self
+    public static function tryFrom($from, \Throwable &$last = null) // : ?static
     {
         $last = null;
 
@@ -74,7 +74,7 @@ class Id
     /**
      * @return static|null
      */
-    public static function tryFromInstance($instance) : ?self
+    public static function tryFromInstance($instance) // : ?static
     {
         if (! is_a($instance, static::class)) {
             return Lib::php_error(
@@ -91,7 +91,7 @@ class Id
     /**
      * @return static|null
      */
-    public static function tryFromString($string) : ?self
+    public static function tryFromString($string) // : ?static
     {
         $_id = Lib::parse_string_not_empty($string);
 

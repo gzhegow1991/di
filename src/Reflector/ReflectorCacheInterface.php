@@ -1,8 +1,4 @@
 <?php
-/**
- * @noinspection PhpUndefinedClassInspection
- * @noinspection PhpUndefinedNamespaceInspection
- */
 
 namespace Gzhegow\Di\Reflector;
 

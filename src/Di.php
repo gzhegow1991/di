@@ -1,8 +1,4 @@
 <?php
-/**
- * @noinspection PhpUndefinedNamespaceInspection
- * @noinspection PhpUndefinedClassInspection
- */
 
 namespace Gzhegow\Di;
 

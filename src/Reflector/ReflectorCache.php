@@ -213,7 +213,7 @@ class ReflectorCache implements ReflectorCacheInterface
                 $spl->isDir()
                     ? rmdir($spl->getRealPath())
                     : unlink($spl->getRealPath());
-            };
+            }
         }
 
         return $this;

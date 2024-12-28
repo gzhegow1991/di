@@ -72,7 +72,7 @@ class DiReflectorCacheConfig extends Config
         }
 
         if ((null !== $this->cacheDirpath)
-            && (null === Lib::parse_dirpath($this->cacheDirpath))
+            && (null === Lib::parse()->dirpath($this->cacheDirpath))
         ) {
             throw new LogicException(
                 [

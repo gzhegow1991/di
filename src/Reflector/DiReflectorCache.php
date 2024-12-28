@@ -79,11 +79,11 @@ class DiReflectorCache implements DiReflectorCacheInterface
 
                     $content = null;
                     if (is_file($cacheFilepath)) {
-                        $content = Lib::fs_file_get_contents($cacheFilepath);
+                        $content = Lib::fs()->file_get_contents($cacheFilepath);
                     }
 
                     if (null !== $content) {
-                        $unserializedArray = Lib::php_unserialize($content);
+                        $unserializedArray = Lib::php()->unserialize($content);
                         $unserializedArray = $unserializedArray ?? [];
 
                         $this->reflectionResults += $unserializedArray;
@@ -185,9 +185,9 @@ class DiReflectorCache implements DiReflectorCacheInterface
                 $cacheFilename = $this->cacheFilename($cacheKey);
                 $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
-                $content = Lib::php_serialize($cacheData);
+                $content = Lib::php()->serialize($cacheData);
 
-                Lib::fs_file_put_contents($cacheFilepath, $content, [ 0755, true ]);
+                Lib::fs()->file_put_contents($cacheFilepath, $content, [ 0755, true ]);
             }
         }
 
@@ -209,7 +209,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->clear();
 
         } else {
-            foreach ( Lib::fs_dir_walk($this->config->cacheDirpath) as $spl ) {
+            foreach ( Lib::fs()->dir_walk($this->config->cacheDirpath) as $spl ) {
                 $spl->isDir()
                     ? rmdir($spl->getRealPath())
                     : unlink($spl->getRealPath());

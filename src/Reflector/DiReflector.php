@@ -102,7 +102,7 @@ class DiReflector implements DiReflectorInterface
             $class = get_class($object);
 
             $reflectKey = $class . '::__invoke';
-            $reflectNamespace = Lib::php_dirname($class, '\\');
+            $reflectNamespace = Lib::parse()->struct_namespace($class);
         }
 
         $cache = $this->cache;
@@ -139,10 +139,10 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsCallableArray($array) : ?array
     {
         if (! is_array($array)) return null;
-        if (! Lib::php_method_exists($array, '', $methodArray, $methodString)) return null;
+        if (! Lib::php()->method_exists($array, '', $methodArray, $methodString)) return null;
 
         $reflectKey = $methodString;
-        $reflectNamespace = Lib::php_dirname($methodArray[ 0 ], '\\');
+        $reflectNamespace = Lib::parse()->struct_namespace($methodArray[ 0 ]);
         $reflectResult = null;
 
         $cache = $this->cache;
@@ -193,7 +193,7 @@ class DiReflector implements DiReflectorInterface
             // } elseif ($isInvokable) {
 
             $reflectKey = "{$string}::__invoke";
-            $reflectNamespace = Lib::php_dirname($string, '\\');
+            $reflectNamespace = Lib::parse()->struct_namespace($string);
         }
 
         $cache = $this->cache;
@@ -267,7 +267,7 @@ class DiReflector implements DiReflectorInterface
         if (! class_exists($class)) return null;
 
         $reflectKey = $class . '::__construct';
-        $reflectNamespace = Lib::php_dirname($class, '\\');
+        $reflectNamespace = Lib::parse()->struct_namespace($class);
         $reflectResult = null;
 
         $cache = $this->cache;

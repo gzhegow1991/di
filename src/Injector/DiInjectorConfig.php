@@ -2,14 +2,14 @@
 
 namespace Gzhegow\Di\Injector;
 
-use Gzhegow\Lib\Config\Config;
+use Gzhegow\Lib\Config\AbstractConfig;
 use Gzhegow\Di\Exception\LogicException;
 
 
 /**
  * @property string $fetchFunc
  */
-class DiInjectorConfig extends Config
+class DiInjectorConfig extends AbstractConfig
 {
     /**
      * > использовать get()/take() в качестве основной функции во время рекрурсивного разбора

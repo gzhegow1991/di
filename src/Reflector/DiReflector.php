@@ -141,7 +141,7 @@ class DiReflector implements DiReflectorInterface
         if (! is_array($array)) return null;
         if (! Lib::php()->method_exists($array, '', $methodArray, $methodString)) return null;
 
-        $reflectKey = $methodString;
+        $reflectKey = $methodString ?? (get_class($methodArray[ 0 ]) . '->' . $methodArray[ 1 ]);
         $reflectNamespace = Lib::parse()->struct_namespace($methodArray[ 0 ]);
         $reflectResult = null;
 

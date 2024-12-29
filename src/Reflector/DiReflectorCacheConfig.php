@@ -8,7 +8,7 @@
 namespace Gzhegow\Di\Reflector;
 
 use Gzhegow\Lib\Lib;
-use Gzhegow\Lib\Config\Config;
+use Gzhegow\Lib\Config\AbstractConfig;
 
 
 /**
@@ -18,7 +18,7 @@ use Gzhegow\Lib\Config\Config;
  *
  * @property string|null                                   $cacheDirpath
  */
-class DiReflectorCacheConfig extends Config
+class DiReflectorCacheConfig extends AbstractConfig
 {
     /**
      * > тип кеширования - кешировать или не использовать кэш

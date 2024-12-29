@@ -2,7 +2,7 @@
 
 namespace Gzhegow\Di;
 
-use Gzhegow\Lib\Config\Config;
+use Gzhegow\Lib\Config\AbstractConfig;
 use Gzhegow\Di\Injector\DiInjectorConfig;
 use Gzhegow\Di\Reflector\DiReflectorCacheConfig;
 
@@ -11,7 +11,7 @@ use Gzhegow\Di\Reflector\DiReflectorCacheConfig;
  * @property DiInjectorConfig       $injector
  * @property DiReflectorCacheConfig $reflectorCache
  */
-class DiConfig extends Config
+class DiConfig extends AbstractConfig
 {
     /**
      * @var DiInjectorConfig

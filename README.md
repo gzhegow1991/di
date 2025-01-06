@@ -33,33 +33,45 @@ ini_set('memory_limit', '32M');
 
 
 // > добавляем несколько функция для тестирования
-function _debug(...$values) : void
+function _debug(...$values) : string
 {
     $lines = [];
     foreach ( $values as $value ) {
         $lines[] = \Gzhegow\Lib\Lib::debug()->type_id($value);
     }
 
-    echo implode(' | ', $lines) . PHP_EOL;
+    $ret = implode(' | ', $lines) . PHP_EOL;
+
+    echo $ret;
+
+    return $ret;
 }
 
-function _dump(...$values) : void
+function _dump(...$values) : string
 {
     $lines = [];
     foreach ( $values as $value ) {
         $lines[] = \Gzhegow\Lib\Lib::debug()->value($value);
     }
 
-    echo implode(' | ', $lines) . PHP_EOL;
+    $ret = implode(' | ', $lines) . PHP_EOL;
+
+    echo $ret;
+
+    return $ret;
 }
 
-function _dump_array($value, int $maxLevel = null, bool $multiline = false) : void
+function _dump_array($value, int $maxLevel = null, bool $multiline = false) : string
 {
     $content = $multiline
         ? \Gzhegow\Lib\Lib::debug()->array_multiline($value, $maxLevel)
         : \Gzhegow\Lib\Lib::debug()->array($value, $maxLevel);
 
-    echo $content . PHP_EOL;
+    $ret = $content . PHP_EOL;
+
+    echo $ret;
+
+    return $ret;
 }
 
 function _assert_output(
@@ -68,7 +80,6 @@ function _assert_output(
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert()->resource_static(STDOUT);
     \Gzhegow\Lib\Lib::assert()->output($trace, $fn, $expect);
 }
 
@@ -78,7 +89,6 @@ function _assert_microtime(
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert()->resource_static(STDOUT);
     \Gzhegow\Lib\Lib::assert()->microtime($trace, $fn, $expectMax, $expectMin);
 }
 
@@ -235,15 +245,13 @@ $fn = function () use ($di) {
 
     echo '';
 };
-_assert_output($fn, <<<HEREDOC
+_assert_output($fn, '
 "TEST 1"
 { object # Gzhegow\Di\Demo\MyClassThree }
 { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree }
 TRUE
 TRUE
-""
-HEREDOC
-);
+');
 
 
 // > TEST
@@ -268,16 +276,14 @@ $fn = function () use ($di) {
 
     echo '';
 };
-_assert_output($fn, <<<HEREDOC
+_assert_output($fn, '
 "TEST 2"
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassOneOne }
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassOneOne }
 TRUE
-""
-HEREDOC
-);
+');
 
 
 // > TEST
@@ -291,8 +297,8 @@ $fn = function () use ($di, $config) {
         $di->autowireInstance($five1);
     }
     catch ( \Gzhegow\Di\Exception\Runtime\NotFoundException $e ) {
-        _dump('[ CATCH ]', $e);
     }
+    _dump('[ CATCH ] ' . $e->getMessage());
 
     // > переключаем режим (на продакшене лучше включить его в начале приложения и динамически не менять)
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
@@ -319,17 +325,15 @@ $fn = function () use ($di, $config) {
 
     echo '';
 };
-_assert_output($fn, <<<HEREDOC
+_assert_output($fn, '
 "TEST 3"
-"[ CATCH ]" | { object # Gzhegow\Di\Exception\Runtime\NotFoundException }
+"[ CATCH ] Missing bound `argReflectionTypeClass` to resolve parameter: [ 0 ] $four : Gzhegow\Di\Demo\MyClassFour"
 { object # Gzhegow\Di\Demo\MyClassFive }
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassFive }
 { object # Gzhegow\Di\Demo\MyClassFour }
 TRUE
-""
-HEREDOC
-);
+');
 
 
 // > TEST
@@ -362,14 +366,12 @@ $fn = function () use ($di, $config) {
 
     echo '';
 };
-_assert_output($fn, <<<HEREDOC
+_assert_output($fn, '
 "TEST 4"
 1
 2
 "Gzhegow\Di\Demo\MyClassThree"
-""
-HEREDOC
-);
+');
 
 
 // > TEST
@@ -407,14 +409,12 @@ $fn = function () use (
 
     echo '';
 };
-_assert_output($fn, <<<HEREDOC
+_assert_output($fn, '
 "TEST 5"
 { object # Gzhegow\Di\LazyService\LazyService }
 { object # Gzhegow\Di\LazyService\LazyService }
 { object # Gzhegow\Di\LazyService\LazyService }
-""
-HEREDOC
-);
+');
 
 
 // > TEST

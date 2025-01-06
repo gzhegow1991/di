@@ -209,7 +209,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->clear();
 
         } else {
-            foreach ( Lib::fs()->dir_walk($this->config->cacheDirpath) as $spl ) {
+            foreach ( Lib::fs()->dir_walk_it($this->config->cacheDirpath) as $spl ) {
                 $spl->isDir()
                     ? rmdir($spl->getRealPath())
                     : unlink($spl->getRealPath());

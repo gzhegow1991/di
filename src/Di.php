@@ -4,7 +4,6 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\LazyService\LazyService;
-use Gzhegow\Di\Exception\RuntimeException;
 use Gzhegow\Di\Injector\DiInjectorInterface;
 use Gzhegow\Di\Reflector\DiReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;

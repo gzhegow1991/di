@@ -20,7 +20,7 @@ function _debug(...$values) : string
 {
     $lines = [];
     foreach ( $values as $value ) {
-        $lines[] = \Gzhegow\Lib\Lib::debug()->type_id($value);
+        $lines[] = \Gzhegow\Lib\Lib::debug()->type($value);
     }
 
     $ret = implode(' | ', $lines) . PHP_EOL;

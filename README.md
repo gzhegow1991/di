@@ -214,6 +214,7 @@ $di->extend(\Gzhegow\Di\Demo\MyClassTwoAwareInterface::class, static function (\
 // > иначе, если $config->injector->fetchFunc = 'TAKE', то инжектор попытается создать новый экземпляр, если в качестве `id` передано имя класса
 $fn = function () use ($di) {
     _dump('TEST 1');
+    echo PHP_EOL;
 
     // > Используя параметр $contractT можно задавать имя класса, который поймет PHPStorm как генерик и будет давать подсказки
 
@@ -242,11 +243,10 @@ $fn = function () use ($di) {
     _dump($result1, $result2, $result3);
     _dump($result1 === $result2);
     _dump($result2 === $result3);
-
-    echo '';
 };
 _assert_output($fn, '
 "TEST 1"
+
 { object # Gzhegow\Di\Demo\MyClassThree }
 { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree }
 TRUE
@@ -258,6 +258,7 @@ TRUE
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере
 $fn = function () use ($di) {
     _dump('TEST 2');
+    echo PHP_EOL;
 
     // $di->autowireInstance($four, $customArgs = [], $customMethod = '__myCustomAutowire');
 
@@ -271,13 +272,11 @@ $fn = function () use ($di) {
     $di->autowireInstance($four2);
     _dump($four2);
     _dump($four2->one);
-
     _dump($four1->one === $four2->one);
-
-    echo '';
 };
 _assert_output($fn, '
 "TEST 2"
+
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassOneOne }
 { object # Gzhegow\Di\Demo\MyClassFour }
@@ -290,6 +289,7 @@ TRUE
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере, имеющий зависимости, которые тоже не были зарегистрированы
 $fn = function () use ($di, $config) {
     _dump('TEST 3');
+    echo PHP_EOL;
 
     // > попытка заполнить зависимости, которые не зарегистрированы в контейнере с `fetchFunc = GET' приведет к ошибке
     try {
@@ -322,11 +322,10 @@ $fn = function () use ($di, $config) {
         $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
     $config->validate();
-
-    echo '';
 };
 _assert_output($fn, '
 "TEST 3"
+
 "[ CATCH ] Missing bound `argReflectionTypeClass` to resolve parameter: [ 0 ] $four : Gzhegow\Di\Demo\MyClassFour"
 { object # Gzhegow\Di\Demo\MyClassFive }
 { object # Gzhegow\Di\Demo\MyClassFour }
@@ -340,6 +339,7 @@ TRUE
 // > вызовем произвольную функцию и заполним её аргументы
 $fn = function () use ($di, $config) {
     _dump('TEST 4');
+    echo PHP_EOL;
 
     $fn = static function (
         $arg1,
@@ -363,11 +363,10 @@ $fn = function () use ($di, $config) {
     // > можно и так, но поскольку аргументы передаются по порядку - придется указать NULL для тех, что мы хотим распознать
     // $args = [ 1, null, 2 ];
     // $result = $di->callUserFuncAutowired($fn, ...$args);
-
-    echo '';
 };
 _assert_output($fn, '
 "TEST 4"
+
 1
 2
 "Gzhegow\Di\Demo\MyClassThree"
@@ -389,6 +388,7 @@ $fn = function () use (
     &$lazy3
 ) {
     _dump('TEST 5');
+    echo PHP_EOL;
 
     // $object = $di->getLazy(MyInterface::class, $contractT = MyClass::class, $parametersWhenNew = []);
     // $object = $di->makeLazy(MyInterface::class, $parameters = [], $contractT = MyClass::class);
@@ -406,11 +406,10 @@ $fn = function () use (
     // > а здесь мы уже получим сохранненный как синглтон экземпляр
     $lazy3 = $di->getLazy('two');
     _dump($lazy3);
-
-    echo '';
 };
 _assert_output($fn, '
 "TEST 5"
+
 { object # Gzhegow\Di\LazyService\LazyService }
 { object # Gzhegow\Di\LazyService\LazyService }
 { object # Gzhegow\Di\LazyService\LazyService }

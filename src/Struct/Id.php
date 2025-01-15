@@ -63,7 +63,7 @@ class Id
 
         if (null === $instance) {
             foreach ( $errors as $error ) {
-                $last = new LogicException($error, null, $last);
+                $last = new LogicException($error, $last);
             }
         }
 
@@ -78,10 +78,7 @@ class Id
     {
         if (! is_a($instance, static::class)) {
             return Lib::php()->error(
-                [
-                    'The `from` should be instance of: ' . static::class,
-                    $instance,
-                ]
+                [ 'The `from` should be instance of: ' . static::class, $instance ]
             );
         }
 
@@ -99,10 +96,7 @@ class Id
 
         if ('' === $_id) {
             return Lib::php()->error(
-                [
-                    'The `from` should be non-empty string',
-                    $string,
-                ]
+                [ 'The `from` should be non-empty string', $string ]
             );
         }
 

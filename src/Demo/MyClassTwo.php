@@ -35,6 +35,6 @@ class MyClassTwo implements MyClassTwoInterface
 
     public function do() : void
     {
-        echo "Hello, [ {$this->hello} ] !" . PHP_EOL;
+        echo "Hello, [ {$this->hello} ]" . PHP_EOL;
     }
 }

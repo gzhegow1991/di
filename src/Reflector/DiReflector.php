@@ -54,14 +54,14 @@ class DiReflector implements DiReflectorInterface
 
 
     /**
-     * @param callable|object|array|string $callable
+     * @param callable|object|array|string $callableOrMethod
      */
-    public function reflectArgumentsCallable($callable) : array
+    public function reflectArguments($callableOrMethod) : array
     {
         $result = null
-            ?? $this->reflectArgumentsCallableObject($callable)
-            ?? $this->reflectArgumentsCallableArray($callable)
-            ?? $this->reflectArgumentsCallableString($callable);
+            ?? $this->reflectArgumentsObject($callableOrMethod)
+            ?? $this->reflectArgumentsArray($callableOrMethod)
+            ?? $this->reflectArgumentsString($callableOrMethod);
 
         return $result;
     }
@@ -69,18 +69,12 @@ class DiReflector implements DiReflectorInterface
     /**
      * @param callable|object $object
      */
-    protected function reflectArgumentsCallableObject($object) : ?array
+    protected function reflectArgumentsObject($object) : ?array
     {
         if (! is_object($object)) return null;
+        if (! Lib::php()->type_callable_object($callableObject, $object, null)) return null;
 
-        $isClosure = false;
-        $isInvokable = false;
-
-        false
-        || ($isClosure = ($object instanceof \Closure))
-        || ($isInvokable = method_exists($object, '__invoke'));
-
-        if (! ($isClosure || $isInvokable)) return null;
+        $isClosure = $callableObject instanceof \Closure;
 
         $reflectKey = null;
         $reflectNamespace = null;
@@ -97,7 +91,7 @@ class DiReflector implements DiReflectorInterface
             $reflectKey = '{ \Closure(' . $rf->getFileName() . "\0" . $rf->getStartLine() . "\0" . $rf->getEndLine() . ') }';
 
         } else {
-            // } elseif ($isInvokable) {
+            // > invokable
 
             $class = get_class($object);
 
@@ -115,7 +109,7 @@ class DiReflector implements DiReflectorInterface
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
             } else {
-                // } elseif ($isInvokable) {
+                // > invokable
 
                 try {
                     $rm = new \ReflectionMethod($object, '__invoke');
@@ -136,12 +130,28 @@ class DiReflector implements DiReflectorInterface
     /**
      * @param callable|array $array
      */
-    protected function reflectArgumentsCallableArray($array) : ?array
+    protected function reflectArgumentsArray($array) : ?array
     {
         if (! is_array($array)) return null;
-        if (! Lib::php()->method_exists($array, '', $methodArray, $methodString)) return null;
 
-        $reflectKey = $methodString ?? (get_class($methodArray[ 0 ]) . '->' . $methodArray[ 1 ]);
+        $reflectResult = null
+            ?? $this->reflectArgumentsArrayMethod($array);
+
+        return $reflectResult;
+    }
+
+    /**
+     * @param callable|array $array
+     */
+    protected function reflectArgumentsArrayMethod($array) : ?array
+    {
+        if (! is_array($array)) return null;
+        if (! count($array)) return null;
+        if (! Lib::php()->type_method_string($methodString, $array, [ &$methodArray ])) return null;
+
+        $isObject = is_object($methodArray[ 0 ]);
+
+        $reflectKey = $methodString;
         $reflectNamespace = Lib::parse()->struct_namespace($methodArray[ 0 ]);
         $reflectResult = null;
 
@@ -169,31 +179,42 @@ class DiReflector implements DiReflectorInterface
     /**
      * @param callable|string|class-string $string
      */
-    protected function reflectArgumentsCallableString($string) : ?array
+    protected function reflectArgumentsString($string) : ?array
     {
         if (! is_string($string)) return null;
 
-        $isFunction = false;
-        $isInvokable = false;
+        $reflectResult = null
+            ?? $this->reflectArgumentsStringCallable($string);
 
-        false
-        || ($isFunction = function_exists($string))
-        || ($isInvokable = method_exists($string, '__invoke'));
+        return $reflectResult;
+    }
 
-        if (! ($isFunction || $isInvokable)) return null;
+    /**
+     * @param callable|string $string
+     */
+    protected function reflectArgumentsStringCallable($string) : ?array
+    {
+        if (! is_string($string)) return null;
+        if (! strlen($string)) return null;
+        if (! Lib::php()->type_callable_string($callableString, $string, null)) return null;
 
-        $reflectKey = null;
+        $isFunction = function_exists($callableString);
+
+        $reflectKey = $callableString;
         $reflectNamespace = null;
         $reflectResult = null;
 
+        $theClass = null;
+        $theMethod = null;
         if ($isFunction) {
             $reflectKey = $string;
 
         } else {
-            // } elseif ($isInvokable) {
+            // static method
 
-            $reflectKey = "{$string}::__invoke";
-            $reflectNamespace = Lib::parse()->struct_namespace($string);
+            [ $theClass, $theMethod ] = explode('::', $callableString);
+
+            $reflectNamespace = Lib::parse()->struct_namespace($theClass);
         }
 
         $cache = $this->cache;
@@ -204,7 +225,7 @@ class DiReflector implements DiReflectorInterface
         } else {
             if ($isFunction) {
                 try {
-                    $rf = new \ReflectionFunction($string);
+                    $rf = new \ReflectionFunction($callableString);
                 }
                 catch ( \ReflectionException $e ) {
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -213,10 +234,10 @@ class DiReflector implements DiReflectorInterface
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
             } else {
-                // } elseif ($isInvokable) {
+                // > static method
 
                 try {
-                    $rm = new \ReflectionMethod($string, '__invoke');
+                    $rm = new \ReflectionMethod($theClass, $theMethod);
                 }
                 catch ( \ReflectionException $e ) {
                     throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -224,6 +245,44 @@ class DiReflector implements DiReflectorInterface
 
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
+
+            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+        }
+
+        return $reflectResult;
+    }
+
+    /**
+     * @param callable|class-string $string
+     */
+    protected function reflectArgumentsStringClassString($string) : ?array
+    {
+        if (! is_string($string)) return null;
+        if (! strlen($string)) return null;
+        if (! class_exists($string)) return null;
+        if (! method_exists($string, '__invoke')) return null;
+
+        $theClass = $string;
+        $theMethod = '__invoke';
+
+        $reflectKey = "{$theClass}->{$theMethod}";
+        $reflectNamespace = Lib::parse()->struct_namespace($theClass);
+        $reflectResult = null;
+
+        $cache = $this->cache;
+
+        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
+
+        } else {
+            try {
+                $rm = new \ReflectionMethod($theClass, $theMethod);
+            }
+            catch ( \ReflectionException $e ) {
+                throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+            }
+
+            $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
             $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }

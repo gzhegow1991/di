@@ -22,9 +22,9 @@ interface DiReflectorInterface
 
 
     /**
-     * @param callable|object|array|string $callable
+     * @param callable|object|array|string $callableOrMethod
      */
-    public function reflectArgumentsCallable($callable) : array;
+    public function reflectArguments($callableOrMethod) : array;
 
     /**
      * @param object|class-string $objectOrClass

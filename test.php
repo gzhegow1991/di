@@ -16,63 +16,44 @@ ini_set('memory_limit', '32M');
 
 
 // > добавляем несколько функция для тестирования
-function _debug(...$values) : string
+function _values($separator = null, ...$values) : string
 {
-    $lines = [];
-    foreach ( $values as $value ) {
-        $lines[] = \Gzhegow\Lib\Lib::debug()->type($value);
-    }
-
-    $ret = implode(' | ', $lines) . PHP_EOL;
-
-    echo $ret;
-
-    return $ret;
+    return \Gzhegow\Lib\Lib::debug()->values($separator, [], ...$values);
 }
 
-function _dump(...$values) : string
+function _print(...$values) : void
 {
-    $lines = [];
-    foreach ( $values as $value ) {
-        $lines[] = \Gzhegow\Lib\Lib::debug()->value($value);
-    }
-
-    $ret = implode(' | ', $lines) . PHP_EOL;
-
-    echo $ret;
-
-    return $ret;
+    echo _values(' | ', ...$values) . PHP_EOL;
 }
 
-function _dump_array($value, int $maxLevel = null, bool $multiline = false) : string
-{
-    $content = $multiline
-        ? \Gzhegow\Lib\Lib::debug()->array_multiline($value, $maxLevel)
-        : \Gzhegow\Lib\Lib::debug()->array($value, $maxLevel);
-
-    $ret = $content . PHP_EOL;
-
-    echo $ret;
-
-    return $ret;
-}
-
-function _assert_output(
-    \Closure $fn, string $expect = null
+function _assert_stdout(
+    \Closure $fn, array $fnArgs = [],
+    string $expectedStdout = null
 ) : void
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert()->output($trace, $fn, $expect);
+    \Gzhegow\Lib\Lib::test()->assertStdout(
+        $trace,
+        $fn, $fnArgs,
+        $expectedStdout
+    );
 }
 
-function _assert_microtime(
-    \Closure $fn, float $expectMax = null, float $expectMin = null
+function _assert(
+    \Closure $fn, array $fnArgs = [],
+    string $expectedStdout = null,
+    float $expectedMicrotimeMax = null, float $expectedMicrotimeMin = null
 ) : void
 {
     $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-    \Gzhegow\Lib\Lib::assert()->microtime($trace, $fn, $expectMax, $expectMin);
+    \Gzhegow\Lib\Lib::test()->assert(
+        $trace,
+        $fn, $fnArgs,
+        $expectedStdout,
+        $expectedMicrotimeMax, $expectedMicrotimeMin
+    );
 }
 
 
@@ -196,7 +177,7 @@ $di->extend(\Gzhegow\Di\Demo\MyClassTwoAwareInterface::class, static function (\
 // > если в настройках установлено $config->injector->fetchFunc = 'GET', то при попытке заполнения необъявленных зависимостей будет выброшено исключение
 // > иначе, если $config->injector->fetchFunc = 'TAKE', то инжектор попытается создать новый экземпляр, если в качестве `id` передано имя класса
 $fn = function () use ($di) {
-    _dump('TEST 1');
+    _print('TEST 1');
     echo PHP_EOL;
 
     // > Используя параметр $contractT можно задавать имя класса, который поймет PHPStorm как генерик и будет давать подсказки
@@ -217,20 +198,23 @@ $fn = function () use ($di) {
     // $object = $di->fetch(MyInterface::class, $parametersWhenNew = [], $contractT = MyClass::class); // > get() если зарегистрировано, make() если не зарегистрировано
 
     $result = $di->get('three');
-    _dump($result);
+    _print($result);
+
+    echo PHP_EOL;
 
     // > Если класс помечен как сиглтон, запросы его вернут один и тот же экземпляр
     $result1 = $di->get('\Gzhegow\Di\Demo\MyClassThree');
     $result2 = $di->get('\Gzhegow\Di\Demo\MyClassThree');
     $result3 = $di->get('three');
-    _dump($result1, $result2, $result3);
-    _dump($result1 === $result2);
-    _dump($result2 === $result3);
+    _print($result1, $result2, $result3);
+    _print($result1 === $result2);
+    _print($result2 === $result3);
 };
-_assert_output($fn, '
+_assert_stdout($fn, [], '
 "TEST 1"
 
 { object # Gzhegow\Di\Demo\MyClassThree }
+
 { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree } | { object # Gzhegow\Di\Demo\MyClassThree }
 TRUE
 TRUE
@@ -240,28 +224,31 @@ TRUE
 // > TEST
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере
 $fn = function () use ($di) {
-    _dump('TEST 2');
+    _print('TEST 2');
     echo PHP_EOL;
 
     // $di->autowireInstance($four, $customArgs = [], $customMethod = '__myCustomAutowire');
 
     $four1 = new \Gzhegow\Di\Demo\MyClassFour();
     $di->autowireInstance($four1);
-    _dump($four1);
-    _dump($four1->one);
+    _print($four1);
+    _print($four1->one);
+
+    echo PHP_EOL;
 
     // > зависимость по интерфейсу, зарегистрированная как одиночка, будет равна в двух разных экземплярах
     $four2 = new \Gzhegow\Di\Demo\MyClassFour();
     $di->autowireInstance($four2);
-    _dump($four2);
-    _dump($four2->one);
-    _dump($four1->one === $four2->one);
+    _print($four2);
+    _print($four2->one);
+    _print($four1->one === $four2->one);
 };
-_assert_output($fn, '
+_assert_stdout($fn, [], '
 "TEST 2"
 
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassOneOne }
+
 { object # Gzhegow\Di\Demo\MyClassFour }
 { object # Gzhegow\Di\Demo\MyClassOneOne }
 TRUE
@@ -271,7 +258,7 @@ TRUE
 // > TEST
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере, имеющий зависимости, которые тоже не были зарегистрированы
 $fn = function () use ($di, $config) {
-    _dump('TEST 3');
+    _print('TEST 3');
     echo PHP_EOL;
 
     // > попытка заполнить зависимости, которые не зарегистрированы в контейнере с `fetchFunc = GET' приведет к ошибке
@@ -281,7 +268,8 @@ $fn = function () use ($di, $config) {
     }
     catch ( \Gzhegow\Di\Exception\Runtime\NotFoundException $e ) {
     }
-    _dump('[ CATCH ] ' . $e->getMessage());
+    _print('[ CATCH ] ' . $e->getMessage());
+    echo PHP_EOL;
 
     // > переключаем режим (на продакшене лучше включить его в начале приложения и динамически не менять)
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
@@ -291,29 +279,34 @@ $fn = function () use ($di, $config) {
 
     $five1 = new \Gzhegow\Di\Demo\MyClassFive();
     $di->autowireInstance($five1);
-    _dump($five1);
-    _dump($five1->four);
+    _print($five1);
+    _print($five1->four);
+    echo PHP_EOL;
 
     $five2 = new \Gzhegow\Di\Demo\MyClassFive();
     $di->autowireInstance($five2);
-    _dump($five2);
-    _dump($five2->four);
+    _print($five2);
+    _print($five2->four);
+    echo PHP_EOL;
 
-    _dump($five1->four !== $five2->four);
+    _print($five1->four !== $five2->four);
 
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
         $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
     $config->validate();
 };
-_assert_output($fn, '
+_assert_stdout($fn, [], '
 "TEST 3"
 
 "[ CATCH ] Missing bound `argReflectionTypeClass` to resolve parameter: [ 0 ] $four : Gzhegow\Di\Demo\MyClassFour"
+
 { object # Gzhegow\Di\Demo\MyClassFive }
 { object # Gzhegow\Di\Demo\MyClassFour }
+
 { object # Gzhegow\Di\Demo\MyClassFive }
 { object # Gzhegow\Di\Demo\MyClassFour }
+
 TRUE
 ');
 
@@ -321,7 +314,7 @@ TRUE
 // > TEST
 // > вызовем произвольную функцию и заполним её аргументы
 $fn = function () use ($di, $config) {
-    _dump('TEST 4');
+    _print('TEST 4');
     echo PHP_EOL;
 
     $fn = static function (
@@ -329,8 +322,8 @@ $fn = function () use ($di, $config) {
         \Gzhegow\Di\Demo\MyClassThree $three,
         $arg2
     ) {
-        _dump($arg1);
-        _dump($arg2);
+        _print($arg1);
+        _print($arg2);
 
         return get_class($three);
     };
@@ -341,13 +334,13 @@ $fn = function () use ($di, $config) {
     ];
 
     $result = $di->callUserFuncArrayAutowired($fn, $args);
-    _dump($result);
+    _print($result);
 
     // > можно и так, но поскольку аргументы передаются по порядку - придется указать NULL для тех, что мы хотим распознать
     // $args = [ 1, null, 2 ];
     // $result = $di->callUserFuncAutowired($fn, ...$args);
 };
-_assert_output($fn, '
+_assert_stdout($fn, [], '
 "TEST 4"
 
 1
@@ -370,7 +363,7 @@ $fn = function () use (
     &$lazy2,
     &$lazy3
 ) {
-    _dump('TEST 5');
+    _print('TEST 5');
     echo PHP_EOL;
 
     // $object = $di->getLazy(MyInterface::class, $contractT = MyClass::class, $parametersWhenNew = []);
@@ -378,24 +371,28 @@ $fn = function () use (
     // $object = $di->takeLazy(MyInterface::class, $parametersWhenNew = [], $contractT = MyClass::class);
     // $object = $di->fetchLazy(MyInterface::class, $parametersWhenNew = [], $contractT = MyClass::class);
 
-    // > make создаст новый объект, но не перепишет имеющийся синглтон, и использует переданные параметры
+    // > get получил бы имеющийся объект, но его нет, так что создаст новый и сохранит как синглтон
     $lazy1 = $di->getLazy('two', $contractT = null, [ 'hello' => 'User1' ]);
-    _dump($lazy1);
+    _print($lazy1, (string) $lazy1->id);
+    echo PHP_EOL;
 
-    // > make создаст новый объект, но не перепишет имеющийся синглтон, и использует переданные параметры
+    // > make создаст новый объект с переданными параметрами, но не перепишет имеющийся синглтон
     $lazy2 = $di->makeLazy('two', [ 'hello' => 'User2' ]);
-    _dump($lazy2);
+    _print($lazy2, (string) $lazy2->id);
+    echo PHP_EOL;
 
-    // > а здесь мы уже получим сохранненный как синглтон экземпляр
+    // > повторный запрос get возвратит синглтон, записанный в первом вызове
     $lazy3 = $di->getLazy('two');
-    _dump($lazy3);
+    _print($lazy3, (string) $lazy3->id);
 };
-_assert_output($fn, '
+_assert_stdout($fn, [], '
 "TEST 5"
 
-{ object # Gzhegow\Di\LazyService\LazyService }
-{ object # Gzhegow\Di\LazyService\LazyService }
-{ object # Gzhegow\Di\LazyService\LazyService }
+{ object # Gzhegow\Di\LazyService\LazyService } | "two"
+
+{ object # Gzhegow\Di\LazyService\LazyService } | "two"
+
+{ object # Gzhegow\Di\LazyService\LazyService } | "two"
 ');
 
 
@@ -408,19 +405,23 @@ $fn = function () use (
     &$lazy2,
     &$lazy3
 ) {
-    // > Это вызовет конструктор ленивого сервиса и займет 3 секунды...
+    // > это вызовет конструктор ленивого сервиса и займет 3 секунды...
     $lazy1->do();
 
-    // > Это вызовет конструктор ленивого сервиса и займет 3 секунды...
+    // > это вызовет конструктор ленивого сервиса и займет 3 секунды...
     $lazy2->do();
 
-    // > В этом случае время не потребуется, поскольку объект был создан ранее
+    // > в этом случае время не потребуется, поскольку объект был создан ранее
     $lazy3->do();
 };
-_assert_microtime($fn, 7.0, 6.0);
+_assert($fn, [], '
+Hello, [ User1 ]
+Hello, [ User2 ]
+Hello, [ User1 ]
+', 7.0, 6.0);
 
 
 // > Теперь сохраним кеш сделанной за скрипт рефлексии для следующего раза
-// > в примере мы чистим кеш в начале скрипта, то есть это смысла не имеет
-// > на проде кеш вычищают вручную или не трогают вовсе
+// > В примере мы чистим кеш в начале скрипта, то есть это смысла не имеет
+// > На проде же кеш вычищают вручную или не трогают вовсе
 $di->saveCache();

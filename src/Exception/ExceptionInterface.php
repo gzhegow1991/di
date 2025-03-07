@@ -6,6 +6,8 @@ use Psr\Container\ContainerExceptionInterface;
 
 
 interface ExceptionInterface extends
+    \Throwable,
+    //
     ContainerExceptionInterface
 {
 }

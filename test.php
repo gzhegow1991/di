@@ -62,19 +62,16 @@ function _assert(
 // > сначала всегда фабрика
 $factory = new \Gzhegow\Di\DiFactory();
 
-// > создаем конфигурацию
-$config = new \Gzhegow\Di\DiConfig();
-$config->configure(function (\Gzhegow\Di\DiConfig $config) {
-    // > инжектор
-    $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
-
-    // > кэш рефлектора
-    $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
+// > создаем кэш рефлектора
+// > кэш наполняется и сохраняется автоматически по мере наполнения контейнера
+$reflectoCacheConfig = new \Gzhegow\Di\Reflector\DiReflectorCacheConfig();
+$reflectoCacheConfig->configure(function (\Gzhegow\Di\Reflector\DiReflectorCacheConfig $config) {
+    $config->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
     //
     $cacheDir = __DIR__ . '/var/cache';
     $cacheNamespace = 'gzhegow.di';
     $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
-    $config->reflectorCache->cacheDirpath = $cacheDirpath;
+    $config->cacheDirpath = $cacheDirpath;
     //
     // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
     //     $cacheNamespace, $defaultLifetime = 0, $cacheDir
@@ -85,23 +82,26 @@ $config->configure(function (\Gzhegow\Di\DiConfig $config) {
     //     $cacheNamespace = '',
     //     $defaultLifetime = 0
     // );
-    // $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\ReflectorCache::CACHE_MODE_STORAGE;
-    // $config->reflectorCache->cacheAdapter = $symfonyCacheAdapter;
+    // $config->cacheMode = \Gzhegow\Di\Reflector\ReflectorCache::CACHE_MODE_STORAGE;
+    // $config->cacheAdapter = $symfonyCacheAdapter;
 });
-
-// > создаем кэш рефлектора
-// > кэш наполняется и сохраняется автоматически по мере наполнения контейнера
 $reflectorCache = new \Gzhegow\Di\Reflector\DiReflectorCache(
-    $config->reflectorCache
+    $reflectoCacheConfig
 );
 
 // > создаем рефлектор
-$reflector = new \Gzhegow\Di\Reflector\DiReflector($reflectorCache);
+$reflector = new \Gzhegow\Di\Reflector\DiReflector(
+    $reflectorCache
+);
 
 // > создаем инжектор
+$injectorConfig = new \Gzhegow\Di\Injector\DiInjectorConfig();
+$injectorConfig->configure(function (\Gzhegow\Di\Injector\DiInjectorConfig $config) {
+    $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
+});
 $injector = new \Gzhegow\Di\Injector\DiInjector(
     $reflector,
-    $config->injector
+    $injectorConfig
 );
 
 // > создаем DI
@@ -257,7 +257,7 @@ TRUE
 
 // > TEST
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере, имеющий зависимости, которые тоже не были зарегистрированы
-$fn = function () use ($di, $config) {
+$fn = function () use ($di, $injectorConfig) {
     _print('TEST 3');
     echo PHP_EOL;
 
@@ -272,10 +272,9 @@ $fn = function () use ($di, $config) {
     echo PHP_EOL;
 
     // > переключаем режим (на продакшене лучше включить его в начале приложения и динамически не менять)
-    $config->configure(function (\Gzhegow\Di\DiConfig $config) {
-        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
+    $injectorConfig->configure(function ($config) {
+        $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
     });
-    $config->validate();
 
     $five1 = new \Gzhegow\Di\Demo\MyClassFive();
     $di->autowireInstance($five1);
@@ -291,10 +290,9 @@ $fn = function () use ($di, $config) {
 
     _print($five1->four !== $five2->four);
 
-    $config->configure(function (\Gzhegow\Di\DiConfig $config) {
-        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
+    $injectorConfig->configure(function ($config) {
+        $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
-    $config->validate();
 };
 _assert_stdout($fn, [], '
 "TEST 3"
@@ -313,7 +311,7 @@ TRUE
 
 // > TEST
 // > вызовем произвольную функцию и заполним её аргументы
-$fn = function () use ($di, $config) {
+$fn = function () use ($di) {
     _print('TEST 4');
     echo PHP_EOL;
 

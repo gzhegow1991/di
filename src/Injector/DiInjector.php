@@ -92,6 +92,7 @@ class DiInjector implements DiInjectorInterface
         $this->reflector = $reflector;
 
         $this->config = $config;
+        $this->config->validate();
     }
 
 

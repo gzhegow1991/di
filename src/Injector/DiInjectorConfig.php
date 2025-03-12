@@ -21,13 +21,15 @@ class DiInjectorConfig extends AbstractConfig
     protected $fetchFunc = DiInjector::FETCH_FUNC_GET;
 
 
-    public function validate() : void
+    public function validate(array $context = [])
     {
         if (! isset(DiInjector::LIST_FETCH_FUNC[ $this->fetchFunc ])) {
             throw new LogicException(
                 [
-                    'The `fetchFunc` should be one of: '
+                    ''
+                    . 'The `fetchFunc` should be one of: '
                     . implode('|', array_keys(DiInjector::LIST_FETCH_FUNC)),
+                    //
                     $this,
                 ]
             );

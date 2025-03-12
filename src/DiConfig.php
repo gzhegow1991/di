@@ -25,11 +25,14 @@ class DiConfig extends AbstractConfig
 
     public function __construct()
     {
-        $this->__sections[ 'injector' ] = $this->injector = new DiInjectorConfig();
-        $this->__sections[ 'reflectorCache' ] = $this->reflectorCache = new DiReflectorCacheConfig();
+        $this->injector = new DiInjectorConfig();
+        $this->reflectorCache = new DiReflectorCacheConfig();
+
+        parent::__construct();
     }
 
-    public function validate() : void
+
+    public function validate(array $context = [])
     {
         $this->injector->validate();
         $this->reflectorCache->validate();

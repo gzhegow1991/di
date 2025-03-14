@@ -6,7 +6,7 @@ use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\DiInterface;
 
 
-class LazyServiceFactory implements LazyServiceFactoryInterface
+class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
 {
     /**
      * @var DiInterface
@@ -20,42 +20,42 @@ class LazyServiceFactory implements LazyServiceFactoryInterface
     }
 
 
-    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : LazyService
+    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $lazyService = new LazyService($lazyId, [ $this, 'fnFactoryGet' ], $parametersWhenNew);
+        $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryGet' ], $parametersWhenNew);
 
         return $lazyService;
     }
 
-    public function newLazyServiceMake($lazyId, array $parameters = null) : LazyService
+    public function newLazyServiceMake($lazyId, array $parameters = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parameters = $parameters ?? [];
 
-        $lazyService = new LazyService($lazyId, [ $this, 'fnFactoryMake' ], $parameters);
+        $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryMake' ], $parameters);
 
         return $lazyService;
     }
 
-    public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : LazyService
+    public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $lazyService = new LazyService($lazyId, [ $this, 'fnFactoryTake' ], $parametersWhenNew);
+        $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryTake' ], $parametersWhenNew);
 
         return $lazyService;
     }
 
-    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : LazyService
+    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
 
-        $lazyService = new LazyService($lazyId, [ $this, 'fnFactoryFetch' ], $parametersWhenNew);
+        $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryFetch' ], $parametersWhenNew);
 
         return $lazyService;
     }

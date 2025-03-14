@@ -3,7 +3,7 @@
 namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
-use Gzhegow\Di\LazyService\LazyService;
+use Gzhegow\Di\LazyService\DiLazyService;
 use Gzhegow\Di\Injector\DiInjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
@@ -136,7 +136,7 @@ interface DiInterface
      *
      * @param class-string<T>|T|null $contractT
      *
-     * @return LazyService<T>|T
+     * @return DiLazyService<T>|T
      *
      * @throws NotFoundException
      */
@@ -147,7 +147,7 @@ interface DiInterface
      *
      * @param class-string<T>|T|null $contractT
      *
-     * @return LazyService<T>|T
+     * @return DiLazyService<T>|T
      */
     public function makeLazy($id, array $parameters = null, string $contractT = null);
 
@@ -156,7 +156,7 @@ interface DiInterface
      *
      * @param class-string<T>|T|null $contractT
      *
-     * @return LazyService<T>|T
+     * @return DiLazyService<T>|T
      */
     public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
@@ -165,7 +165,7 @@ interface DiInterface
      *
      * @param class-string<T>|T|null $contractT
      *
-     * @return LazyService<T>|T
+     * @return DiLazyService<T>|T
      */
     public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null);
 

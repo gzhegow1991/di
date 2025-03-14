@@ -2,14 +2,14 @@
 
 namespace Gzhegow\Di;
 
-use Gzhegow\Di\LazyService\LazyServiceFactory;
-use Gzhegow\Di\LazyService\LazyServiceFactoryInterface;
+use Gzhegow\Di\LazyService\DiLazyServiceFactory;
+use Gzhegow\Di\LazyService\DiLazyServiceFactoryInterface;
 
 
 class DiFactory implements DiFactoryInterface
 {
-    public function newLazyServiceFactory(DiInterface $di) : LazyServiceFactoryInterface
+    public function newLazyServiceFactory(DiInterface $di) : DiLazyServiceFactoryInterface
     {
-        return new LazyServiceFactory($di);
+        return new DiLazyServiceFactory($di);
     }
 }

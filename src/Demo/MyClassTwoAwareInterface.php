@@ -2,13 +2,13 @@
 
 namespace Gzhegow\Di\Demo;
 
-use Gzhegow\Di\LazyService\LazyService;
+use Gzhegow\Di\LazyService\DiLazyService;
 
 
 interface MyClassTwoAwareInterface
 {
     /**
-     * @param LazyService<MyClassTwo>|MyClassTwo $two
+     * @param DiLazyService<MyClassTwo>|MyClassTwo $two
      */
     public function setTwo($two);
 }

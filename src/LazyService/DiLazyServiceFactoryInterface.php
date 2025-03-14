@@ -2,15 +2,15 @@
 
 namespace Gzhegow\Di\LazyService;
 
-interface LazyServiceFactoryInterface
+interface DiLazyServiceFactoryInterface
 {
-    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : LazyService;
+    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : DiLazyService;
 
-    public function newLazyServiceMake($lazyId, array $parameters = null) : LazyService;
+    public function newLazyServiceMake($lazyId, array $parameters = null) : DiLazyService;
 
-    public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : LazyService;
+    public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : DiLazyService;
 
-    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : LazyService;
+    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : DiLazyService;
 
 
     /**

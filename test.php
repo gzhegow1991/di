@@ -355,7 +355,8 @@ _assert_stdout($fn, [], '
 // > TEST
 // > некоторые сервисы слишком долго выполняют конструктор (например, подключаются к внешней апи)
 // > запросим его как ленивый (правда, при этом подстановка в аргументы конструктора будет невозможна)
-// > В PHP, к сожалению, нет возможности создать анонимный класс, который расширяет ("extend") имя класса из строковой переменной, поэтому, приходится использовать только такие LazyService.
+// > В PHP, к сожалению, нет возможности создать анонимный класс, который расширяет ("extend") имя класса из строковой переменной
+// > поэтому, приходится использовать только такие LazyService
 $lazy1 = null;
 $lazy2 = null;
 $lazy3 = null;
@@ -391,11 +392,11 @@ $fn = function () use (
 _assert_stdout($fn, [], '
 "TEST 5"
 
-{ object # Gzhegow\Di\LazyService\LazyService } | "two"
+{ object # Gzhegow\Di\LazyService\DiLazyService } | "two"
 
-{ object # Gzhegow\Di\LazyService\LazyService } | "two"
+{ object # Gzhegow\Di\LazyService\DiLazyService } | "two"
 
-{ object # Gzhegow\Di\LazyService\LazyService } | "two"
+{ object # Gzhegow\Di\LazyService\DiLazyService } | "two"
 ');
 
 

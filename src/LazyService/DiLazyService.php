@@ -8,7 +8,7 @@ use Gzhegow\Di\Struct\Id;
 /**
  * @template T of object
  */
-class LazyService
+class DiLazyService
 {
     /**
      * @var Id

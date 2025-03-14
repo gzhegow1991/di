@@ -2,18 +2,18 @@
 
 namespace Gzhegow\Di\Demo;
 
-use Gzhegow\Di\LazyService\LazyService;
+use Gzhegow\Di\LazyService\DiLazyService;
 
 
 trait MyClassTwoAwareTrait
 {
     /**
-     * @var LazyService<MyClassTwo>|MyClassTwo
+     * @var DiLazyService<MyClassTwo>|MyClassTwo
      */
     protected $two;
 
     /**
-     * @param LazyService<MyClassTwo>|MyClassTwo $two
+     * @param DiLazyService<MyClassTwo>|MyClassTwo $two
      */
     public function setTwo($two) : void
     {

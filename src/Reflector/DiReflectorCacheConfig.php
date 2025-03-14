@@ -47,7 +47,7 @@ class DiReflectorCacheConfig extends AbstractConfig
     protected $cacheDirpath = __DIR__ . '/../var/cache/gzhegow.di';
 
 
-    protected function validation(array $context = []) : bool
+    protected function validation(array &$context = []) : bool
     {
         if (! isset(DiReflectorCache::LIST_CACHE_MODE[ $this->cacheMode ])) {
             throw new LogicException(

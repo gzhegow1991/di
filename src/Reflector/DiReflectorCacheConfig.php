@@ -9,13 +9,12 @@ namespace Gzhegow\Di\Reflector;
 
 use Gzhegow\Lib\Lib;
 use Gzhegow\Lib\Config\AbstractConfig;
+use Gzhegow\Lib\Exception\LogicException;
 
 
 /**
  * @property string|null                                   $cacheMode
- *
  * @property object|\Psr\Cache\CacheItemPoolInterface|null $cacheAdapter
- *
  * @property string|null                                   $cacheDirpath
  */
 class DiReflectorCacheConfig extends AbstractConfig
@@ -48,56 +47,42 @@ class DiReflectorCacheConfig extends AbstractConfig
     protected $cacheDirpath = __DIR__ . '/../var/cache/gzhegow.di';
 
 
-    public function validateValue($value, string $key, array $path = [], array $context = []) : array
+    protected function validation(array $context = []) : bool
     {
-        $errors = [];
+        if (! isset(DiReflectorCache::LIST_CACHE_MODE[ $this->cacheMode ])) {
+            throw new LogicException(
+                [
+                    ''
+                    . 'The `cacheMode` should be one of: '
+                    . implode('|', array_keys(DiReflectorCache::LIST_CACHE_MODE)),
+                    //
+                    $this,
+                ]
+            );
+        }
 
-        switch ( $key ):
-            case 'cacheMode':
-                if (! isset(DiReflectorCache::LIST_CACHE_MODE[ $value ])) {
-                    $error = [
-                        ''
-                        . 'The `cacheMode` should be one of: '
-                        . implode('|', array_keys(DiReflectorCache::LIST_CACHE_MODE)),
-                        //
+        if (null !== $this->cacheAdapter) {
+            if (! is_a($this->cacheAdapter, $class = '\Psr\Cache\CacheItemPoolInterface')) {
+                throw new LogicException(
+                    [
+                        'The `cacheAdapter` should be instance of: ' . $class,
                         $this,
-                    ];
+                    ]
+                );
+            }
+        }
 
-                    $errors[] = [ $path, $error ];
-                }
+        if (null !== $this->cacheDirpath) {
+            if (null === Lib::parse()->dirpath($this->cacheDirpath)) {
+                throw new LogicException(
+                    [
+                        'The `cacheDirpath` should be valid directory path',
+                        $this,
+                    ]
+                );
+            }
+        }
 
-                break;
-
-            case 'cacheAdapter':
-                if (null !== $value) {
-                    if (! is_a($value, $class = '\Psr\Cache\CacheItemPoolInterface')) {
-                        $error = [
-                            'The `cacheAdapter` should be instance of: ' . $class,
-                            $this,
-                        ];
-
-                        $errors[] = [ $path, $error ];
-                    }
-                }
-
-                break;
-
-            case 'cacheDirpath':
-                if (null !== $value) {
-                    if (null === Lib::parse()->dirpath($value)) {
-                        $error = [
-                            'The `cacheDirpath` should be valid directory path',
-                            $this,
-                        ];
-
-                        $errors[] = [ $path, $error ];
-                    }
-                }
-
-                break;
-
-        endswitch;
-
-        return $errors;
+        return true;
     }
 }

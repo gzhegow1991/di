@@ -12,7 +12,7 @@
 composer require gzhegow/di;
 ```
 
-## Пример
+## Примеры и тесты
 
 ```php
 <?php
@@ -82,10 +82,10 @@ $factory = new \Gzhegow\Di\DiFactory();
 // > создаем конфигурацию
 $config = new \Gzhegow\Di\DiConfig();
 $config->configure(function (\Gzhegow\Di\DiConfig $config) {
-    // > инжектор
+    // > задаем функцию выборки по-умолчанию - GET - бросает исключение, если объекта нет, TAKE - пытается создать
     $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
 
-    // > кэш рефлектора
+    // > настраиваем кэширование рефлексии
     $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
     //
     $cacheDir = __DIR__ . '/var/cache';
@@ -93,6 +93,7 @@ $config->configure(function (\Gzhegow\Di\DiConfig $config) {
     $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
     $config->reflectorCache->cacheDirpath = $cacheDirpath;
     //
+    // > можно симфонийский кэш использовать
     // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
     //     $cacheNamespace, $defaultLifetime = 0, $cacheDir
     // );
@@ -106,14 +107,15 @@ $config->configure(function (\Gzhegow\Di\DiConfig $config) {
     // $config->reflectorCache->cacheAdapter = $symfonyCacheAdapter;
 });
 
-// > создаем кэш рефлектора
-// > кэш наполняется и сохраняется автоматически по мере наполнения контейнера
+// > создаем кэш рефлектора - кэш наполняется и сохраняется автоматически по мере наполнения контейнера
 $reflectorCache = new \Gzhegow\Di\Reflector\DiReflectorCache(
     $config->reflectorCache
 );
 
 // > создаем рефлектор
-$reflector = new \Gzhegow\Di\Reflector\DiReflector($reflectorCache);
+$reflector = new \Gzhegow\Di\Reflector\DiReflector(
+    $reflectorCache
+);
 
 // > создаем инжектор
 $injector = new \Gzhegow\Di\Injector\DiInjector(
@@ -121,11 +123,14 @@ $injector = new \Gzhegow\Di\Injector\DiInjector(
     $config->injector
 );
 
-// > создаем DI
+// > создаем контейнер
 $di = new \Gzhegow\Di\Di(
     $factory,
+    //
     $injector,
-    $reflector
+    $reflector,
+    //
+    $config
 );
 
 // > сохраняем DI статически
@@ -292,7 +297,6 @@ $fn = function () use ($di, $config) {
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
         $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
     });
-    $config->validate();
 
     $five1 = new \Gzhegow\Di\Demo\MyClassFive();
     $di->autowireInstance($five1);
@@ -311,7 +315,6 @@ $fn = function () use ($di, $config) {
     $config->configure(function (\Gzhegow\Di\DiConfig $config) {
         $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
-    $config->validate();
 };
 _assert_stdout($fn, [], '
 "TEST 3"
@@ -330,7 +333,7 @@ TRUE
 
 // > TEST
 // > вызовем произвольную функцию и заполним её аргументы
-$fn = function () use ($di, $config) {
+$fn = function () use ($di) {
     _print('TEST 4');
     echo PHP_EOL;
 

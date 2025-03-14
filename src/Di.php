@@ -31,12 +31,19 @@ class Di implements DiInterface
      */
     protected $lazyServiceFactory;
 
+    /**
+     * @var DiConfig
+     */
+    protected $config;
+
 
     public function __construct(
         DiFactoryInterface $factory,
         //
         DiInjectorInterface $injector,
-        DiReflectorInterface $reflector
+        DiReflectorInterface $reflector,
+        //
+        DiConfig $config
     )
     {
         $this->factory = $factory;
@@ -45,6 +52,8 @@ class Di implements DiInterface
         $this->reflector = $reflector;
 
         $this->lazyServiceFactory = $this->factory->newLazyServiceFactory($this);
+
+        $this->config = $config;
     }
 
 

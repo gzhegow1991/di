@@ -3,6 +3,7 @@
 namespace Gzhegow\Di\Injector;
 
 use Gzhegow\Lib\Config\AbstractConfig;
+use Gzhegow\Di\Exception\LogicException;
 
 
 /**
@@ -20,24 +21,20 @@ class DiInjectorConfig extends AbstractConfig
     protected $fetchFunc = DiInjector::FETCH_FUNC_GET;
 
 
-    protected function validateValue($value, string $key, array $path = [], array $context = []) : array
+    protected function validation(array $context = []) : bool
     {
-        $errors = [];
-
-        if ($key === 'fetchFunc') {
-            if (! isset(DiInjector::LIST_FETCH_FUNC[ $value ])) {
-                $error = [
+        if (! isset(DiInjector::LIST_FETCH_FUNC[ $this->fetchFunc ])) {
+            throw new LogicException(
+                [
                     ''
                     . 'The `fetchFunc` should be one of: '
                     . implode('|', array_keys(DiInjector::LIST_FETCH_FUNC)),
                     //
                     $this,
-                ];
-
-                $errors[] = [ $path, $error ];
-            }
+                ]
+            );
         }
 
-        return $errors;
+        return true;
     }
 }

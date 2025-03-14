@@ -62,17 +62,21 @@ function _assert(
 // > сначала всегда фабрика
 $factory = new \Gzhegow\Di\DiFactory();
 
-// > создаем кэш рефлектора
-// > кэш наполняется и сохраняется автоматически по мере наполнения контейнера
-$reflectoCacheConfig = new \Gzhegow\Di\Reflector\DiReflectorCacheConfig();
-$reflectoCacheConfig->configure(function (\Gzhegow\Di\Reflector\DiReflectorCacheConfig $config) {
-    $config->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
+// > создаем конфигурацию
+$config = new \Gzhegow\Di\DiConfig();
+$config->configure(function (\Gzhegow\Di\DiConfig $config) {
+    // > задаем функцию выборки по-умолчанию - GET - бросает исключение, если объекта нет, TAKE - пытается создать
+    $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
+
+    // > настраиваем кэширование рефлексии
+    $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
     //
     $cacheDir = __DIR__ . '/var/cache';
     $cacheNamespace = 'gzhegow.di';
     $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
-    $config->cacheDirpath = $cacheDirpath;
+    $config->reflectorCache->cacheDirpath = $cacheDirpath;
     //
+    // > можно симфонийский кэш использовать
     // $symfonyCacheAdapter = new \Symfony\Component\Cache\Adapter\FilesystemAdapter(
     //     $cacheNamespace, $defaultLifetime = 0, $cacheDir
     // );
@@ -82,11 +86,13 @@ $reflectoCacheConfig->configure(function (\Gzhegow\Di\Reflector\DiReflectorCache
     //     $cacheNamespace = '',
     //     $defaultLifetime = 0
     // );
-    // $config->cacheMode = \Gzhegow\Di\Reflector\ReflectorCache::CACHE_MODE_STORAGE;
-    // $config->cacheAdapter = $symfonyCacheAdapter;
+    // $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\ReflectorCache::CACHE_MODE_STORAGE;
+    // $config->reflectorCache->cacheAdapter = $symfonyCacheAdapter;
 });
+
+// > создаем кэш рефлектора - кэш наполняется и сохраняется автоматически по мере наполнения контейнера
 $reflectorCache = new \Gzhegow\Di\Reflector\DiReflectorCache(
-    $reflectoCacheConfig
+    $config->reflectorCache
 );
 
 // > создаем рефлектор
@@ -95,20 +101,19 @@ $reflector = new \Gzhegow\Di\Reflector\DiReflector(
 );
 
 // > создаем инжектор
-$injectorConfig = new \Gzhegow\Di\Injector\DiInjectorConfig();
-$injectorConfig->configure(function (\Gzhegow\Di\Injector\DiInjectorConfig $config) {
-    $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
-});
 $injector = new \Gzhegow\Di\Injector\DiInjector(
     $reflector,
-    $injectorConfig
+    $config->injector
 );
 
-// > создаем DI
+// > создаем контейнер
 $di = new \Gzhegow\Di\Di(
     $factory,
+    //
     $injector,
-    $reflector
+    $reflector,
+    //
+    $config
 );
 
 // > сохраняем DI статически
@@ -257,7 +262,7 @@ TRUE
 
 // > TEST
 // > дозаполнить аргументы уже существующего объекта, который мы не регистрировали в контейнере, имеющий зависимости, которые тоже не были зарегистрированы
-$fn = function () use ($di, $injectorConfig) {
+$fn = function () use ($di, $config) {
     _print('TEST 3');
     echo PHP_EOL;
 
@@ -272,8 +277,8 @@ $fn = function () use ($di, $injectorConfig) {
     echo PHP_EOL;
 
     // > переключаем режим (на продакшене лучше включить его в начале приложения и динамически не менять)
-    $injectorConfig->configure(function ($config) {
-        $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
+    $config->configure(function (\Gzhegow\Di\DiConfig $config) {
+        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_TAKE;
     });
 
     $five1 = new \Gzhegow\Di\Demo\MyClassFive();
@@ -290,8 +295,8 @@ $fn = function () use ($di, $injectorConfig) {
 
     _print($five1->four !== $five2->four);
 
-    $injectorConfig->configure(function ($config) {
-        $config->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
+    $config->configure(function (\Gzhegow\Di\DiConfig $config) {
+        $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
 };
 _assert_stdout($fn, [], '

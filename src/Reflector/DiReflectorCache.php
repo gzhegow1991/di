@@ -187,7 +187,10 @@ class DiReflectorCache implements DiReflectorCacheInterface
 
                 $content = Lib::php()->serialize($cacheData);
 
-                Lib::fs()->file_put_contents($cacheFilepath, $content, [ 0755, true ]);
+                Lib::fs()->file_put_contents(
+                    $cacheFilepath, $content,
+                    [], [ 0755, true ]
+                );
             }
         }
 

@@ -73,7 +73,7 @@ class DiReflectorCacheConfig extends AbstractConfig
         }
 
         if (null !== $this->cacheDirpath) {
-            if (null === Lib::parse()->dirpath($this->cacheDirpath)) {
+            if (null === Lib::parse()->dirpath($this->cacheDirpath, true)) {
                 throw new LogicException(
                     [
                         'The `cacheDirpath` should be valid directory path',

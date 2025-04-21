@@ -25,6 +25,14 @@
   "autoload": {
     "psr-4": {
       "Gzhegow\\Di\\": "src/"
+    },
+    "exclude-from-classmap": [
+      "tests/"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Gzhegow\\Di\\Tests\\": "tests/src/"
     }
   },
 

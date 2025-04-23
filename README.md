@@ -23,9 +23,7 @@ php test.php
 ```php
 <?php
 
-define('__ROOT__', __DIR__ . '/..');
-
-require_once __ROOT__ . '/vendor/autoload.php';
+require_once __DIR__ . '/../vendor/autoload.php';
 
 
 // > настраиваем PHP
@@ -42,6 +40,12 @@ ini_set('memory_limit', '32M');
 
 // > добавляем несколько функция для тестирования
 $ffn = new class {
+    function root() : string
+    {
+        return realpath(__DIR__ . '/..');
+    }
+
+
     function values($separator = null, ...$values) : string
     {
         return \Gzhegow\Lib\Lib::debug()->values([], $separator, ...$values);
@@ -93,14 +97,14 @@ $factory = new \Gzhegow\Di\DiFactory();
 
 // > создаем конфигурацию
 $config = new \Gzhegow\Di\DiConfig();
-$config->configure(function (\Gzhegow\Di\DiConfig $config) {
+$config->configure(function (\Gzhegow\Di\DiConfig $config) use ($ffn) {
     // > задаем функцию выборки по-умолчанию - GET - бросает исключение, если объекта нет, TAKE - пытается создать
     $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
 
     // > настраиваем кэширование рефлексии
     $config->reflectorCache->cacheMode = \Gzhegow\Di\Reflector\DiReflectorCache::CACHE_MODE_STORAGE;
     //
-    $cacheDir = __ROOT__ . '/var/cache';
+    $cacheDir = $ffn->root() . '/var/cache';
     $cacheNamespace = 'gzhegow.di';
     $cacheDirpath = "{$cacheDir}/{$cacheNamespace}";
     $config->reflectorCache->cacheDirpath = $cacheDirpath;

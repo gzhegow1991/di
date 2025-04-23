@@ -47,10 +47,12 @@ $ffn = new class {
         return \Gzhegow\Lib\Lib::debug()->values([], $separator, ...$values);
     }
 
+
     function print(...$values) : void
     {
         echo $this->values(' | ', ...$values) . PHP_EOL;
     }
+
 
     function assert_stdout(
         \Closure $fn, array $fnArgs = [],

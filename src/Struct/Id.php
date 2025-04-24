@@ -37,10 +37,10 @@ class Id
      */
     public static function from($from)
     {
-        $instance = static::tryFrom($from, $error);
+        $instance = static::tryFrom($from, $e);
 
         if (null === $instance) {
-            throw $error;
+            throw $e;
         }
 
         return $instance;
@@ -83,14 +83,22 @@ class Id
      */
     public static function fromString($from, array $refs = [])
     {
-        $id = Lib::parse()->string($from);
-        $id = ltrim($id, '\\');
+        if (! (is_string($from) && ('' !== $from))) {
+            return Lib::refsError(
+                $refs,
+                new LogicException(
+                    [ 'The `from` should be non-empty string', $from ]
+                )
+            );
+        }
+
+        $id = ltrim($from, '\\');
 
         if ('' === $id) {
             return Lib::refsError(
                 $refs,
                 new LogicException(
-                    [ 'The `from` should be non-empty string', $from ]
+                    [ 'The `id` should be non-empty string', $from ]
                 )
             );
         }

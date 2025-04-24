@@ -35,7 +35,7 @@ class Id
     /**
      * @return static
      */
-    public static function from($from) // : static
+    public static function from($from)
     {
         $instance = static::tryFrom($from, $error);
 
@@ -49,61 +49,56 @@ class Id
     /**
      * @return static|null
      */
-    public static function tryFrom($from, \Throwable &$last = null) // : ?static
+    public static function tryFrom($from, \Throwable &$e = null)
     {
-        $last = null;
-
-        Lib::php()->errors_start($b);
+        $e = null;
 
         $instance = null
-            ?? static::tryFromInstance($from)
-            ?? static::tryFromString($from);
-
-        $errors = Lib::php()->errors_end($b);
-
-        if (null === $instance) {
-            foreach ( $errors as $error ) {
-                $last = new LogicException($error, $last);
-            }
-        }
+            ?? static::tryFromInstance($from, [ &$e ])
+            ?? static::tryFromString($from, [ &$e ]);
 
         return $instance;
     }
 
 
     /**
-     * @return static|null
+     * @return static|bool|null
      */
-    public static function tryFromInstance($instance) // : ?static
+    public static function tryFromInstance($from, array $refs = [])
     {
-        if (! is_a($instance, static::class)) {
-            return Lib::php()->error(
-                [ 'The `from` should be instance of: ' . static::class, $instance ]
-            );
+        if ($from instanceof static) {
+            return Lib::refsResult($refs, $from);
         }
 
-        return $instance;
+        return Lib::refsError(
+            $refs,
+            new LogicException(
+                [ 'The `from` should be instance of: ' . static::class, $from ]
+            )
+        );
     }
 
     /**
-     * @return static|null
+     * @return static|bool|null
      */
-    public static function tryFromString($string) // : ?static
+    public static function tryFromString($from, array $refs = [])
     {
-        $_id = Lib::parse()->string_not_empty($string);
+        $id = Lib::parse()->string($from);
+        $id = ltrim($id, '\\');
 
-        $_id = ltrim($_id, '\\');
-
-        if ('' === $_id) {
-            return Lib::php()->error(
-                [ 'The `from` should be non-empty string', $string ]
+        if ('' === $id) {
+            return Lib::refsError(
+                $refs,
+                new LogicException(
+                    [ 'The `from` should be non-empty string', $from ]
+                )
             );
         }
 
         $instance = new static();
-        $instance->value = $_id;
+        $instance->value = $id;
 
-        return $instance;
+        return Lib::refsResult($refs, $instance);
     }
 
 

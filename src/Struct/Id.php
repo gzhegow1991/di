@@ -54,8 +54,8 @@ class Id
         $e = null;
 
         $instance = null
-            ?? static::tryFromInstance($from, [ &$e ])
-            ?? static::tryFromString($from, [ &$e ]);
+            ?? static::fromInstance($from, [ &$e ])
+            ?? static::fromString($from, [ &$e ]);
 
         return $instance;
     }
@@ -64,7 +64,7 @@ class Id
     /**
      * @return static|bool|null
      */
-    public static function tryFromInstance($from, array $refs = [])
+    public static function fromInstance($from, array $refs = [])
     {
         if ($from instanceof static) {
             return Lib::refsResult($refs, $from);
@@ -81,7 +81,7 @@ class Id
     /**
      * @return static|bool|null
      */
-    public static function tryFromString($from, array $refs = [])
+    public static function fromString($from, array $refs = [])
     {
         $id = Lib::parse()->string($from);
         $id = ltrim($id, '\\');

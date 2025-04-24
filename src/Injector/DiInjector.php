@@ -138,16 +138,18 @@ class DiInjector implements DiInjectorInterface
     {
         $result = null;
 
-        $id = Id::tryFrom($id);
+        $e = null;
 
-        if (! $id) {
+        $idObject = Id::from($id, [ &$e ]);
+
+        if (! $idObject) {
             return false;
         }
 
-        $_id = $id->getValue();
+        $idValue = $idObject->getValue();
 
-        if (isset($this->bindToTypeList[ $_id ])) {
-            $result = $id;
+        if (isset($this->bindToTypeList[ $idValue ])) {
+            $result = $idObject;
 
             return true;
         }
@@ -634,7 +636,7 @@ class DiInjector implements DiInjectorInterface
      */
     protected function resolveBind(Id $id, $mixed) : array
     {
-        $_id = $id->getValue();
+        $idValue = $id->getValue();
 
         $result = null;
 
@@ -654,21 +656,27 @@ class DiInjector implements DiInjectorInterface
             $result = [ $object, static::BIND_TYPE_INSTANCE ];
 
         } elseif (is_string($mixed) && ($mixed !== '')) {
-            $mixedId = Id::tryFrom($mixed);
+            $e = null;
 
-            if ($isAlias = ($_id !== $mixedId->getValue())) {
-                $result = [ $mixedId, static::BIND_TYPE_ALIAS ];
+            $mixedIdObject = Id::from($mixed, [ &$e ]);
 
-            } elseif ($isClass = $mixedId->isClass()) {
-                $result = [ $mixedId, static::BIND_TYPE_CLASS ];
+            if ($mixedIdObject) {
+                $mixedIdValue = $mixedIdObject->getValue();
+
+                if ($isAlias = ($idValue !== $mixedIdValue)) {
+                    $result = [ $mixedIdObject, static::BIND_TYPE_ALIAS ];
+
+                } elseif ($isClass = $mixedIdObject->isClass()) {
+                    $result = [ $mixedIdObject, static::BIND_TYPE_CLASS ];
+                }
             }
         }
 
         if (null === $result) {
             throw new LogicException(
                 [
-                    'Unable to resolve bind: ' . $_id,
-                    $_id,
+                    'Unable to resolve bind: ' . $idValue,
+                    $idValue,
                 ]
             );
         }

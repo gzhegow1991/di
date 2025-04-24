@@ -35,31 +35,24 @@ class Id
     /**
      * @return static
      */
-    public static function from($from)
+    public static function from($from, array $refs = [])
     {
-        $instance = static::tryFrom($from, $e);
+        $withErrors = array_key_exists(0, $refs);
 
-        if (null === $instance) {
-            throw $e;
+        $refs[ 0 ] = $refs[ 0 ] ?? null;
+
+        $instance = null
+            ?? static::fromInstance($from, $refs)
+            ?? static::fromString($from, $refs);
+
+        if (! $withErrors) {
+            if (null === $instance) {
+                throw $refs[ 0 ];
+            }
         }
 
         return $instance;
     }
-
-    /**
-     * @return static|null
-     */
-    public static function tryFrom($from, \Throwable &$e = null)
-    {
-        $e = null;
-
-        $instance = null
-            ?? static::fromInstance($from, [ &$e ])
-            ?? static::fromString($from, [ &$e ]);
-
-        return $instance;
-    }
-
 
     /**
      * @return static|bool|null

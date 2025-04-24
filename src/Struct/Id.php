@@ -42,7 +42,7 @@ class Id
         $refs[ 0 ] = $refs[ 0 ] ?? null;
 
         $instance = null
-            ?? static::fromInstance($from, $refs)
+            ?? static::fromStatic($from, $refs)
             ?? static::fromString($from, $refs);
 
         if (! $withErrors) {
@@ -57,7 +57,7 @@ class Id
     /**
      * @return static|bool|null
      */
-    public static function fromInstance($from, array $refs = [])
+    public static function fromStatic($from, array $refs = [])
     {
         if ($from instanceof static) {
             return Lib::refsResult($refs, $from);

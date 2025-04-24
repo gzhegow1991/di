@@ -72,7 +72,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function resetCache() // : static
+    public function resetCache()
     {
         $this->reflector->resetCache();
 
@@ -82,7 +82,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function saveCache() // : static
+    public function saveCache()
     {
         $this->reflector->saveCache();
 
@@ -92,7 +92,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function clearCache() // : static
+    public function clearCache()
     {
         $this->reflector->clearCache();
 
@@ -103,7 +103,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function merge(DiInjectorInterface $di) // : static
+    public function merge(DiInjectorInterface $di)
     {
         $this->injector->merge($di);
 
@@ -125,7 +125,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function bind($id, $mixed = null, bool $isSingleton = null) // : static
+    public function bind($id, $mixed = null, bool $isSingleton = null)
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -139,7 +139,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function bindSingleton($id, $mixed = null) // : static
+    public function bindSingleton($id, $mixed = null)
     {
         $this->bind($id, $mixed, true);
 
@@ -150,7 +150,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function bindAlias($id, $aliasId, bool $isSingleton = null) // : static
+    public function bindAlias($id, $aliasId, bool $isSingleton = null)
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -167,7 +167,7 @@ class Di implements DiInterface
      *
      * @return static
      */
-    public function bindClass($id, $classId, bool $isSingleton = null) // : static
+    public function bindClass($id, $classId, bool $isSingleton = null)
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -184,7 +184,7 @@ class Di implements DiInterface
      *
      * @return static
      */
-    public function bindFactory($id, $fnFactory, bool $isSingleton = null) // : static
+    public function bindFactory($id, $fnFactory, bool $isSingleton = null)
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -198,7 +198,7 @@ class Di implements DiInterface
     /**
      * @return static
      */
-    public function bindInstance($id, object $instance, bool $isSingleton = null) // : static
+    public function bindInstance($id, object $instance, bool $isSingleton = null)
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -215,7 +215,7 @@ class Di implements DiInterface
      *
      * @return static
      */
-    public function extend($id, $fnExtend) // : static
+    public function extend($id, $fnExtend)
     {
         $id = Id::from($id);
 

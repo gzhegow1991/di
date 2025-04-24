@@ -123,7 +123,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     /**
      * @return static
      */
-    public function setReflectionResult(array $reflectionResult, string $reflectionKey, string $reflectionNamespace = null) // : static
+    public function setReflectionResult(array $reflectionResult, string $reflectionKey, string $reflectionNamespace = null)
     {
         $reflectionNamespace = $reflectionNamespace ?? '-';
 
@@ -146,7 +146,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     /**
      * @return static
      */
-    public function resetCache() // : static
+    public function resetCache()
     {
         $this->reflectionResults = [];
 
@@ -158,7 +158,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     /**
      * @return static
      */
-    public function saveCache() // : static
+    public function saveCache()
     {
         if (! $this->isChanged) {
             return $this;
@@ -200,7 +200,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     /**
      * @return static
      */
-    public function clearCache() // : static
+    public function clearCache()
     {
         $this->resetCache();
 

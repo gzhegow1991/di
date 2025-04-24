@@ -101,7 +101,7 @@ class DiInjector implements DiInjectorInterface
      *
      * @return static
      */
-    public function merge($di) // : static
+    public function merge($di)
     {
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
@@ -158,7 +158,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false) // : static
+    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false)
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -189,7 +189,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false) // : static
+    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false)
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -226,7 +226,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false) // : static
+    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false)
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -248,7 +248,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false) // : static
+    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false)
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -271,7 +271,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false) // : static
+    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false)
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -289,7 +289,7 @@ class DiInjector implements DiInjectorInterface
     /**
      * @param callable|object|array|class-string $mixed
      */
-    protected function bindItemOfType(string $type, Id $id, $mixed, bool $isSingleton = false) // : static
+    protected function bindItemOfType(string $type, Id $id, $mixed, bool $isSingleton = false)
     {
         switch ( $type ):
             case static::BIND_TYPE_ALIAS:
@@ -334,7 +334,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function extendItem(Id $id, callable $fnExtend) // : static
+    public function extendItem(Id $id, callable $fnExtend)
     {
         $_id = $id->getValue();
 

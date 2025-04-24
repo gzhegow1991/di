@@ -25,7 +25,7 @@ class DiReflector implements DiReflectorInterface
     /**
      * @return static
      */
-    public function resetCache() // : static
+    public function resetCache()
     {
         $this->cache->resetCache();
 
@@ -35,7 +35,7 @@ class DiReflector implements DiReflectorInterface
     /**
      * @return static
      */
-    public function saveCache() // : static
+    public function saveCache()
     {
         $this->cache->saveCache();
 
@@ -45,7 +45,7 @@ class DiReflector implements DiReflectorInterface
     /**
      * @return static
      */
-    public function clearCache() // : static
+    public function clearCache()
     {
         $this->cache->clearCache();
 

@@ -232,7 +232,7 @@ class Di implements DiInterface
      *
      * @return T|null
      */
-    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : ?object
+    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -255,7 +255,7 @@ class Di implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) // : object
+    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -275,7 +275,7 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null)
     {
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
@@ -295,7 +295,7 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -315,7 +315,7 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) // : object
+    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -338,7 +338,7 @@ class Di implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null) // : LazyService
+    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -357,7 +357,7 @@ class Di implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function makeLazy($id, array $parameters = null, string $contractT = null) // : LazyService
+    public function makeLazy($id, array $parameters = null, string $contractT = null)
     {
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
@@ -376,7 +376,7 @@ class Di implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -395,7 +395,7 @@ class Di implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null) // : LazyService
+    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null)
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -415,7 +415,7 @@ class Di implements DiInterface
      *
      * @return T
      */
-    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null) // : object
+    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null)
     {
         $methodArgs = $methodArgs ?? [];
         $methodName = $methodName ?? '';
@@ -431,7 +431,7 @@ class Di implements DiInterface
      *
      * @return mixed
      */
-    public function callUserFuncAutowired($fn, ...$args) // : mixed
+    public function callUserFuncAutowired($fn, ...$args)
     {
         $result = $this->injector->callUserFuncAutowired($fn, ...$args);
 
@@ -443,7 +443,7 @@ class Di implements DiInterface
      *
      * @return mixed
      */
-    public function callUserFuncArrayAutowired($fn, array $args = null) // : mixed
+    public function callUserFuncArrayAutowired($fn, array $args = null)
     {
         $args = $args ?? [];
 

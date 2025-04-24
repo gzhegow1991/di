@@ -587,7 +587,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function callUserFuncAutowired(callable $fn, ...$args) // : mixed
+    public function callUserFuncAutowired(callable $fn, ...$args)
     {
         $reflectResult = $this->reflector->reflectArguments($fn);
 
@@ -598,7 +598,7 @@ class DiInjector implements DiInjectorInterface
         return $result;
     }
 
-    public function callUserFuncArrayAutowired(callable $fn, array $args = []) // : mixed
+    public function callUserFuncArrayAutowired(callable $fn, array $args = [])
     {
         $reflectResult = $this->reflector->reflectArguments($fn);
 

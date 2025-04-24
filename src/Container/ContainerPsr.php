@@ -30,7 +30,7 @@ class ContainerPsr implements ContainerPsrInterface
         return $this->di->has($id);
     }
 
-    public function get(string $id) // : mixed
+    public function get(string $id)
     {
         return $this->di->fetch($id);
     }

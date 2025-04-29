@@ -5,6 +5,7 @@ namespace Gzhegow\Di\Injector;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
+use Gzhegow\Lib\Modules\Php\Result\Result;
 use Gzhegow\Di\Reflector\DiReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
@@ -140,7 +141,7 @@ class DiInjector implements DiInjectorInterface
 
         $e = null;
 
-        $idObject = Id::from($id, [ &$e ]);
+        $idObject = Id::from($id, Result::parse());
 
         if (! $idObject) {
             return false;
@@ -658,7 +659,7 @@ class DiInjector implements DiInjectorInterface
         } elseif (is_string($mixed) && ($mixed !== '')) {
             $e = null;
 
-            $mixedIdObject = Id::from($mixed, [ &$e ]);
+            $mixedIdObject = Id::from($mixed, Result::parse());
 
             if ($mixedIdObject) {
                 $mixedIdValue = $mixedIdObject->getValue();

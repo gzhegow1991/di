@@ -8,7 +8,8 @@ ini_set('memory_limit', '32M');
 
 
 // > настраиваем обработку ошибок
-(new \Gzhegow\Lib\Exception\ErrorHandler())
+\Gzhegow\Lib\Lib::errorHandler()
+    ->setDirRoot(__DIR__ . '/..')
     ->useErrorReporting()
     ->useErrorHandler()
     ->useExceptionHandler()

@@ -101,7 +101,10 @@ interface DiInterface
     public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object;
 
 
-    public function setLazyServiceFactory(DiLazyServiceFactoryInterface $lazyServiceFactory) : DiInterface;
+    public function getLazyServiceFactory() : DiLazyServiceFactoryInterface;
+
+    public function setLazyServiceFactory(?DiLazyServiceFactoryInterface $lazyServiceFactory) : DiInterface;
+
 
     /**
      * @template-covariant T of object

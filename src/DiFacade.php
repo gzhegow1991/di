@@ -53,8 +53,6 @@ class DiFacade implements DiInterface
 
         $this->config = $config;
         $this->config->validate();
-
-        $this->lazyServiceFactory = $this->factory->newLazyServiceFactory($this);
     }
 
 
@@ -288,12 +286,20 @@ class DiFacade implements DiInterface
     }
 
 
-    public function setLazyServiceFactory(DiLazyServiceFactoryInterface $lazyServiceFactory) : DiInterface
+    public function getLazyServiceFactory() : DiLazyServiceFactoryInterface
+    {
+        return $this->lazyServiceFactory = null
+            ?? $this->lazyServiceFactory
+            ?? $this->factory->newLazyServiceFactory($this);
+    }
+
+    public function setLazyServiceFactory(?DiLazyServiceFactoryInterface $lazyServiceFactory) : DiInterface
     {
         $this->lazyServiceFactory = $lazyServiceFactory;
 
         return $this;
     }
+
 
     /**
      * @template-covariant T of object
@@ -432,7 +438,8 @@ class DiFacade implements DiInterface
      */
     protected function getItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : DiLazyService
     {
-        $lazyService = $this->lazyServiceFactory->newLazyServiceGet($id, $parametersWhenNew);
+        $lazyService = $this->getLazyServiceFactory()
+            ->newLazyServiceGet($id, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -448,7 +455,8 @@ class DiFacade implements DiInterface
      */
     protected function makeItemLazy(Id $id, array $parameters = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->lazyServiceFactory->newLazyServiceMake($id, $parameters);
+        $lazyService = $this->getLazyServiceFactory()
+            ->newLazyServiceMake($id, $parameters);
 
         return $lazyService;
     }
@@ -464,7 +472,8 @@ class DiFacade implements DiInterface
      */
     protected function takeItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->lazyServiceFactory->newLazyServiceTake($id, $parametersWhenNew);
+        $lazyService = $this->getLazyServiceFactory()
+            ->newLazyServiceTake($id, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -480,7 +489,8 @@ class DiFacade implements DiInterface
      */
     protected function fetchItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->lazyServiceFactory->newLazyServiceFetch($id, $parametersWhenNew);
+        $lazyService = $this->getLazyServiceFactory()
+            ->newLazyServiceFetch($id, $parametersWhenNew);
 
         return $lazyService;
     }

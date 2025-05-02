@@ -102,7 +102,7 @@ class DiInjector implements DiInjectorInterface
      *
      * @return static
      */
-    public function merge($di)
+    public function merge(DiInjectorInterface $di) : DiInjectorInterface
     {
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
@@ -159,7 +159,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false)
+    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -190,7 +190,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false)
+    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -227,7 +227,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false)
+    public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -249,7 +249,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false)
+    public function bindItemInstance(Id $id, object $instance, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -272,7 +272,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false)
+    public function bindItemAuto(Id $id, $mixed = null, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -290,7 +290,7 @@ class DiInjector implements DiInjectorInterface
     /**
      * @param callable|object|array|class-string $mixed
      */
-    protected function bindItemOfType(string $type, Id $id, $mixed, bool $isSingleton = false)
+    protected function bindItemOfType(string $type, Id $id, $mixed, bool $isSingleton = false) : DiInjectorInterface
     {
         switch ( $type ):
             case static::BIND_TYPE_ALIAS:
@@ -335,7 +335,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function extendItem(Id $id, callable $fnExtend)
+    public function extendItem(Id $id, callable $fnExtend) : DiInjectorInterface
     {
         $_id = $id->getValue();
 
@@ -346,7 +346,7 @@ class DiInjector implements DiInjectorInterface
 
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T> $contractT
      *
@@ -376,7 +376,7 @@ class DiInjector implements DiInjectorInterface
 
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T> $contractT
      *
@@ -466,7 +466,7 @@ class DiInjector implements DiInjectorInterface
     }
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T> $contractT
      *
@@ -500,7 +500,7 @@ class DiInjector implements DiInjectorInterface
     }
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T> $contractT
      *
@@ -527,7 +527,7 @@ class DiInjector implements DiInjectorInterface
     }
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T> $contractT
      *
@@ -610,8 +610,9 @@ class DiInjector implements DiInjectorInterface
         return $result;
     }
 
+
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|T $class
      *
@@ -656,9 +657,7 @@ class DiInjector implements DiInjectorInterface
 
             $result = [ $object, static::BIND_TYPE_INSTANCE ];
 
-        } elseif (is_string($mixed) && ($mixed !== '')) {
-            $e = null;
-
+        } elseif (is_string($mixed) && ('' !== $mixed)) {
             $mixedIdObject = Id::from($mixed, Result::parse());
 
             if ($mixedIdObject) {

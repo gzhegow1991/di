@@ -119,7 +119,7 @@ $injector = new \Gzhegow\Di\Injector\DiInjector(
 );
 
 // > создаем контейнер
-$di = new \Gzhegow\Di\Di(
+$di = new \Gzhegow\Di\DiFacade(
     $factory,
     //
     $injector,
@@ -129,7 +129,7 @@ $di = new \Gzhegow\Di\Di(
 );
 
 // > сохраняем DI статически
-\Gzhegow\Di\Di::setInstance($di);
+\Gzhegow\Di\Di::setFacade($di);
 
 // > можно обернуть в контейнер Psr, для стандартизации (не обязательно)
 // $container = new \Gzhegow\Di\Container\ContainerPsr($di);      // composer require psr/container

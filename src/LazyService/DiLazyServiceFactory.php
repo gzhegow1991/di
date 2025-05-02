@@ -61,40 +61,28 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
     }
 
 
-    /**
-     * @return object
-     */
-    public function fnFactoryGet($lazyId, array $parametersWhenNew = null)
+    public function fnFactoryGet($lazyId, array $parametersWhenNew = null) : object
     {
         $instance = $this->di->get($lazyId, null, null, $parametersWhenNew);
 
         return $instance;
     }
 
-    /**
-     * @return object
-     */
-    public function fnFactoryMake($lazyId, array $parameters = null)
+    public function fnFactoryMake($lazyId, array $parameters = null) : object
     {
         $instance = $this->di->make($lazyId, $parameters);
 
         return $instance;
     }
 
-    /**
-     * @return object
-     */
-    public function fnFactoryTake($lazyId, array $parametersWhenNew = null)
+    public function fnFactoryTake($lazyId, array $parametersWhenNew = null) : object
     {
         $instance = $this->di->take($lazyId, $parametersWhenNew);
 
         return $instance;
     }
 
-    /**
-     * @return object
-     */
-    public function fnFactoryFetch($lazyId, array $parametersWhenNew = null)
+    public function fnFactoryFetch($lazyId, array $parametersWhenNew = null) : object
     {
         $instance = $this->di->fetch($lazyId, $parametersWhenNew);
 

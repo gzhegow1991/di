@@ -4,32 +4,20 @@ namespace Gzhegow\Di;
 
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\LazyService\DiLazyService;
-use Gzhegow\Di\Injector\DiInjectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
+use Gzhegow\Di\LazyService\DiLazyServiceFactoryInterface;
 
 
 interface DiInterface
 {
-    /**
-     * @return static
-     */
-    public function resetCache();
+    public function resetCache() : DiInterface;
 
-    /**
-     * @return static
-     */
-    public function clearCache();
+    public function clearCache() : DiInterface;
 
-    /**
-     * @return static
-     */
-    public function saveCache();
+    public function saveCache() : DiInterface;
 
 
-    /**
-     * @return static
-     */
-    public function merge(DiInjectorInterface $di);
+    public function merge(DiInterface $di) : DiInterface;
 
 
     /**
@@ -38,62 +26,44 @@ interface DiInterface
     public function has($id, Id &$result = null) : bool;
 
 
-    /**
-     * @return static
-     */
-    public function bind($id, $mixed = null, bool $isSingleton = null);
+    public function bind($id, $mixed = null, bool $isSingleton = null) : DiInterface;
 
-    /**
-     * @return static
-     */
-    public function bindSingleton($id, $mixed = null);
+    public function bindSingleton($id, $mixed = null) : DiInterface;
 
 
-    /**
-     * @return static
-     */
-    public function bindAlias($id, $aliasId, bool $isSingleton = null);
+    public function bindAlias($id, $aliasId, bool $isSingleton = null) : DiInterface;
 
     /**
      * @param class-string $classId
-     *
-     * @return static
      */
-    public function bindClass($id, $classId, bool $isSingleton = null);
+    public function bindClass($id, $classId, bool $isSingleton = null) : DiInterface;
 
     /**
      * @param callable $fnFactory
-     *
-     * @return static
      */
-    public function bindFactory($id, $fnFactory, bool $isSingleton = null);
+    public function bindFactory($id, $fnFactory, bool $isSingleton = null) : DiInterface;
 
-    /**
-     * @return static
-     */
-    public function bindInstance($id, object $instance, bool $isSingleton = null);
+    public function bindInstance($id, object $instance, bool $isSingleton = null) : DiInterface;
 
 
     /**
      * @param callable $fnExtend
-     *
-     * @return static
      */
-    public function extend($id, $fnExtend);
+    public function extend($id, $fnExtend) : DiInterface;
 
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|null $contractT
      *
      * @return T|null
      */
-    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
+    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : ?object;
 
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|null $contractT
      *
@@ -101,38 +71,40 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null);
+    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : object;
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) : object;
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object;
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|null $contractT
      *
      * @return T
      */
-    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null);
+    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object;
 
+
+    public function setLazyServiceFactory(DiLazyServiceFactoryInterface $lazyServiceFactory) : DiInterface;
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|T|null $contractT
      *
@@ -143,7 +115,7 @@ interface DiInterface
     public function getLazy($id, string $contractT = null, array $parametersWhenNew = null);
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|T|null $contractT
      *
@@ -152,7 +124,7 @@ interface DiInterface
     public function makeLazy($id, array $parameters = null, string $contractT = null);
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|T|null $contractT
      *
@@ -161,7 +133,7 @@ interface DiInterface
     public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null);
 
     /**
-     * @template-covariant T
+     * @template-covariant T of object
      *
      * @param class-string<T>|T|null $contractT
      *

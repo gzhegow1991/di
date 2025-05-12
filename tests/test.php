@@ -4,10 +4,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 
 // > настраиваем PHP
-ini_set('memory_limit', '32M');
-
-
-// > настраиваем обработку ошибок
 \Gzhegow\Lib\Lib::entrypoint()
     ->setDirRoot(__DIR__ . '/..')
     //

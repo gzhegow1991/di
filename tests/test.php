@@ -8,10 +8,12 @@ ini_set('memory_limit', '32M');
 
 
 // > настраиваем обработку ошибок
-\Gzhegow\Lib\Lib::errorHandler()
+\Gzhegow\Lib\Lib::entrypoint()
     ->setDirRoot(__DIR__ . '/..')
     //
     ->useErrorReporting()
+    ->useMemoryLimit()
+    ->useTimeLimit()
     ->useErrorHandler()
     ->useExceptionHandler()
 ;
@@ -37,36 +39,17 @@ $ffn = new class {
     }
 
 
-    function assert_stdout(
-        \Closure $fn, array $fnArgs = [],
-        string $expectedStdout = null
-    ) : void
+    function test(\Closure $fn, array $args = []) : \Gzhegow\Lib\Modules\Test\TestRunner\TestRunner
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-        \Gzhegow\Lib\Lib::test()->assertStdout(
-            $trace,
-            $fn, $fnArgs,
-            $expectedStdout
-        );
-    }
-
-    function assert(
-        \Closure $fn, array $fnArgs = [],
-        string $expectedStdout = null,
-        float $expectedMicrotimeMax = null, float $expectedMicrotimeMin = null
-    ) : void
-    {
-        $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
-
-        \Gzhegow\Lib\Lib::test()->assert(
-            $trace,
-            $fn, $fnArgs,
-            $expectedStdout,
-            $expectedMicrotimeMax, $expectedMicrotimeMin
-        );
+        return \Gzhegow\Lib\Lib::test()->test()
+            ->fn($fn, $args)
+            ->trace($trace)
+        ;
     }
 };
+
 
 
 // >>> ЗАПУСКАЕМ!
@@ -189,6 +172,9 @@ $di->extend(\Gzhegow\Di\Demo\MyClassTwoAwareInterface::class, static function (\
 });
 
 
+
+// >>> ТЕСТЫ
+
 // > TEST
 // > получить сервис (с автоматическим заполнением зависимостей, "автовайрингом")
 // > если в настройках установлено $config->injector->fetchFunc = 'GET', то при попытке заполнения необъявленных зависимостей будет выброшено исключение
@@ -227,7 +213,8 @@ $fn = function () use ($di, $ffn) {
     $ffn->print($result1 === $result2);
     $ffn->print($result2 === $result3);
 };
-$ffn->assert_stdout($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 "TEST 1"
 
 { object # Gzhegow\Di\Demo\MyClassThree }
@@ -236,6 +223,7 @@ $ffn->assert_stdout($fn, [], '
 TRUE
 TRUE
 ');
+$test->run();
 
 
 // > TEST
@@ -260,7 +248,8 @@ $fn = function () use ($di, $ffn) {
     $ffn->print($four2->one);
     $ffn->print($four1->one === $four2->one);
 };
-$ffn->assert_stdout($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 "TEST 2"
 
 { object # Gzhegow\Di\Demo\MyClassFour }
@@ -270,6 +259,7 @@ $ffn->assert_stdout($fn, [], '
 { object # Gzhegow\Di\Demo\MyClassOneOne }
 TRUE
 ');
+$test->run();
 
 
 // > TEST
@@ -311,7 +301,8 @@ $fn = function () use ($di, $config, $ffn) {
         $config->injector->fetchFunc = \Gzhegow\Di\Injector\DiInjector::FETCH_FUNC_GET;
     });
 };
-$ffn->assert_stdout($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 "TEST 3"
 
 "[ CATCH ] Missing bound `argReflectionTypeClass` to resolve parameter: [ 0 ] $four : Gzhegow\Di\Demo\MyClassFour"
@@ -324,6 +315,7 @@ $ffn->assert_stdout($fn, [], '
 
 TRUE
 ');
+$test->run();
 
 
 // > TEST
@@ -355,13 +347,15 @@ $fn = function () use ($di, $ffn) {
     // $args = [ 1, null, 2 ];
     // $result = $di->callUserFuncAutowired($fn, ...$args);
 };
-$ffn->assert_stdout($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 "TEST 4"
 
 1
 2
 "Gzhegow\Di\Demo\MyClassThree"
 ');
+$test->run();
 
 
 // > TEST
@@ -401,7 +395,8 @@ $fn = function () use (
     $lazy3 = $di->getLazy('two');
     $ffn->print($lazy3, (string) $lazy3->id);
 };
-$ffn->assert_stdout($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 "TEST 5"
 
 { object # Gzhegow\Di\LazyService\DiLazyService } | "two"
@@ -410,6 +405,7 @@ $ffn->assert_stdout($fn, [], '
 
 { object # Gzhegow\Di\LazyService\DiLazyService } | "two"
 ');
+$test->run();
 
 
 // > TEST
@@ -430,11 +426,15 @@ $fn = function () use (
     // > в этом случае время не потребуется, поскольку объект был создан ранее
     $lazy3->do();
 };
-$ffn->assert($fn, [], '
+$test = $ffn->test($fn);
+$test->expectStdout('
 Hello, [ User1 ]
 Hello, [ User2 ]
 Hello, [ User1 ]
-', 7.0, 6.0);
+');
+$test->expectSecondsMin(6.0);
+$test->expectMemoryMax(6.1);
+$test->run();
 
 
 // > Теперь сохраним кеш сделанной за скрипт рефлексии для следующего раза

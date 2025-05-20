@@ -78,8 +78,8 @@ class DiReflectorCache implements DiReflectorCacheInterface
                     $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
                     $content = null;
-                    if (is_file($cacheFilepath)) {
-                        $content = Lib::fs()->file_get_contents($cacheFilepath);
+                    if (is_file($cacheFilepath) && filesize($cacheFilepath)) {
+                        $content = file_get_contents($cacheFilepath);
                     }
 
                     if (null !== $content) {

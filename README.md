@@ -33,6 +33,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
     ->useErrorReporting()
     ->useMemoryLimit()
     ->useTimeLimit()
+    ->useUmask()
     ->useErrorHandler()
     ->useExceptionHandler()
 ;

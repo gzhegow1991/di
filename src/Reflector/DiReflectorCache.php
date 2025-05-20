@@ -77,10 +77,9 @@ class DiReflectorCache implements DiReflectorCacheInterface
                     $cacheFilename = $this->cacheFilename($cacheKey);
                     $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
-                    $content = null;
-                    if (is_file($cacheFilepath) && filesize($cacheFilepath)) {
-                        $content = file_get_contents($cacheFilepath);
-                    }
+                    $f = Lib::fs()->fileSafe();
+
+                    $content = $f->file_get_contents($cacheFilepath) ?: null;
 
                     if (null !== $content) {
                         $unserializedArray = Lib::php()->unserialize($content);
@@ -179,9 +178,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->commit();
 
         } else {
-            $theFs = Lib::fs();
-
-            $f = $theFs->fileSafe();
+            $f = Lib::fs()->fileSafe();
 
             foreach ( $this->reflectionResults as $reflectNamespace => $cacheData ) {
                 $cacheKey = $reflectNamespace;
@@ -217,6 +214,10 @@ class DiReflectorCache implements DiReflectorCacheInterface
 
         } else {
             foreach ( Lib::fs()->dir_walk_it($this->config->cacheDirpath) as $spl ) {
+                if ($spl->getFilename() === '.gitignore') {
+                    continue;
+                }
+
                 $spl->isDir()
                     ? rmdir($spl->getRealPath())
                     : unlink($spl->getRealPath());

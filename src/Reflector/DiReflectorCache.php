@@ -179,6 +179,10 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->commit();
 
         } else {
+            $theFs = Lib::fs();
+
+            $f = $theFs->fileSafe();
+
             foreach ( $this->reflectionResults as $reflectNamespace => $cacheData ) {
                 $cacheKey = $reflectNamespace;
 
@@ -187,9 +191,9 @@ class DiReflectorCache implements DiReflectorCacheInterface
 
                 $content = Lib::php()->serialize($cacheData);
 
-                Lib::fs()->file_put_contents(
-                    $cacheFilepath, $content,
-                    [], [ 0755, true ]
+                $f->file_put_contents(
+                    $cacheFilepath, $content, null,
+                    [], [ 0755 ]
                 );
             }
         }

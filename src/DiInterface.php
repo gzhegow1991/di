@@ -23,27 +23,27 @@ interface DiInterface
     /**
      * @param string $id
      */
-    public function has($id, Id &$result = null) : bool;
+    public function has($id, ?Id &$result = null) : bool;
 
 
-    public function bind($id, $mixed = null, bool $isSingleton = null) : DiInterface;
+    public function bind($id, $mixed = null, ?bool $isSingleton = null) : DiInterface;
 
     public function bindSingleton($id, $mixed = null) : DiInterface;
 
 
-    public function bindAlias($id, $aliasId, bool $isSingleton = null) : DiInterface;
+    public function bindAlias($id, $aliasId, ?bool $isSingleton = null) : DiInterface;
 
     /**
      * @param class-string $classId
      */
-    public function bindClass($id, $classId, bool $isSingleton = null) : DiInterface;
+    public function bindClass($id, $classId, ?bool $isSingleton = null) : DiInterface;
 
     /**
      * @param callable $fnFactory
      */
-    public function bindFactory($id, $fnFactory, bool $isSingleton = null) : DiInterface;
+    public function bindFactory($id, $fnFactory, ?bool $isSingleton = null) : DiInterface;
 
-    public function bindInstance($id, object $instance, bool $isSingleton = null) : DiInterface;
+    public function bindInstance($id, object $instance, ?bool $isSingleton = null) : DiInterface;
 
 
     /**
@@ -59,7 +59,7 @@ interface DiInterface
      *
      * @return T|null
      */
-    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : ?object;
+    public function ask($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : ?object;
 
 
     /**
@@ -71,7 +71,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : object;
+    public function get($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : object;
 
     /**
      * @template-covariant T of object
@@ -80,7 +80,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) : object;
+    public function make($id, ?array $parameters = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object;
 
     /**
      * @template-covariant T of object
@@ -89,7 +89,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object;
+    public function take($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object;
 
     /**
      * @template-covariant T of object
@@ -98,7 +98,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object;
+    public function fetch($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object;
 
 
     public function getLazyServiceFactory() : DiLazyServiceFactoryInterface;
@@ -115,7 +115,7 @@ interface DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null);
+    public function getLazy($id, ?string $contractT = null, ?array $parametersWhenNew = null);
 
     /**
      * @template-covariant T of object
@@ -124,7 +124,7 @@ interface DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function makeLazy($id, array $parameters = null, string $contractT = null);
+    public function makeLazy($id, ?array $parameters = null, ?string $contractT = null);
 
     /**
      * @template-covariant T of object
@@ -133,7 +133,7 @@ interface DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null);
+    public function takeLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null);
 
     /**
      * @template-covariant T of object
@@ -142,7 +142,7 @@ interface DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null);
+    public function fetchLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null);
 
 
     /**
@@ -152,7 +152,7 @@ interface DiInterface
      *
      * @return T
      */
-    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null);
+    public function autowireInstance(object $instance, ?array $methodArgs = null, ?string $methodName = null);
 
 
     /**
@@ -167,5 +167,5 @@ interface DiInterface
      *
      * @return mixed
      */
-    public function callUserFuncArrayAutowired($fn, array $args = null);
+    public function callUserFuncArrayAutowired($fn, ?array $args = null);
 }

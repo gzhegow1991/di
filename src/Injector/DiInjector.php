@@ -135,13 +135,11 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function has($id, Id &$result = null) : bool
+    public function has($id, ?Id &$result = null) : bool
     {
         $result = null;
 
-        $e = null;
-
-        $idObject = Id::from($id, Result::parse());
+        $idObject = Id::from($id, Result::asValue());
 
         if (! $idObject) {
             return false;
@@ -658,7 +656,7 @@ class DiInjector implements DiInjectorInterface
             $result = [ $object, static::BIND_TYPE_INSTANCE ];
 
         } elseif (is_string($mixed) && ('' !== $mixed)) {
-            $mixedIdObject = Id::from($mixed, Result::parse());
+            $mixedIdObject = Id::from($mixed, Result::asValue());
 
             if ($mixedIdObject) {
                 $mixedIdValue = $mixedIdObject->getValue();

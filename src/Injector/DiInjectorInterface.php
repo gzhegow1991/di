@@ -16,7 +16,7 @@ interface DiInjectorInterface
     public function merge(DiInjectorInterface $di) : DiInjectorInterface;
 
 
-    public function has($id, Id &$result = null) : bool;
+    public function has($id, ?Id &$result = null) : bool;
 
 
     public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false) : DiInjectorInterface;

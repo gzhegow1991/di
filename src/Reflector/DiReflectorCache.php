@@ -46,7 +46,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     }
 
 
-    public function hasReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array &$result = null) : bool
+    public function hasReflectionResult(string $reflectionKey, ?string $reflectionNamespace = null, ?array &$result = null) : bool
     {
         $result = null;
 
@@ -100,7 +100,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
         return $status;
     }
 
-    public function getReflectionResult(string $reflectionKey, string $reflectionNamespace = null, array $fallback = []) : array
+    public function getReflectionResult(string $reflectionKey, ?string $reflectionNamespace = null, array $fallback = []) : array
     {
         $status = $this->hasReflectionResult($reflectionKey, $reflectionNamespace, $result);
 
@@ -122,7 +122,7 @@ class DiReflectorCache implements DiReflectorCacheInterface
     /**
      * @return static
      */
-    public function setReflectionResult(array $reflectionResult, string $reflectionKey, string $reflectionNamespace = null)
+    public function setReflectionResult(array $reflectionResult, string $reflectionKey, ?string $reflectionNamespace = null)
     {
         $reflectionNamespace = $reflectionNamespace ?? '-';
 

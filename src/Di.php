@@ -35,13 +35,13 @@ class Di
     /**
      * @param string $id
      */
-    public static function has($id, Id &$result = null) : bool
+    public static function has($id, ?Id &$result = null) : bool
     {
         return static::$facade->has($id, $result);
     }
 
 
-    public static function bind($id, $mixed = null, bool $isSingleton = null) : DiInterface
+    public static function bind($id, $mixed = null, ?bool $isSingleton = null) : DiInterface
     {
         return static::$facade->bind($id, $mixed, $isSingleton);
     }
@@ -52,7 +52,7 @@ class Di
     }
 
 
-    public static function bindAlias($id, $aliasId, bool $isSingleton = null) : DiInterface
+    public static function bindAlias($id, $aliasId, ?bool $isSingleton = null) : DiInterface
     {
         return static::$facade->bindAlias($id, $aliasId, $isSingleton);
     }
@@ -60,7 +60,7 @@ class Di
     /**
      * @param class-string $classId
      */
-    public static function bindClass($id, $classId, bool $isSingleton = null) : DiInterface
+    public static function bindClass($id, $classId, ?bool $isSingleton = null) : DiInterface
     {
         return static::$facade->bindClass($id, $classId, $isSingleton);
     }
@@ -68,12 +68,12 @@ class Di
     /**
      * @param callable $fnFactory
      */
-    public static function bindFactory($id, $fnFactory, bool $isSingleton = null) : DiInterface
+    public static function bindFactory($id, $fnFactory, ?bool $isSingleton = null) : DiInterface
     {
         return static::$facade->bindFactory($id, $fnFactory, $isSingleton);
     }
 
-    public static function bindInstance($id, object $instance, bool $isSingleton = null) : DiInterface
+    public static function bindInstance($id, object $instance, ?bool $isSingleton = null) : DiInterface
     {
         return static::$facade->bindInstance($id, $instance, $isSingleton);
     }
@@ -95,7 +95,7 @@ class Di
      *
      * @return T|null
      */
-    public static function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : ?object
+    public static function ask($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : ?object
     {
         return static::$facade->ask($id, $contractT, $forceInstanceOf, $parametersWhenNew);
     }
@@ -110,7 +110,7 @@ class Di
      *
      * @throws NotFoundException
      */
-    public static function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : object
+    public static function get($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : object
     {
         return static::$facade->get($id, $contractT, $forceInstanceOf, $parametersWhenNew);
     }
@@ -122,7 +122,7 @@ class Di
      *
      * @return T
      */
-    public static function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public static function make($id, ?array $parameters = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         return static::$facade->make($id, $parameters, $contractT, $forceInstanceOf);
     }
@@ -134,7 +134,7 @@ class Di
      *
      * @return T
      */
-    public static function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public static function take($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         return static::$facade->take($id, $parametersWhenNew, $contractT, $forceInstanceOf);
     }
@@ -146,7 +146,7 @@ class Di
      *
      * @return T
      */
-    public static function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public static function fetch($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         return static::$facade->fetch($id, $parametersWhenNew, $contractT, $forceInstanceOf);
     }
@@ -166,7 +166,7 @@ class Di
      *
      * @throws NotFoundException
      */
-    public static function getLazy($id, string $contractT = null, array $parametersWhenNew = null)
+    public static function getLazy($id, ?string $contractT = null, ?array $parametersWhenNew = null)
     {
         return static::$facade->getLazy($id, $contractT, $parametersWhenNew);
     }
@@ -178,7 +178,7 @@ class Di
      *
      * @return DiLazyService<T>|T
      */
-    public static function makeLazy($id, array $parameters = null, string $contractT = null)
+    public static function makeLazy($id, ?array $parameters = null, ?string $contractT = null)
     {
         return static::$facade->makeLazy($id, $parameters, $contractT);
     }
@@ -190,7 +190,7 @@ class Di
      *
      * @return DiLazyService<T>|T
      */
-    public static function takeLazy($id, array $parametersWhenNew = null, string $contractT = null)
+    public static function takeLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null)
     {
         return static::$facade->takeLazy($id, $parametersWhenNew, $contractT);
     }
@@ -202,7 +202,7 @@ class Di
      *
      * @return DiLazyService<T>|T
      */
-    public static function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null)
+    public static function fetchLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null)
     {
         return static::$facade->fetchLazy($id, $parametersWhenNew, $contractT);
     }
@@ -215,7 +215,7 @@ class Di
      *
      * @return T
      */
-    public static function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null)
+    public static function autowireInstance(object $instance, ?array $methodArgs = null, ?string $methodName = null)
     {
         return static::$facade->autowireInstance($instance, $methodArgs, $methodName);
     }
@@ -236,7 +236,7 @@ class Di
      *
      * @return mixed
      */
-    public static function callUserFuncArrayAutowired($fn, array $args = null)
+    public static function callUserFuncArrayAutowired($fn, ?array $args = null)
     {
         return static::$facade->callUserFuncArrayAutowired($fn, $args);
     }

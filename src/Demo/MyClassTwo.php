@@ -15,7 +15,7 @@ class MyClassTwo implements MyClassTwoInterface
     protected $hello;
 
 
-    // public function __construct(MyClassOneInterface $a, string $hello = null)
+    // public function __construct(MyClassOneInterface $a, ?string $hello = null)
     // {
     //     // > gzhegow, long init example
     //     sleep(3);
@@ -24,7 +24,7 @@ class MyClassTwo implements MyClassTwoInterface
     //     $this->hello = $hello;
     // }
 
-    public function __construct(string $hello = null)
+    public function __construct(?string $hello = null)
     {
         // > gzhegow, long init example
         sleep(3);

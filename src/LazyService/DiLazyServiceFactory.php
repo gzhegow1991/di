@@ -20,7 +20,7 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
     }
 
 
-    public function newLazyServiceGet($lazyId, array $parametersWhenNew = null) : DiLazyService
+    public function newLazyServiceGet($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
@@ -30,7 +30,7 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
         return $lazyService;
     }
 
-    public function newLazyServiceMake($lazyId, array $parameters = null) : DiLazyService
+    public function newLazyServiceMake($lazyId, ?array $parameters = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parameters = $parameters ?? [];
@@ -40,7 +40,7 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
         return $lazyService;
     }
 
-    public function newLazyServiceTake($lazyId, array $parametersWhenNew = null) : DiLazyService
+    public function newLazyServiceTake($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
@@ -50,7 +50,7 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
         return $lazyService;
     }
 
-    public function newLazyServiceFetch($lazyId, array $parametersWhenNew = null) : DiLazyService
+    public function newLazyServiceFetch($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
         $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
@@ -61,28 +61,28 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
     }
 
 
-    public function fnFactoryGet($lazyId, array $parametersWhenNew = null) : object
+    public function fnFactoryGet($lazyId, ?array $parametersWhenNew = null) : object
     {
         $instance = $this->di->get($lazyId, null, null, $parametersWhenNew);
 
         return $instance;
     }
 
-    public function fnFactoryMake($lazyId, array $parameters = null) : object
+    public function fnFactoryMake($lazyId, ?array $parameters = null) : object
     {
         $instance = $this->di->make($lazyId, $parameters);
 
         return $instance;
     }
 
-    public function fnFactoryTake($lazyId, array $parametersWhenNew = null) : object
+    public function fnFactoryTake($lazyId, ?array $parametersWhenNew = null) : object
     {
         $instance = $this->di->take($lazyId, $parametersWhenNew);
 
         return $instance;
     }
 
-    public function fnFactoryFetch($lazyId, array $parametersWhenNew = null) : object
+    public function fnFactoryFetch($lazyId, ?array $parametersWhenNew = null) : object
     {
         $instance = $this->di->fetch($lazyId, $parametersWhenNew);
 

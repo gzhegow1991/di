@@ -89,7 +89,7 @@ class DiFacade implements DiInterface
     /**
      * @param string $id
      */
-    public function has($id, Id &$result = null) : bool
+    public function has($id, ?Id &$result = null) : bool
     {
         $status = $this->injector->has($id, $result);
 
@@ -97,7 +97,7 @@ class DiFacade implements DiInterface
     }
 
 
-    public function bind($id, $mixed = null, bool $isSingleton = null) : DiInterface
+    public function bind($id, $mixed = null, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -116,7 +116,7 @@ class DiFacade implements DiInterface
     }
 
 
-    public function bindAlias($id, $aliasId, bool $isSingleton = null) : DiInterface
+    public function bindAlias($id, $aliasId, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -131,7 +131,7 @@ class DiFacade implements DiInterface
     /**
      * @param class-string $classId
      */
-    public function bindClass($id, $classId, bool $isSingleton = null) : DiInterface
+    public function bindClass($id, $classId, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -146,7 +146,7 @@ class DiFacade implements DiInterface
     /**
      * @param callable $fnFactory
      */
-    public function bindFactory($id, $fnFactory, bool $isSingleton = null) : DiInterface
+    public function bindFactory($id, $fnFactory, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -157,7 +157,7 @@ class DiFacade implements DiInterface
         return $this;
     }
 
-    public function bindInstance($id, object $instance, bool $isSingleton = null) : DiInterface
+    public function bindInstance($id, object $instance, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
@@ -189,7 +189,7 @@ class DiFacade implements DiInterface
      *
      * @return T|null
      */
-    public function ask($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : ?object
+    public function ask($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : ?object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -212,7 +212,7 @@ class DiFacade implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function get($id, string $contractT = null, bool $forceInstanceOf = null, array $parametersWhenNew = null) : object
+    public function get($id, ?string $contractT = null, ?bool $forceInstanceOf = null, ?array $parametersWhenNew = null) : object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -232,7 +232,7 @@ class DiFacade implements DiInterface
      *
      * @return T
      */
-    public function make($id, array $parameters = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public function make($id, ?array $parameters = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
@@ -252,7 +252,7 @@ class DiFacade implements DiInterface
      *
      * @return T
      */
-    public function take($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public function take($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -272,7 +272,7 @@ class DiFacade implements DiInterface
      *
      * @return T
      */
-    public function fetch($id, array $parametersWhenNew = null, string $contractT = null, bool $forceInstanceOf = null) : object
+    public function fetch($id, ?array $parametersWhenNew = null, ?string $contractT = null, ?bool $forceInstanceOf = null) : object
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -310,7 +310,7 @@ class DiFacade implements DiInterface
      *
      * @throws NotFoundException
      */
-    public function getLazy($id, string $contractT = null, array $parametersWhenNew = null) : DiLazyService
+    public function getLazy($id, ?string $contractT = null, ?array $parametersWhenNew = null) : DiLazyService
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -329,7 +329,7 @@ class DiFacade implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function makeLazy($id, array $parameters = null, string $contractT = null) : DiLazyService
+    public function makeLazy($id, ?array $parameters = null, ?string $contractT = null) : DiLazyService
     {
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
@@ -348,7 +348,7 @@ class DiFacade implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function takeLazy($id, array $parametersWhenNew = null, string $contractT = null) : DiLazyService
+    public function takeLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null) : DiLazyService
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -367,7 +367,7 @@ class DiFacade implements DiInterface
      *
      * @return DiLazyService<T>|T
      */
-    public function fetchLazy($id, array $parametersWhenNew = null, string $contractT = null) : DiLazyService
+    public function fetchLazy($id, ?array $parametersWhenNew = null, ?string $contractT = null) : DiLazyService
     {
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
@@ -387,7 +387,7 @@ class DiFacade implements DiInterface
      *
      * @return T
      */
-    public function autowireInstance(object $instance, array $methodArgs = null, string $methodName = null)
+    public function autowireInstance(object $instance, ?array $methodArgs = null, ?string $methodName = null)
     {
         $methodArgs = $methodArgs ?? [];
         $methodName = $methodName ?? '';
@@ -415,7 +415,7 @@ class DiFacade implements DiInterface
      *
      * @return mixed
      */
-    public function callUserFuncArrayAutowired($fn, array $args = null)
+    public function callUserFuncArrayAutowired($fn, ?array $args = null)
     {
         $args = $args ?? [];
 

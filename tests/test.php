@@ -7,12 +7,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 \Gzhegow\Lib\Lib::entrypoint()
     ->setDirRoot(__DIR__ . '/..')
     //
-    ->useAllErrorReporting()
-    //
-    ->useMemoryLimit()
-    ->usePrecision()
-    ->useTimezoneDefault()
-    ->useUmask()
+    ->useAll()
 ;
 
 

@@ -10,6 +10,11 @@ use Gzhegow\Di\LazyService\DiLazyServiceFactoryInterface;
 
 class Di
 {
+    private function __construct()
+    {
+    }
+
+
     public static function resetCache() : DiInterface
     {
         return static::$facade->resetCache();

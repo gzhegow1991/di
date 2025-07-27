@@ -53,16 +53,16 @@ class DiReflectorCache implements DiReflectorCacheInterface
 
         $reflectionNamespace = $reflectionNamespace ?? '-';
 
-        $isNoCache = $this->config->cacheMode === static::CACHE_MODE_NO_CACHE;
-        $isRuntime = $this->config->cacheMode === static::CACHE_MODE_RUNTIME;
-        $isStorage = $this->config->cacheMode === static::CACHE_MODE_STORAGE;
+        $isNoCache = ($this->config->cacheMode === static::CACHE_MODE_NO_CACHE);
+        $isRuntime = ($this->config->cacheMode === static::CACHE_MODE_RUNTIME);
+        $isStorage = ($this->config->cacheMode === static::CACHE_MODE_STORAGE);
 
         if ($isNoCache) {
             return false;
         }
 
-        if (! isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ])) {
-            if ($isStorage) {
+        if ($isStorage) {
+            if (! isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ])) {
                 $cacheKey = $reflectionNamespace;
 
                 if (null !== $this->config->cacheAdapter) {
@@ -75,15 +75,16 @@ class DiReflectorCache implements DiReflectorCacheInterface
                     }
 
                 } else {
+                    $theFsFile = Lib::fs()->fileSafe();
+                    $thePhp = Lib::php();
+
                     $cacheFilename = $this->cacheFilename($cacheKey);
                     $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
-                    $f = Lib::fs()->fileSafe();
-
-                    $content = $f->file_get_contents($cacheFilepath) ?: null;
+                    $content = $theFsFile->file_get_contents($cacheFilepath) ?: null;
 
                     if (null !== $content) {
-                        $unserializedArray = Lib::php()->unserialize($content);
+                        $unserializedArray = $thePhp->unserialize($content);
                         $unserializedArray = $unserializedArray ?? [];
 
                         $this->reflectionResults += $unserializedArray;
@@ -92,13 +93,15 @@ class DiReflectorCache implements DiReflectorCacheInterface
             }
         }
 
-        $status = isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ]);
+        if ($isStorage || $isRuntime) {
+            if (isset($this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ])) {
+                $result = $this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ];
 
-        if ($status) {
-            $result = $this->reflectionResults[ $reflectionNamespace ][ $reflectionKey ];
+                return true;
+            }
         }
 
-        return $status;
+        return false;
     }
 
     public function getReflectionResult(string $reflectionKey, ?string $reflectionNamespace = null, array $fallback = []) : array
@@ -179,7 +182,8 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->commit();
 
         } else {
-            $f = Lib::fs()->fileSafe();
+            $theFsFile = Lib::fs()->fileSafe();
+            $thePhp = Lib::php();
 
             foreach ( $this->reflectionResults as $reflectNamespace => $cacheData ) {
                 $cacheKey = $reflectNamespace;
@@ -187,11 +191,11 @@ class DiReflectorCache implements DiReflectorCacheInterface
                 $cacheFilename = $this->cacheFilename($cacheKey);
                 $cacheFilepath = "{$this->config->cacheDirpath}/{$cacheFilename}";
 
-                $content = Lib::php()->serialize($cacheData);
+                $content = $thePhp->serialize($cacheData);
 
-                $f->file_put_contents(
+                $theFsFile->file_put_contents(
                     $cacheFilepath, $content, null,
-                    [], [ 0755 ]
+                    [], [ 0775 ]
                 );
             }
         }
@@ -214,7 +218,9 @@ class DiReflectorCache implements DiReflectorCacheInterface
             $this->config->cacheAdapter->clear();
 
         } else {
-            foreach ( Lib::fs()->dir_walk_it($this->config->cacheDirpath) as $spl ) {
+            $theFs = Lib::fs();
+
+            foreach ( $theFs->dir_walk_it($this->config->cacheDirpath) as $spl ) {
                 if ($spl->getFilename() === '.gitignore') {
                     continue;
                 }

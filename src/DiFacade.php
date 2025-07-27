@@ -101,7 +101,7 @@ class DiFacade implements DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
-        $id = Id::from($id);
+        $id = Id::from($id)->orThrow();
 
         $this->injector->bindItemAuto($id, $mixed, $isSingleton);
 
@@ -116,29 +116,29 @@ class DiFacade implements DiInterface
     }
 
 
-    public function bindAlias($id, $aliasId, ?bool $isSingleton = null) : DiInterface
+    public function bindAlias($id, $idOrAlias, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
-        $id = Id::from($id);
-        $aliasId = Id::from($aliasId);
+        $idValid = Id::from($id)->orThrow();
+        $idOrAliasValid = Id::from($idOrAlias)->orThrow();
 
-        $this->injector->bindItemAlias($id, $aliasId, $isSingleton);
+        $this->injector->bindItemAlias($idValid, $idOrAliasValid, $isSingleton);
 
         return $this;
     }
 
     /**
-     * @param class-string $classId
+     * @param class-string $idOrClass
      */
-    public function bindClass($id, $classId, ?bool $isSingleton = null) : DiInterface
+    public function bindClass($id, $idOrClass, ?bool $isSingleton = null) : DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
-        $id = Id::from($id);
-        $classId = Id::from($classId);
+        $idValid = Id::from($id)->orThrow();
+        $idOrClassValid = Id::from($idOrClass)->orThrow();
 
-        $this->injector->bindItemClass($id, $classId, $isSingleton);
+        $this->injector->bindItemClass($idValid, $idOrClassValid, $isSingleton);
 
         return $this;
     }
@@ -150,9 +150,9 @@ class DiFacade implements DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $this->injector->bindItemFactory($id, $fnFactory, $isSingleton);
+        $this->injector->bindItemFactory($idValid, $fnFactory, $isSingleton);
 
         return $this;
     }
@@ -161,9 +161,9 @@ class DiFacade implements DiInterface
     {
         $isSingleton = $isSingleton ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $this->injector->bindItemInstance($id, $instance, $isSingleton);
+        $this->injector->bindItemInstance($idValid, $instance, $isSingleton);
 
         return $this;
     }
@@ -174,9 +174,9 @@ class DiFacade implements DiInterface
      */
     public function extend($id, $fnExtend) : DiInterface
     {
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $this->injector->extendItem($id, $fnExtend);
+        $this->injector->extendItem($idValid, $fnExtend);
 
         return $this;
     }
@@ -195,9 +195,9 @@ class DiFacade implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $instance = $this->injector->askItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
+        $instance = $this->injector->askItem($idValid, $contractT, $forceInstanceOf, $parametersWhenNew);
 
         return $instance;
     }
@@ -218,9 +218,9 @@ class DiFacade implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $instance = $this->injector->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
+        $instance = $this->injector->getItem($idValid, $contractT, $forceInstanceOf, $parametersWhenNew);
 
         return $instance;
     }
@@ -238,9 +238,9 @@ class DiFacade implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $instance = $this->injector->makeItem($id, $parameters, $contractT, $forceInstanceOf);
+        $instance = $this->injector->makeItem($idValid, $parameters, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -258,9 +258,9 @@ class DiFacade implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $instance = $this->injector->takeItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+        $instance = $this->injector->takeItem($idValid, $parametersWhenNew, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -278,9 +278,9 @@ class DiFacade implements DiInterface
         $contractT = $contractT ?? '';
         $forceInstanceOf = $forceInstanceOf ?? false;
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $instance = $this->injector->fetchItem($id, $parametersWhenNew, $contractT, $forceInstanceOf);
+        $instance = $this->injector->fetchItem($idValid, $parametersWhenNew, $contractT, $forceInstanceOf);
 
         return $instance;
     }
@@ -315,9 +315,9 @@ class DiFacade implements DiInterface
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $lazyService = $this->getItemLazy($id, $contractT, $parametersWhenNew);
+        $lazyService = $this->getItemLazy($idValid, $contractT, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -334,9 +334,9 @@ class DiFacade implements DiInterface
         $parameters = $parameters ?? [];
         $contractT = $contractT ?? '';
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $lazyService = $this->makeItemLazy($id, $parameters, $contractT);
+        $lazyService = $this->makeItemLazy($idValid, $parameters, $contractT);
 
         return $lazyService;
     }
@@ -353,9 +353,9 @@ class DiFacade implements DiInterface
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $lazyService = $this->takeItemLazy($id, $parametersWhenNew, $contractT);
+        $lazyService = $this->takeItemLazy($idValid, $parametersWhenNew, $contractT);
 
         return $lazyService;
     }
@@ -372,9 +372,9 @@ class DiFacade implements DiInterface
         $parametersWhenNew = $parametersWhenNew ?? [];
         $contractT = $contractT ?? '';
 
-        $id = Id::from($id);
+        $idValid = Id::from($id)->orThrow();
 
-        $lazyService = $this->fetchItemLazy($id, $parametersWhenNew, $contractT);
+        $lazyService = $this->fetchItemLazy($idValid, $parametersWhenNew, $contractT);
 
         return $lazyService;
     }
@@ -438,8 +438,9 @@ class DiFacade implements DiInterface
      */
     protected function getItemLazy(Id $id, string $contractT = '', array $parametersWhenNew = []) : DiLazyService
     {
-        $lazyService = $this->getLazyServiceFactory()
-            ->newLazyServiceGet($id, $parametersWhenNew);
+        $theLazyServiceFactory = $this->getLazyServiceFactory();
+
+        $lazyService = $theLazyServiceFactory->newLazyServiceGet($id, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -455,8 +456,9 @@ class DiFacade implements DiInterface
      */
     protected function makeItemLazy(Id $id, array $parameters = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->getLazyServiceFactory()
-            ->newLazyServiceMake($id, $parameters);
+        $theLazyServiceFactory = $this->getLazyServiceFactory();
+
+        $lazyService = $theLazyServiceFactory->newLazyServiceMake($id, $parameters);
 
         return $lazyService;
     }
@@ -472,8 +474,9 @@ class DiFacade implements DiInterface
      */
     protected function takeItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->getLazyServiceFactory()
-            ->newLazyServiceTake($id, $parametersWhenNew);
+        $theLazyServiceFactory = $this->getLazyServiceFactory();
+
+        $lazyService = $theLazyServiceFactory->newLazyServiceTake($id, $parametersWhenNew);
 
         return $lazyService;
     }
@@ -489,8 +492,9 @@ class DiFacade implements DiInterface
      */
     protected function fetchItemLazy(Id $id, array $parametersWhenNew = [], string $contractT = '') : DiLazyService
     {
-        $lazyService = $this->getLazyServiceFactory()
-            ->newLazyServiceFetch($id, $parametersWhenNew);
+        $theLazyServiceFactory = $this->getLazyServiceFactory();
+
+        $lazyService = $theLazyServiceFactory->newLazyServiceFetch($id, $parametersWhenNew);
 
         return $lazyService;
     }

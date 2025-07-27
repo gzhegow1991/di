@@ -72,56 +72,82 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsObject($object) : ?array
     {
         if (! is_object($object)) return null;
-        if (! Lib::php()->type_callable_object($callableObject, $object, null)) return null;
 
-        $isClosure = $callableObject instanceof \Closure;
+        $reflectResult = null
+            ?? $this->reflectArgumentsObjectClosure($object)
+            ?? $this->reflectArgumentsObjectInvokable($object);
 
-        $reflectKey = null;
+        return $reflectResult;
+    }
+
+    /**
+     * @param callable|object $object
+     */
+    protected function reflectArgumentsObjectClosure($object) : ?array
+    {
+        $theCache = $this->cache;
+        $thePhp = Lib::php();
+
+        if (! $thePhp->type_callable_object_closure($object, $newScope = null)->isOk()) {
+            return null;
+        }
+
         $reflectNamespace = null;
-        $reflectResult = null;
 
-        if ($isClosure) {
+        try {
+            $rf = new \ReflectionFunction($object);
+        }
+        catch ( \ReflectionException $e ) {
+            throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
+        }
+
+        $reflectKey = '{ \Closure(' . $rf->getFileName() . "\0" . $rf->getStartLine() . "\0" . $rf->getEndLine() . ') }';
+
+        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
+
+        } else {
+            $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
+
+            $theCache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+        }
+
+        return $reflectResult;
+    }
+
+    /**
+     * @param callable|object $object
+     */
+    protected function reflectArgumentsObjectInvokable($object) : ?array
+    {
+        $theCache = $this->cache;
+        $thePhp = Lib::php();
+        $theType = Lib::type();
+
+        if (! $thePhp->type_callable_object_invokable($object, $newScope = null)->isOk([ &$invokable ])) {
+            return null;
+        }
+
+        $class = get_class($object);
+
+        $reflectKey = $class . '::__invoke';
+
+        $reflectNamespace = $theType->struct_namespace($class)->orNull();
+
+        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
+
+        } else {
             try {
-                $rf = new \ReflectionFunction($object);
+                $rm = new \ReflectionMethod($object, '__invoke');
             }
             catch ( \ReflectionException $e ) {
                 throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
             }
 
-            $reflectKey = '{ \Closure(' . $rf->getFileName() . "\0" . $rf->getStartLine() . "\0" . $rf->getEndLine() . ') }';
+            $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
-        } else {
-            // > invokable
-
-            $class = get_class($object);
-
-            $reflectKey = $class . '::__invoke';
-            $reflectNamespace = Lib::parse()->struct_namespace($class);
-        }
-
-        $cache = $this->cache;
-
-        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
-
-        } else {
-            if ($isClosure) {
-                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
-
-            } else {
-                // > invokable
-
-                try {
-                    $rm = new \ReflectionMethod($object, '__invoke');
-                }
-                catch ( \ReflectionException $e ) {
-                    throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
-                }
-
-                $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
-            }
-
-            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+            $theCache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -133,6 +159,7 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsArray($array) : ?array
     {
         if (! is_array($array)) return null;
+        if (! count($array)) return null;
 
         $reflectResult = null
             ?? $this->reflectArgumentsArrayMethod($array);
@@ -145,20 +172,20 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsArrayMethod($array) : ?array
     {
-        if (! is_array($array)) return null;
-        if (! count($array)) return null;
-        if (! Lib::php()->type_method_string($methodString, $array, [ &$methodArray ])) return null;
+        $theCache = $this->cache;
+        $thePhp = Lib::php();
+        $theType = Lib::type();
 
-        $isObject = is_object($methodArray[ 0 ]);
+        if (! $thePhp->type_method($array, [ &$methodArray, &$methodString ])->isOk()) {
+            return null;
+        }
 
         $reflectKey = $methodString;
-        $reflectNamespace = Lib::parse()->struct_namespace($methodArray[ 0 ]);
-        $reflectResult = null;
 
-        $cache = $this->cache;
+        $reflectNamespace = $theType->struct_namespace($methodArray[ 0 ])->orNull();
 
-        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
+        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -170,7 +197,7 @@ class DiReflector implements DiReflectorInterface
 
             $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rf);
 
-            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+            $theCache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -182,9 +209,11 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsString($string) : ?array
     {
         if (! is_string($string)) return null;
+        if ('' === $string) return null;
 
         $reflectResult = null
-            ?? $this->reflectArgumentsStringCallable($string);
+            ?? $this->reflectArgumentsStringCallable($string)
+            ?? $this->reflectArgumentsStringInvokableClass($string);
 
         return $reflectResult;
     }
@@ -194,15 +223,19 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsStringCallable($string) : ?array
     {
-        if (! is_string($string)) return null;
-        if (! strlen($string)) return null;
-        if (! Lib::php()->type_callable_string($callableString, $string, null)) return null;
+        $theCache = $this->cache;
+        $thePhp = Lib::php();
+        $theType = Lib::type();
+
+        if (! $thePhp->type_callable_string($string, $newScope = null)->isOk([ &$callableString ])) {
+            return null;
+        }
 
         $isFunction = function_exists($callableString);
 
         $reflectKey = $callableString;
+
         $reflectNamespace = null;
-        $reflectResult = null;
 
         $theClass = null;
         $theMethod = null;
@@ -214,13 +247,11 @@ class DiReflector implements DiReflectorInterface
 
             [ $theClass, $theMethod ] = explode('::', $callableString);
 
-            $reflectNamespace = Lib::parse()->struct_namespace($theClass);
+            $reflectNamespace = $theType->struct_namespace($theClass)->orNull();
         }
 
-        $cache = $this->cache;
-
-        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
+        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             if ($isFunction) {
@@ -246,7 +277,7 @@ class DiReflector implements DiReflectorInterface
                 $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
             }
 
-            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+            $theCache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -255,24 +286,23 @@ class DiReflector implements DiReflectorInterface
     /**
      * @param callable|class-string $string
      */
-    protected function reflectArgumentsStringClassString($string) : ?array
+    protected function reflectArgumentsStringInvokableClass($string) : ?array
     {
-        if (! is_string($string)) return null;
-        if (! strlen($string)) return null;
         if (! class_exists($string)) return null;
         if (! method_exists($string, '__invoke')) return null;
+
+        $theCache = $this->cache;
+        $theType = Lib::type();
 
         $theClass = $string;
         $theMethod = '__invoke';
 
-        $reflectKey = "{$theClass}->{$theMethod}";
-        $reflectNamespace = Lib::parse()->struct_namespace($theClass);
-        $reflectResult = null;
+        $reflectKey = "{$theClass}->__invoke";
 
-        $cache = $this->cache;
+        $reflectNamespace = $theType->struct_namespace($theClass)->orNull();
 
-        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
-            $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
+        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+            $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
@@ -284,7 +314,7 @@ class DiReflector implements DiReflectorInterface
 
             $reflectResult = $this->resolveReflectionFunctionAbstract($reflectKey, $rm);
 
-            $cache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
+            $theCache->setReflectionResult($reflectResult, $reflectKey, $reflectNamespace);
         }
 
         return $reflectResult;
@@ -325,11 +355,12 @@ class DiReflector implements DiReflectorInterface
         if (! is_string($class)) return null;
         if (! class_exists($class)) return null;
 
-        $reflectKey = $class . '::__construct';
-        $reflectNamespace = Lib::parse()->struct_namespace($class);
-        $reflectResult = null;
-
         $cache = $this->cache;
+        $theType = Lib::type();
+
+        $reflectKey = $class . '::__construct';
+
+        $reflectNamespace = $theType->struct_namespace($class)->orNull();
 
         if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
             $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);

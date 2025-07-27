@@ -2,8 +2,9 @@
 
 namespace Gzhegow\Di\Struct;
 
-use Gzhegow\Lib\Modules\Php\Result\Ret;
-use Gzhegow\Lib\Modules\Php\Result\Result;
+
+use Gzhegow\Lib\Lib;
+use Gzhegow\Lib\Modules\Type\Ret;
 
 
 class Id
@@ -33,63 +34,59 @@ class Id
 
 
     /**
-     * @param Ret $ret
-     *
-     * @return static|bool|null
+     * @return static|Ret<static>
      */
-    public static function from($from, $ret = null)
+    public static function from($from, ?array $fallback = null)
     {
-        $retCur = Result::asValue();
+        $ret = Ret::new();
 
         $instance = null
-            ?? static::fromStatic($from, $retCur)
-            ?? static::fromString($from, $retCur);
+            ?? static::fromStatic($from, $fallback)->orNull($ret)
+            ?? static::fromString($from, $fallback)->orNull($ret);
 
-        if ($retCur->isErr()) {
-            return Result::err($ret, $retCur);
+        if ($ret->isFail()) {
+            return Ret::throw($fallback, $ret);
         }
 
-        return Result::ok($ret, $instance);
+        return Ret::ok($fallback, $instance);
     }
 
     /**
-     * @param Ret $ret
-     *
-     * @return static|bool|null
+     * @return static|Ret<static>
      */
-    public static function fromStatic($from, $ret = null)
+    public static function fromStatic($from, ?array $fallback = null)
     {
         if ($from instanceof static) {
-            return Result::ok($ret, $from);
+            return Ret::ok($fallback, $from);
         }
 
-        return Result::err(
-            $ret,
+        return Ret::throw(
+            $fallback,
             [ 'The `from` should be instance of: ' . static::class, $from ],
             [ __FILE__, __LINE__ ]
         );
     }
 
     /**
-     * @param Ret $ret
-     *
-     * @return static|bool|null
+     * @return static|Ret<static>
      */
-    public static function fromString($from, $ret = null)
+    public static function fromString($from, ?array $fallback = null)
     {
-        if (! (is_string($from) && ('' !== $from))) {
-            return Result::err(
-                $ret,
+        $theType = Lib::type();
+
+        if (! $theType->string_not_empty($from)->isOk([ &$fromString ])) {
+            return Ret::throw(
+                $fallback,
                 [ 'The `from` should be non-empty string', $from ],
                 [ __FILE__, __LINE__ ]
             );
         }
 
-        $id = ltrim($from, '\\');
+        $id = ltrim($fromString, '\\');
 
         if ('' === $id) {
-            return Result::err(
-                $ret,
+            return Ret::throw(
+                $fallback,
                 [ 'The `id` should be non-empty string', $from ],
                 [ __FILE__, __LINE__ ]
             );
@@ -98,7 +95,7 @@ class Id
         $instance = new static();
         $instance->value = $id;
 
-        return Result::ok($ret, $instance);
+        return Ret::ok($fallback, $instance);
     }
 
 

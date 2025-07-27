@@ -22,8 +22,9 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
 
     public function newLazyServiceGet($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
-        $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $lazyId = Id::from($lazyId)->orThrow();
 
         $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryGet' ], $parametersWhenNew);
 
@@ -32,8 +33,9 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
 
     public function newLazyServiceMake($lazyId, ?array $parameters = null) : DiLazyService
     {
-        $lazyId = Id::from($lazyId);
         $parameters = $parameters ?? [];
+
+        $lazyId = Id::from($lazyId)->orThrow();
 
         $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryMake' ], $parameters);
 
@@ -42,8 +44,9 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
 
     public function newLazyServiceTake($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
-        $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $lazyId = Id::from($lazyId)->orThrow();
 
         $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryTake' ], $parametersWhenNew);
 
@@ -52,8 +55,9 @@ class DiLazyServiceFactory implements DiLazyServiceFactoryInterface
 
     public function newLazyServiceFetch($lazyId, ?array $parametersWhenNew = null) : DiLazyService
     {
-        $lazyId = Id::from($lazyId);
         $parametersWhenNew = $parametersWhenNew ?? [];
+
+        $lazyId = Id::from($lazyId)->orThrow();
 
         $lazyService = new DiLazyService($lazyId, [ $this, 'fnFactoryFetch' ], $parametersWhenNew);
 

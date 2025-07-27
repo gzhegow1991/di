@@ -31,12 +31,12 @@ interface DiInterface
     public function bindSingleton($id, $mixed = null) : DiInterface;
 
 
-    public function bindAlias($id, $aliasId, ?bool $isSingleton = null) : DiInterface;
+    public function bindAlias($id, $idOrAlias, ?bool $isSingleton = null) : DiInterface;
 
     /**
-     * @param class-string $classId
+     * @param class-string $idOrClass
      */
-    public function bindClass($id, $classId, ?bool $isSingleton = null) : DiInterface;
+    public function bindClass($id, $idOrClass, ?bool $isSingleton = null) : DiInterface;
 
     /**
      * @param callable $fnFactory

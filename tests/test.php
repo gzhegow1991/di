@@ -1,14 +1,11 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
-
 // > настраиваем PHP
 \Gzhegow\Lib\Lib::entrypoint()
     ->setDirRoot(__DIR__ . '/..')
-    //
-    ->useAll()
+    ->useAllRecommended()
 ;
+
 
 
 // > добавляем несколько функция для тестирования
@@ -21,7 +18,7 @@ $ffn = new class {
 
     function values($separator = null, ...$values) : string
     {
-        return \Gzhegow\Lib\Lib::debug()->values([], $separator, ...$values);
+        return \Gzhegow\Lib\Lib::debug()->dump_values([], $separator, ...$values);
     }
 
 
@@ -31,11 +28,11 @@ $ffn = new class {
     }
 
 
-    function test(\Closure $fn, array $args = []) : \Gzhegow\Lib\Modules\Test\Test
+    function test(\Closure $fn, array $args = []) : \Gzhegow\Lib\Modules\Test\TestCase
     {
         $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 
-        return \Gzhegow\Lib\Lib::test()->newTest()
+        return \Gzhegow\Lib\Lib::test()->newTestCase()
             ->fn($fn, $args)
             ->trace($trace)
         ;
@@ -110,9 +107,9 @@ $di = new \Gzhegow\Di\DiFacade(
 // $container = new \Gzhegow\Di\Container\ContainerPsr($di);      // composer require psr/container
 // $container = new \Gzhegow\Di\Container\ContainerPsr10000($di); // composer require psr/container:~1.0
 
-// > так можно очистить кеш принудительно (обычно для этого делают консольный скрипт и запускают вручную или кроном, но если использовать symfony/cache можно и просто установить TTL - время устаревания)
+// > так можно очистить кеш (обычно для этого делают консольный скрипт и запускают вручную или кроном, но если использовать symfony/cache можно и просто установить TTL - время устаревания)
 $di->clearCache();
-// > так можно сбросить кэш принудительно (чтобы запросить его из хранилища заново в режиме STORAGE)
+// > так можно сбросить кэш (на диске он останется для следующего раза, и перезапишется новым рассчётом)
 // $di->resetCache();
 // > так можно сохранить кеш (обычно в конце скрипта)
 // $di->saveCache();

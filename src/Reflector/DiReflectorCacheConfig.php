@@ -1,8 +1,9 @@
 <?php
 
 /**
- * @noinspection PhpUndefinedNamespaceInspection
+ * @noinspection PhpFullyQualifiedNameUsageInspection
  * @noinspection PhpUndefinedClassInspection
+ * @noinspection PhpUndefinedNamespaceInspection
  */
 
 namespace Gzhegow\Di\Reflector;
@@ -47,14 +48,16 @@ class DiReflectorCacheConfig extends AbstractConfig
     protected $cacheDirpath = __DIR__ . '/../var/cache/gzhegow.di';
 
 
-    protected function validation(array &$context = []) : bool
+    protected function validation(array $context = []) : bool
     {
+        $theType = Lib::type();
+
         if (! isset(DiReflectorCache::LIST_CACHE_MODE[ $this->cacheMode ])) {
             throw new LogicException(
                 [
                     ''
                     . 'The `cacheMode` should be one of: '
-                    . implode('|', array_keys(DiReflectorCache::LIST_CACHE_MODE)),
+                    . '[ ' . implode(' ][ ', array_keys(DiReflectorCache::LIST_CACHE_MODE)) . ' ]',
                     //
                     $this,
                 ]
@@ -73,14 +76,7 @@ class DiReflectorCacheConfig extends AbstractConfig
         }
 
         if (null !== $this->cacheDirpath) {
-            if (! Lib::type()->dirpath($dirpath, $this->cacheDirpath)) {
-                throw new LogicException(
-                    [
-                        'The `cacheDirpath` should be valid directory path',
-                        $this,
-                    ]
-                );
-            }
+            $theType->dirpath($this->cacheDirpath, true)->orThrow();
         }
 
         return true;

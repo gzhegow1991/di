@@ -5,7 +5,6 @@ namespace Gzhegow\Di\Injector;
 use Gzhegow\Di\Struct\Id;
 use Gzhegow\Di\Exception\LogicException;
 use Gzhegow\Di\Exception\RuntimeException;
-use Gzhegow\Lib\Modules\Php\Result\Result;
 use Gzhegow\Di\Reflector\DiReflectorInterface;
 use Gzhegow\Di\Exception\Runtime\NotFoundException;
 
@@ -106,25 +105,22 @@ class DiInjector implements DiInjectorInterface
     {
         if (! is_a($di, static::class)) {
             throw new RuntimeException(
-                [
-                    'The `di` should be instance of: ' . static::class,
-                    $di,
-                ]
+                [ 'The `di` should be instance of: ' . static::class, $di ]
             );
         }
 
-        foreach ( $di->bindToTypeList as $_bindId => $bindType ) {
-            $bindId = Id::from($_bindId);
+        foreach ( $di->bindToTypeList as $bindIdString => $bindType ) {
+            $bindId = Id::from($bindIdString)->orThrow();
             $bindProperty = "{$bindType}List";
-            $bindObject = $di->{$bindProperty}[ $_bindId ];
+            $bindObject = $di->{$bindProperty}[ $bindIdString ];
 
-            $isSingleton = ! empty($di->isSingletonIndex[ $_bindId ]);
+            $isSingleton = ! empty($di->isSingletonIndex[ $bindIdString ]);
 
             $this->bindItemOfType($bindType, $bindId, $bindObject, $isSingleton);
         }
 
-        foreach ( $di->extendList as $_extendId => $callables ) {
-            $extendId = Id::from($_extendId);
+        foreach ( $di->extendList as $extendIdString => $callables ) {
+            $extendId = Id::from($extendIdString)->orThrow();
 
             foreach ( $callables as $callable ) {
                 $this->extendItem($extendId, $callable);
@@ -139,9 +135,8 @@ class DiInjector implements DiInjectorInterface
     {
         $result = null;
 
-        $idObject = Id::from($id, Result::asValue());
-
-        if (! $idObject) {
+        $idObject = Id::from($id)->orNull();
+        if (null === $idObject) {
             return false;
         }
 
@@ -157,7 +152,7 @@ class DiInjector implements DiInjectorInterface
     }
 
 
-    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false) : DiInjectorInterface
+    public function bindItemAlias(Id $id, Id $idOfAlias, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -166,7 +161,7 @@ class DiInjector implements DiInjectorInterface
         }
 
         $_id = $id->getValue();
-        $_aliasId = $aliasId->getValue();
+        $_aliasId = $idOfAlias->getValue();
 
         if ($_id === $_aliasId) {
             throw new LogicException(
@@ -188,7 +183,7 @@ class DiInjector implements DiInjectorInterface
         return $this;
     }
 
-    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false) : DiInjectorInterface
+    public function bindItemClass(Id $id, Id $idOfClass, bool $isSingleton = false) : DiInjectorInterface
     {
         if ($this->has($id)) {
             throw new RuntimeException(
@@ -197,7 +192,7 @@ class DiInjector implements DiInjectorInterface
         }
 
         $_id = $id->getValue();
-        $_classId = $classId->getValue();
+        $_classId = $idOfClass->getValue();
 
         if ($_id !== $_classId) {
             throw new LogicException(
@@ -207,7 +202,7 @@ class DiInjector implements DiInjectorInterface
             );
         }
 
-        if (! $classId->isClass()) {
+        if (! $idOfClass->isClass()) {
             throw new LogicException(
                 'The `classId` value should be valid class: ' . $_classId
             );
@@ -292,14 +287,14 @@ class DiInjector implements DiInjectorInterface
     {
         switch ( $type ):
             case static::BIND_TYPE_ALIAS:
-                $aliasId = Id::from($mixed);
+                $aliasId = Id::from($mixed)->orThrow();
 
                 $this->bindItemAlias($id, $aliasId, $isSingleton);
 
                 break;
 
             case static::BIND_TYPE_CLASS:
-                $classId = Id::from($mixed);
+                $classId = Id::from($mixed)->orThrow();
 
                 $this->bindItemClass($id, $classId, $isSingleton);
 
@@ -352,8 +347,6 @@ class DiInjector implements DiInjectorInterface
      */
     public function askItem(Id $id, string $contractT = '', bool $forceInstanceOf = false, array $parametersWhenNew = []) : ?object
     {
-        $paremeters = $paremeters ?? [];
-
         if (! $this->has($id)) {
             return null;
         }
@@ -506,8 +499,6 @@ class DiInjector implements DiInjectorInterface
      */
     public function takeItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
-        $paremeters = $paremeters ?? [];
-
         $instance = $this->has($id)
             ? $this->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew)
             : $this->makeItem($id, $parametersWhenNew);
@@ -533,8 +524,6 @@ class DiInjector implements DiInjectorInterface
      */
     public function fetchItem(Id $id, array $parametersWhenNew = [], string $contractT = '', bool $forceInstanceOf = false) : object
     {
-        $paremeters = $paremeters ?? [];
-
         switch ( $this->config->fetchFunc ):
             case static::FETCH_FUNC_GET:
                 $instance = $this->getItem($id, $contractT, $forceInstanceOf, $parametersWhenNew);
@@ -656,9 +645,9 @@ class DiInjector implements DiInjectorInterface
             $result = [ $object, static::BIND_TYPE_INSTANCE ];
 
         } elseif (is_string($mixed) && ('' !== $mixed)) {
-            $mixedIdObject = Id::from($mixed, Result::asValue());
+            $mixedIdObject = Id::from($mixed)->orNull();
 
-            if ($mixedIdObject) {
+            if (null !== $mixedIdObject) {
                 $mixedIdValue = $mixedIdObject->getValue();
 
                 if ($isAlias = ($idValue !== $mixedIdValue)) {
@@ -722,12 +711,12 @@ class DiInjector implements DiInjectorInterface
             ? ($extendContractList[ $_id ] = true)
             : ($extendIdList[ $_id ] = true);
 
-        foreach ( $resolvedPath as $_resolvedId => $resolvedType ) {
-            $resolvedId = Id::from($_resolvedId);
+        foreach ( $resolvedPath as $resolvedIdString => $resolvedType ) {
+            $resolvedId = Id::from($resolvedIdString)->orThrow();
 
             $resolvedId->isContract()
-                ? ($extendContractList[ $_resolvedId ] = true)
-                : ($extendIdList[ $_resolvedId ] = true);
+                ? ($extendContractList[ $resolvedIdString ] = true)
+                : ($extendIdList[ $resolvedIdString ] = true);
         }
 
         $extendContractList[ get_class($instance) ] = true;
@@ -745,7 +734,7 @@ class DiInjector implements DiInjectorInterface
         if ($intersect) {
             $callablesOrdered = [];
 
-            foreach ( $intersect as $extendClass => $callables ) {
+            foreach ( $intersect as $callables ) {
                 $callablesOrdered += $callables;
             }
 
@@ -915,7 +904,7 @@ class DiInjector implements DiInjectorInterface
                     $_arguments[ $i ] = null;
 
                 } else {
-                    $id = Id::from($argReflectionTypeClass);
+                    $id = Id::from($argReflectionTypeClass)->orThrow();
 
                     try {
                         $_arguments[ $i ] = $this->fetchItem($id);

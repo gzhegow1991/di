@@ -19,9 +19,9 @@ interface DiInjectorInterface
     public function has($id, ?Id &$result = null) : bool;
 
 
-    public function bindItemAlias(Id $id, Id $aliasId, bool $isSingleton = false) : DiInjectorInterface;
+    public function bindItemAlias(Id $id, Id $idOfAlias, bool $isSingleton = false) : DiInjectorInterface;
 
-    public function bindItemClass(Id $id, Id $classId, bool $isSingleton = false) : DiInjectorInterface;
+    public function bindItemClass(Id $id, Id $idOfClass, bool $isSingleton = false) : DiInjectorInterface;
 
     public function bindItemFactory(Id $id, callable $fnFactory, bool $isSingleton = false) : DiInjectorInterface;
 

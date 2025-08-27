@@ -1,7 +1,6 @@
 {
   "name": "gzhegow/di",
   "type": "library",
-  "version": "1.0.0",
   "license": "MIT",
 
   "authors": [
@@ -19,7 +18,7 @@
 
     "psr/container": "^1.0|^2.0",
 
-    "gzhegow/lib": "~1.2.0"
+    "gzhegow/lib": "^1.0"
   },
 
   "autoload": {
@@ -40,5 +39,9 @@
     "optimize-autoloader": true,
 
     "sort-packages": false
+  },
+
+  "extra": {
+    "version": "1.0.0"
   }
 }

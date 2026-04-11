@@ -71,7 +71,7 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsObject($object) : ?array
     {
-        if (! is_object($object)) return null;
+        if ( ! is_object($object) ) return null;
 
         $reflectResult = null
             ?? $this->reflectArgumentsObjectClosure($object)
@@ -86,9 +86,10 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsObjectClosure($object) : ?array
     {
         $theCache = $this->cache;
-        $thePhp = Lib::php();
 
-        if (! $thePhp->type_callable_object_closure($object, $newScope = null)->isOk()) {
+        $theType = Lib::type();
+
+        if ( ! $theType->callable_object_closure($object, $newScope = null)->isOk() ) {
             return null;
         }
 
@@ -103,7 +104,7 @@ class DiReflector implements DiReflectorInterface
 
         $reflectKey = '{ \Closure(' . $rf->getFileName() . "\0" . $rf->getStartLine() . "\0" . $rf->getEndLine() . ') }';
 
-        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $theCache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
@@ -121,10 +122,10 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsObjectInvokable($object) : ?array
     {
         $theCache = $this->cache;
-        $thePhp = Lib::php();
+
         $theType = Lib::type();
 
-        if (! $thePhp->type_callable_object_invokable($object, $newScope = null)->isOk([ &$invokable ])) {
+        if ( ! $theType->callable_object_invokable($object, $newScope = null)->isOk([ &$invokable ]) ) {
             return null;
         }
 
@@ -134,7 +135,7 @@ class DiReflector implements DiReflectorInterface
 
         $reflectNamespace = $theType->struct_namespace($class)->orNull();
 
-        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $theCache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
@@ -158,8 +159,8 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsArray($array) : ?array
     {
-        if (! is_array($array)) return null;
-        if (! count($array)) return null;
+        if ( ! is_array($array) ) return null;
+        if ( ! count($array) ) return null;
 
         $reflectResult = null
             ?? $this->reflectArgumentsArrayMethod($array);
@@ -173,23 +174,23 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsArrayMethod($array) : ?array
     {
         $theCache = $this->cache;
-        $thePhp = Lib::php();
+
         $theType = Lib::type();
 
-        if (! $thePhp->type_method($array, [ &$methodArray, &$methodString ])->isOk()) {
+        if ( ! $theType->method($array, [ &$methodArray, &$methodString ])->isOk() ) {
             return null;
         }
 
         $reflectKey = $methodString;
 
-        $reflectNamespace = $theType->struct_namespace($methodArray[ 0 ])->orNull();
+        $reflectNamespace = $theType->struct_namespace($methodArray[0])->orNull();
 
-        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $theCache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
             try {
-                $rf = new \ReflectionMethod($methodArray[ 0 ], $methodArray[ 1 ]);
+                $rf = new \ReflectionMethod($methodArray[0], $methodArray[1]);
             }
             catch ( \ReflectionException $e ) {
                 throw new RuntimeException($e->getMessage(), $e->getCode(), $e);
@@ -208,8 +209,8 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsString($string) : ?array
     {
-        if (! is_string($string)) return null;
-        if ('' === $string) return null;
+        if ( ! is_string($string) ) return null;
+        if ( '' === $string ) return null;
 
         $reflectResult = null
             ?? $this->reflectArgumentsStringCallable($string)
@@ -224,10 +225,10 @@ class DiReflector implements DiReflectorInterface
     protected function reflectArgumentsStringCallable($string) : ?array
     {
         $theCache = $this->cache;
-        $thePhp = Lib::php();
+
         $theType = Lib::type();
 
-        if (! $thePhp->type_callable_string($string, $newScope = null)->isOk([ &$callableString ])) {
+        if ( ! $theType->callable_string($string, $newScope = null)->isOk([ &$callableString ]) ) {
             return null;
         }
 
@@ -239,7 +240,7 @@ class DiReflector implements DiReflectorInterface
 
         $theClass = null;
         $theMethod = null;
-        if ($isFunction) {
+        if ( $isFunction ) {
             $reflectKey = $string;
 
         } else {
@@ -250,11 +251,11 @@ class DiReflector implements DiReflectorInterface
             $reflectNamespace = $theType->struct_namespace($theClass)->orNull();
         }
 
-        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $theCache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
-            if ($isFunction) {
+            if ( $isFunction ) {
                 try {
                     $rf = new \ReflectionFunction($callableString);
                 }
@@ -288,8 +289,8 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsStringInvokableClass($string) : ?array
     {
-        if (! class_exists($string)) return null;
-        if (! method_exists($string, '__invoke')) return null;
+        if ( ! class_exists($string) ) return null;
+        if ( ! method_exists($string, '__invoke') ) return null;
 
         $theCache = $this->cache;
         $theType = Lib::type();
@@ -301,7 +302,7 @@ class DiReflector implements DiReflectorInterface
 
         $reflectNamespace = $theType->struct_namespace($theClass)->orNull();
 
-        if ($theCache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $theCache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $theCache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
@@ -338,7 +339,7 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsConstructorObject($object) : ?array
     {
-        if (! is_object($object)) return null;
+        if ( ! is_object($object) ) return null;
 
         $class = get_class($object);
 
@@ -352,8 +353,8 @@ class DiReflector implements DiReflectorInterface
      */
     protected function reflectArgumentsConstructorClass($class) : ?array
     {
-        if (! is_string($class)) return null;
-        if (! class_exists($class)) return null;
+        if ( ! is_string($class) ) return null;
+        if ( ! class_exists($class) ) return null;
 
         $cache = $this->cache;
         $theType = Lib::type();
@@ -362,7 +363,7 @@ class DiReflector implements DiReflectorInterface
 
         $reflectNamespace = $theType->struct_namespace($class)->orNull();
 
-        if ($cache->hasReflectionResult($reflectKey, $reflectNamespace)) {
+        if ( $cache->hasReflectionResult($reflectKey, $reflectNamespace) ) {
             $reflectResult = $cache->getReflectionResult($reflectKey, $reflectNamespace);
 
         } else {
@@ -387,14 +388,14 @@ class DiReflector implements DiReflectorInterface
     protected function resolveReflectionFunctionAbstract(string $reflectionKey, ?\ReflectionFunctionAbstract $reflectionFunctionAbstract) : array
     {
         $result = [];
-        $result[ 'key' ] = $reflectionKey;
+        $result['key'] = $reflectionKey;
 
-        if (! $reflectionFunctionAbstract) {
-            $result[ 'name' ] = null;
-            $result[ 'file' ] = null;
-            $result[ 'line' ] = null;
-            $result[ 'arguments' ] = null;
-            $result[ 'return' ] = null;
+        if ( ! $reflectionFunctionAbstract ) {
+            $result['name'] = null;
+            $result['file'] = null;
+            $result['line'] = null;
+            $result['arguments'] = null;
+            $result['return'] = null;
 
         } else {
             $rfName = $reflectionFunctionAbstract->getName();
@@ -416,7 +417,7 @@ class DiReflector implements DiReflectorInterface
                 $rpName = $reflectionParameter->getName();
                 $rpIsNullable = $rtIsNullable || $reflectionParameter->isOptional();
 
-                $rfParamsResolved[ $i ] = [ $rpName, $rtList, $rtTree, $rpIsNullable ];
+                $rfParamsResolved[$i] = [ $rpName, $rtList, $rtTree, $rpIsNullable ];
             }
 
             $rfReturnResolved = $rfReturn
@@ -424,11 +425,11 @@ class DiReflector implements DiReflectorInterface
                 : null;
 
             $result = [];
-            $result[ 'name' ] = $rfName;
-            $result[ 'file' ] = $rfFile ?: null;
-            $result[ 'line' ] = $rfLine ?: null;
-            $result[ 'arguments' ] = $rfParamsResolved;
-            $result[ 'return' ] = $rfReturnResolved;
+            $result['name'] = $rfName;
+            $result['file'] = $rfFile ?: null;
+            $result['line'] = $rfLine ?: null;
+            $result['arguments'] = $rfParamsResolved;
+            $result['return'] = $rfReturnResolved;
         }
 
         return $result;
@@ -440,18 +441,18 @@ class DiReflector implements DiReflectorInterface
         $tree = [];
         $isNullable = false;
 
-        if (! $reflectionType) {
+        if ( ! $reflectionType ) {
             $root = '';
             $id = '0';
 
-            $list[ $id ] = [
+            $list[$id] = [
                 'name'       => 'mixed',
                 'class'      => null,
                 'allowsNull' => true,
             ];
 
-            $tree[ $root ][ "\0" ] = 'and';
-            $tree[ $root ][ $id ] = true;
+            $tree[$root]["\0"] = 'and';
+            $tree[$root][$id] = true;
 
             $isNullable = true;
 
@@ -466,11 +467,11 @@ class DiReflector implements DiReflectorInterface
                 $isReflectionTypeUnion = $reflectionType && is_a($reflectionType, '\ReflectionUnionType');
                 $isReflectionTypeIntersection = $reflectionType && is_a($reflectionType, '\ReflectionIntersectionType');
 
-                if ($isReflectionTypeUnion || $isReflectionTypeIntersection) {
-                    if ($isReflectionTypeUnion) {
+                if ( $isReflectionTypeUnion || $isReflectionTypeIntersection ) {
+                    if ( $isReflectionTypeUnion ) {
                         $logic = 'or';
 
-                    } elseif ($isReflectionTypeIntersection) {
+                    } elseif ( $isReflectionTypeIntersection ) {
                         $logic = 'and';
                     }
 
@@ -486,7 +487,7 @@ class DiReflector implements DiReflectorInterface
                         prev($array);
                     }
 
-                } elseif ($isReflectionTypeNamed) {
+                } elseif ( $isReflectionTypeNamed ) {
                     $isRtNamedClass = ! $reflectionType->isBuiltin();
 
                     $reflectionTypeName = $reflectionType->getName();
@@ -498,14 +499,14 @@ class DiReflector implements DiReflectorInterface
                     $path = array_slice($fullpath, 0, -1);
                     $keyParent = implode('.', $path);
 
-                    $list[ $key ] = [
+                    $list[$key] = [
                         'name'       => $reflectionTypeName,
                         'class'      => $reflectionTypeClass,
                         'allowsNull' => $reflectionTypeAllowsNull,
                     ];
 
-                    $tree[ $keyParent ][ "\0" ] = $logic;
-                    $tree[ $keyParent ][ $key ] = true;
+                    $tree[$keyParent]["\0"] = $logic;
+                    $tree[$keyParent][$key] = true;
 
                     $isNullable = $isNullable || $reflectionTypeAllowsNull;
 
@@ -513,14 +514,14 @@ class DiReflector implements DiReflectorInterface
                     $root = '';
                     $id = '0';
 
-                    $list[ $id ] = [
+                    $list[$id] = [
                         'name'       => 'mixed',
                         'class'      => null,
                         'allowsNull' => true,
                     ];
 
-                    $tree[ $root ][ "\0" ] = $logic;
-                    $tree[ $root ][ $id ] = true;
+                    $tree[$root]["\0"] = $logic;
+                    $tree[$root][$id] = true;
 
                     $isNullable = true;
                 }

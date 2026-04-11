@@ -12,6 +12,7 @@ trait MyClassTwoAwareTrait
      */
     protected $two;
 
+
     /**
      * @param DiLazyService<MyClassTwo>|MyClassTwo $two
      */

@@ -18,7 +18,7 @@
 
     "psr/container": "^1.0|^2.0",
 
-    "gzhegow/lib": "~1.0.0"
+    "gzhegow/lib": "^1.0.0"
   },
 
   "autoload": {
@@ -42,6 +42,6 @@
   },
 
   "extra": {
-    "version": "v1.0.0"
+    "version": "v1.1.0"
   }
 }

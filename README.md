@@ -24,11 +24,14 @@ php test.php
 <?php
 
 // > настраиваем PHP
-($ent = \Gzhegow\Lib\Lib::entrypoint())
+\Gzhegow\Lib\Lib::entrypoint()
     ->setAllRecommended()
-    ->setOpt($ent::OPT_CUSTOM_DIR_ROOT, __DIR__ . '/..')
+    //
+    ->setCustomDirRoot(__DIR__ . '/..')
     //
     ->useAll()
+    //
+    ->lock()
 ;
 
 
